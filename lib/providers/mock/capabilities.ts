@@ -61,6 +61,23 @@ export const importYetiWebCapability: ProviderCapability = {
   },
 };
 
+export const shipmentDataCapability: ProviderCapability = {
+  id: "shipment_data",
+  kind: "free",
+  label: "Stored shipment records (canonical entities)",
+  canHandle(query) {
+    return query.intent === "buyer_ranking";
+  },
+  rejectReason(query) {
+    if (query.market !== "US") return "Stored shipment records currently cover US import records only";
+    if (query.intent !== "buyer_ranking") return "Shipment records support buyer ranking only";
+    return null;
+  },
+  estimateCredits() {
+    return 0;
+  },
+};
+
 export function mockProviderKind(): ProviderKind {
   return "free";
 }

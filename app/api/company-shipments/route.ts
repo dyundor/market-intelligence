@@ -1,5 +1,6 @@
 import { NextRequest,NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
+import { enrichShipmentRow } from "../../../lib/entities/shipment.ts";
 
 export async function GET(request:NextRequest){
   if(!env.DB)return NextResponse.json({error:"Database unavailable"},{status:503});
@@ -20,5 +21,6 @@ export async function GET(request:NextRequest){
     LEFT JOIN importyeti_web_entities importer ON importer.id=sh.importer_id
     WHERE ${field}=?${monthClause} ORDER BY sh.shipment_date DESC,sh.id DESC LIMIT ? OFFSET ?`).bind(...binds,pageSize,(page-1)*pageSize).all();
   const months=await env.DB.prepare(`SELECT substr(sh.shipment_date,1,7) month,COUNT(*) shipments FROM importyeti_web_shipments sh WHERE ${field}=? GROUP BY 1 ORDER BY 1 DESC`).bind(companyId).all();
-  return NextResponse.json({companyId,page,pageSize,total:Number(count?.total||0),totalPages:Math.max(1,Math.ceil(Number(count?.total||0)/pageSize)),month,months:months.results,shipments:result.results});
+  const shipments = (result.results || []).map(row => enrichShipmentRow(row as Record<string, unknown>));
+  return NextResponse.json({companyId,page,pageSize,total:Number(count?.total||0),totalPages:Math.max(1,Math.ceil(Number(count?.total||0)/pageSize)),month,months:months.results,shipments});
 }

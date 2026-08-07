@@ -5,6 +5,7 @@ import { planQuery } from "./planner.ts";
 import type { CacheResolver } from "../cache/resolver.ts";
 import type { ProviderCapability, ProviderRegistry } from "../providers/types.ts";
 import { normalizeTrade, normalizeRanking, normalizeCompanies } from "../normalizers/trade.ts";
+import { normalizeShipmentRanking } from "../normalizers/shipments.ts";
 import type { BuyerRanking } from "../ranking/types.ts";
 
 export interface Budget {
@@ -118,6 +119,7 @@ export class QueryEngine {
   private normalize(providerId: string, raw: unknown, query: QueryRequest, requestedLimit: number): NormalizedData {
     if (providerId === "comtrade") return normalizeTrade(raw as Parameters<typeof normalizeTrade>[0]);
     if (providerId === "importyeti_web") return normalizeRanking(raw as Parameters<typeof normalizeRanking>[0], query);
+    if (providerId === "shipment_data") return normalizeShipmentRanking(raw, query);
     return this.sliceCompanies(normalizeCompanies(raw), requestedLimit);
   }
 

@@ -47,7 +47,7 @@ export function aggregateShipments(shipments: Shipment[], months: number): Aggre
     }
     entry.metrics.shipments += 1;
     if (shipment.supplierId) entry.supplierSet.add(shipment.supplierId);
-    entry.metrics.weightKg += shipment.weightKg || 0;
+    entry.metrics.weightKg += shipment.weight || 0;
     entry.metrics.containers += shipment.containerCount || 0;
     if (shipment.shipmentDate) entry.monthSet.add(shipment.shipmentDate.slice(0, 7));
   }

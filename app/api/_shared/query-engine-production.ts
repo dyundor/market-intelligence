@@ -4,9 +4,10 @@ import { comtradeProvider, importYetiProvider } from "../../../lib/providers/moc
 import { ComtradeProvider } from "../../../lib/providers/comtrade/provider.ts";
 import { ImportYetiWebProvider } from "../../../lib/providers/importyeti-web/provider.ts";
 import type { DbLike } from "../../../lib/db/types.ts";
-import { comtradeCapability, importYetiCapability, importYetiWebCapability } from "../../../lib/providers/mock/capabilities.ts";
+import { comtradeCapability, importYetiCapability, importYetiWebCapability, shipmentDataCapability } from "../../../lib/providers/mock/capabilities.ts";
 import { CacheResolver, type CacheAdapter } from "../../../lib/cache/resolver.ts";
 import { persistMonthlyRankings } from "../../../lib/ranking/persist.ts";
+import { ShipmentRankingProvider } from "../../../lib/providers/shipments/provider.ts";
 import type { Provider } from "../../../lib/providers/types.ts";
 import type { PlannedQuery, QueryRequest } from "../../../lib/query/types.ts";
 
@@ -51,6 +52,7 @@ export function createQueryEngine(options: ProductionOptions = {}) {
   const providers = options.providers || [
     new ComtradeProvider({ apiKey: options.apiKey }),
     options.db ? new ImportYetiWebProvider({ db: options.db }) : null,
+    options.db ? new ShipmentRankingProvider({ db: options.db }) : null,
     importYetiProvider,
   ].filter((provider): provider is Provider => provider !== null);
   const cache = options.cache || new MemoryCache();
@@ -62,7 +64,7 @@ export function createQueryEngine(options: ProductionOptions = {}) {
   const resolver = new CacheResolver({ cache, providers, resolveProvider: route });
 
   return new QueryEngine({
-    capabilities: [comtradeCapability, importYetiWebCapability, importYetiCapability],
+    capabilities: [comtradeCapability, importYetiWebCapability, shipmentDataCapability, importYetiCapability],
     registry,
     resolver,
     budget,

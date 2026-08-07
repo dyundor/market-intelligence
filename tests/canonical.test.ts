@@ -87,11 +87,11 @@ test("provider data normalizes into canonical company and shipment entities", ()
   assert.equal(shipment.id, "sh1");
   assert.equal(shipment.importerName, "Kohler Co.");
   assert.equal(shipment.shipmentDate, "2026-07-15");
-  assert.equal(shipment.weightKg, 12000);
+  assert.equal(shipment.weight, 12000);
   assert.equal(shipment.containerCount, 2);
   assert.equal(shipment.quantity, 100);
-  assert.equal(shipment.freightUsd, 3400);
-  assert.equal(shipment.sourceChannel, "importyeti_free_web");
+  assert.equal(shipment.value, 3400);
+  assert.equal(shipment.source, "importyeti_free_web");
 });
 
 test("company identity mapping merges provider variants of the same company", () => {
@@ -107,17 +107,23 @@ test("company identity mapping merges provider variants of the same company", ()
 function shipmentsFor(buyerId: string, buyerName: string, supplierIds: string[], count: number, weightKg: number): Shipment[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `${buyerId}-${index}`,
+    source: "importyeti_free_web",
+    sourceShipmentId: `${buyerId}-${index}`,
     supplierId: supplierIds[index % supplierIds.length],
     importerId: buyerId,
     importerName: buyerName,
+    productCategory: "faucet",
+    productKeywords: ["faucet"],
+    hsCode: "848180",
+    originCountry: "CN",
+    destinationCountry: "US",
     shipmentDate: index % 2 === 0 ? "2026-07-10" : "2026-08-10",
-    weightKg,
-    containerCount: 1,
+    month: index % 2 === 0 ? "2026-07" : "2026-08",
+    year: 2026,
     quantity: 10,
-    freightUsd: 1000,
-    hsCodes: "848180",
-    productDescriptions: "faucet",
-    sourceChannel: "importyeti_free_web",
+    weight: weightKg,
+    value: 1000,
+    containerCount: 1,
     sourceUrl: "",
   }));
 }
