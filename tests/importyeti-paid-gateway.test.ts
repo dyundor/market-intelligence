@@ -66,6 +66,37 @@ test("dedupes concurrent execution and never accepts an automatic or wrong admin
   assert.equal(constantTimeSecretMatch(undefined,"secret"),false);assert.equal(constantTimeSecretMatch("wrong","secret"),false);assert.equal(constantTimeSecretMatch("secret","secret"),true);
 });
 
+test("rejects an approval below estimate and refuses to execute an unapproved or wrong query",async()=>{
+  const store=new MemoryStore();const gateway=new ImportYetiPaidGateway(store,{shipment_search:operation()},memoryCache());
+  const pending=await gateway.preflight("shipment_search",{q:"x"});
+  const tooLow=await gateway.approve(pending.request!.id,5,true);
+  assert.equal(tooLow.status,"failed");assert.equal(tooLow.reason,"Approved cost cannot be lower than estimated cost");
+  assert.equal(store.requests[0]?.status,"awaiting_approval");
+  assert.equal((await gateway.execute(pending.request!.id,{q:"x"})).status,"awaiting_approval");
+  const approved=await gateway.approve(pending.request!.id,10,true);assert.equal(approved.status,"approved");
+  assert.equal((await gateway.execute(pending.request!.id,{q:"different"})).status,"failed");
+  const unapproved=await gateway.preflight("shipment_search",{q:"new"});
+  assert.equal((await gateway.execute(unapproved.request!.id,{q:"new"})).status,"awaiting_approval");
+});
+
+test("records an explicit admin rejection without spending credits",async()=>{
+  const store=new MemoryStore();const gateway=new ImportYetiPaidGateway(store,{shipment_search:operation()},memoryCache());
+  const pending=await gateway.preflight("shipment_search",{q:"x"});
+  const rejected=await gateway.approve(pending.request!.id,0,false);
+  assert.equal(rejected.status,"failed");assert.equal(rejected.request?.failureReason,"Rejected by administrator");
+  assert.equal((await store.costs()).actualSpent,0);assert.equal((await store.costs()).approvedReservations,0);
+  assert.ok(store.events.some(event=>event.eventType==="rejected"));
+  assert.equal((await gateway.execute(pending.request!.id,{q:"x"})).status,"failed");
+});
+
+test("reports an upstream failure without leaving the request stuck as approved",async()=>{
+  const store=new MemoryStore();const gateway=new ImportYetiPaidGateway(store,{shipment_search:operation({execute:async()=>{throw new Error("upstream timeout")}})} ,memoryCache());
+  const pending=await gateway.preflight("shipment_search",{q:"x"});await gateway.approve(pending.request!.id,10,true);
+  const failed=await gateway.execute(pending.request!.id,{q:"x"});
+  assert.equal(failed.status,"failed");assert.equal(failed.reason,"upstream timeout");
+  assert.equal(store.requests[0]?.status,"failed");assert.equal((await store.costs()).actualSpent,0);
+});
+
 test("dedupes concurrent preflight requests",async()=>{
   const store=new MemoryStore();const gateway=new ImportYetiPaidGateway(store,{shipment_search:operation()},memoryCache());
   const [left,right]=await Promise.all([gateway.preflight("shipment_search",{q:"same"}),gateway.preflight("shipment_search",{q:"same"})]);
