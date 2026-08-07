@@ -5,10 +5,11 @@ export type ResolveResult = {
   source: "cache" | "provider";
   cacheHit: boolean;
   raw: unknown;
+  meta?: { source: string; storedAt: string; expiresAt: string };
 };
 
 export interface CacheAdapter {
-  read(cacheKey: string): Promise<{ hit: boolean; raw: unknown } | null>;
+  read(cacheKey: string): Promise<{ hit: boolean; raw: unknown; meta?: { source: string; storedAt: string; expiresAt: string } } | null>;
   write(cacheKey: string, raw: unknown): Promise<void>;
 }
 
@@ -28,9 +29,10 @@ export class CacheResolver {
     this.providers = deps.providers;
     this.resolveProvider = deps.resolveProvider;
   }
+
   async resolve(query: QueryRequest, cacheKey: string): Promise<ResolveResult> {
     const cached = await this.cache.read(cacheKey);
-    if (cached?.hit) return { source: "cache", cacheHit: true, raw: cached.raw };
+    if (cached?.hit) return { source: "cache", cacheHit: true, raw: cached.raw, meta: cached.meta };
 
     const provider = this.resolveProvider(query);
     if (!provider) throw new Error("No provider selected for this query");

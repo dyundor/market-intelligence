@@ -1,7 +1,9 @@
 import { QueryEngine, type Budget, type QueryLogger } from "../../../lib/query/engine.ts";
 import { SimpleProviderRegistry } from "../../../lib/providers/registry.ts";
 import { comtradeProvider, importYetiProvider } from "../../../lib/providers/mock/registry.ts";
-import { comtradeCapability, importYetiCapability } from "../../../lib/providers/mock/capabilities.ts";
+import { ComtradeProvider } from "../../../lib/providers/comtrade/provider.ts";
+import { ImportYetiWebProvider, type DbLike } from "../../../lib/providers/importyeti-web/provider.ts";
+import { comtradeCapability, importYetiCapability, importYetiWebCapability } from "../../../lib/providers/mock/capabilities.ts";
 import { CacheResolver, type CacheAdapter } from "../../../lib/cache/resolver.ts";
 import type { Provider } from "../../../lib/providers/types.ts";
 import type { PlannedQuery, QueryRequest } from "../../../lib/query/types.ts";
@@ -35,6 +37,8 @@ export class FixedBudget implements Budget {
 }
 
 export interface ProductionOptions {
+  db?: DbLike;
+  apiKey?: string;
   providers?: Provider[];
   cache?: CacheAdapter;
   logger?: QueryLogger;
@@ -42,7 +46,11 @@ export interface ProductionOptions {
 }
 
 export function createQueryEngine(options: ProductionOptions = {}) {
-  const providers = options.providers || [comtradeProvider, importYetiProvider];
+  const providers = options.providers || [
+    new ComtradeProvider({ apiKey: options.apiKey }),
+    options.db ? new ImportYetiWebProvider({ db: options.db }) : null,
+    importYetiProvider,
+  ].filter((provider): provider is Provider => provider !== null);
   const cache = options.cache || new MemoryCache();
   const logger = options.logger || new NoopLogger();
   const budget = options.budget || new FixedBudget(0);
@@ -52,7 +60,7 @@ export function createQueryEngine(options: ProductionOptions = {}) {
   const resolver = new CacheResolver({ cache, providers, resolveProvider: route });
 
   return new QueryEngine({
-    capabilities: [comtradeCapability, importYetiCapability],
+    capabilities: [comtradeCapability, importYetiWebCapability, importYetiCapability],
     registry,
     resolver,
     budget,
@@ -63,5 +71,7 @@ export function createQueryEngine(options: ProductionOptions = {}) {
 export function createPreviewQueryEngine(options: ProductionOptions = {}) {
   return createQueryEngine(options);
 }
+
+export { comtradeProvider, importYetiProvider };
 
 export type { PlannedQuery };

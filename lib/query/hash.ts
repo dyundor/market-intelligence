@@ -1,13 +1,18 @@
 import type { QueryRequest } from "./types.ts";
 
 export function normalizeQuery(query: QueryRequest): QueryRequest {
-  return {
+  const normalized: QueryRequest = {
     intent: query.intent,
     subject: query.subject.trim().toLowerCase(),
     market: query.market.trim().toUpperCase(),
     period: query.period.trim(),
-    ranking: query.ranking ? { limit: query.ranking.limit } : undefined,
   };
+  if (query.ranking) normalized.ranking = { limit: query.ranking.limit };
+  if (query.flow) normalized.flow = query.flow;
+  if (query.granularity) normalized.granularity = query.granularity;
+  if (query.range) normalized.range = query.range;
+  if (query.months?.length) normalized.months = [...query.months].sort();
+  return normalized;
 }
 
 export async function queryHash(query: QueryRequest): Promise<string> {

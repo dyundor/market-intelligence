@@ -1,5 +1,7 @@
 export type Intent = "buyer_ranking" | "supplier_ranking" | "trade_trend";
 export type ProviderKind = "free" | "paid";
+export type TradeFlow = "import" | "export";
+export type Granularity = "monthly" | "annual";
 
 export interface RankingSpec {
   limit: number;
@@ -11,6 +13,10 @@ export interface QueryRequest {
   market: string;
   period: string;
   ranking?: RankingSpec;
+  flow?: TradeFlow;
+  granularity?: Granularity;
+  range?: number;
+  months?: string[];
 }
 
 export interface QueryValidation {
@@ -55,43 +61,101 @@ export interface Company {
   shipments: number;
 }
 
-export interface TradePartner {
-  code: string;
-  name: string;
-  value: number;
-  share: number;
+export interface TradeSeriesPoint {
+  period: string;
+  label: string;
+  tradeValue: number;
+  netWeightKg: number;
+  isEstimated: boolean;
 }
 
-export interface TradeMetric {
-  period: string;
+export interface TradePartner {
+  code: number;
+  iso2: string;
+  name: string;
+  englishName?: string;
+  flag: string;
   value: number;
+  share: number;
+  netWeightKg: number;
+  isEstimated: boolean;
+}
+
+export type AvailabilityStatus = "available" | "fallback" | "not_released" | "no_trade_record";
+
+export interface TradeMetric {
+  source: string;
+  sourceUrl: string;
+  access: string;
+  market: string;
+  product: string;
+  flow: TradeFlow;
+  granularity: Granularity;
+  range: number;
+  availabilityStatus: AvailabilityStatus;
+  requestedPeriod: string;
+  period: string;
+  latestReportedPeriod: string;
+  recordCount: number;
+  hsCode: string;
+  tradeValue: number;
+  netWeightKg: number;
+  isNetWeightEstimated: boolean;
+  series: TradeSeriesPoint[];
   partners: TradePartner[];
+  fetchedAt: string;
+  licenseNote: string;
+}
+
+export interface DiscoveryRow {
+  [key: string]: unknown;
+}
+
+export interface SupplierDiscovery {
+  available: boolean;
+  reason?: string;
+  dataset: string;
+  market: string;
+  flow: string;
+  product: string;
+  hsCode: string;
+  requestedMonths: string[];
+  latestAvailableMonth: string;
+  importers: DiscoveryRow[];
+  suppliers: DiscoveryRow[];
+  storedShipmentCoverage: DiscoveryRow[];
 }
 
 export type NormalizedData =
   | { kind: "companies"; companies: Company[] }
-  | { kind: "trade"; metric: TradeMetric };
+  | { kind: "trade"; metric: TradeMetric }
+  | { kind: "discovery"; discovery: SupplierDiscovery };
+
+export interface QueryCost {
+  estimated: number;
+  percentOfTotal: number;
+}
 
 export interface QueryResult {
-  queryHash: string;
-  query: QueryRequest;
-  status: QueryStatus;
-  provider?: string;
+  queryId: string;
+  intent: Intent;
+  source: string[];
+  cached: boolean;
+  cost: QueryCost;
   data?: NormalizedData;
-  cache?: CacheMeta;
-  credits?: number;
-  requestId?: string;
+  metadata: Record<string, unknown>;
+  status: QueryStatus;
   reason?: string;
 }
 
 export interface QueryLogEntry {
-  queryHash: string;
+  queryId: string;
   intent: Intent;
   subject: string;
   market: string;
   period: string;
   provider: string | null;
   status: QueryStatus;
-  credits: number | null;
+  cost: number | null;
   createdAt: string;
 }

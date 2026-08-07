@@ -9,11 +9,11 @@ export const PRODUCT_HINTS: Record<string, string> = {
   sanitary: "Iron and steel sanitary ware",
 };
 
-function productDescription(subject: string): string {
+export function productDescription(subject: string): string {
   return PRODUCT_HINTS[subject] || subject;
 }
 
-function rankCount(query: QueryRequest): number {
+export function rankCount(query: QueryRequest): number {
   return query.ranking?.limit || 20;
 }
 
@@ -51,8 +51,23 @@ export const importYetiCapability: ProviderCapability = {
   },
 };
 
+export const importYetiWebCapability: ProviderCapability = {
+  id: "importyeti_web",
+  kind: "free",
+  label: "ImportYeti free web data (stored company-level records)",
+  canHandle(query) {
+    return query.intent === "buyer_ranking";
+  },
+  rejectReason(query) {
+    if (query.market !== "US") return "Stored ImportYeti web data currently covers US import records only";
+    if (query.intent !== "buyer_ranking") return "ImportYeti web data provides company-level records, not country aggregates";
+    return null;
+  },
+  estimateCredits() {
+    return 0;
+  },
+};
+
 export function mockProviderKind(): ProviderKind {
   return "free";
 }
-
-export { productDescription, rankCount };
