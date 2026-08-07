@@ -1,0 +1,1 @@
+CREATE INDEX `paid_api_cache_provider_expiry_idx` ON `paid_api_cache` (`provider`,`expires_at`);
