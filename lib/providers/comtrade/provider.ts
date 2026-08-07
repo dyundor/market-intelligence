@@ -4,11 +4,20 @@ import type { QueryRequest, TradeFlow } from "../../query/types.ts";
 import { resolveProduct } from "../../products/resolver.ts";
 
 export const REPORTERS: Record<string, number> = {
-  "美国": 842, "加拿大": 124, "阿联酋": 784,
-  "沙特阿拉伯": 682, "卡塔尔": 634, "科威特": 414, "阿曼": 512, "巴林": 48,
-  "澳大利亚": 36, "中国": 156, "英国": 826, "德国": 276, "法国": 251,
-  "意大利": 381, "西班牙": 724, "荷兰": 528, "比利时": 56, "日本": 392, "韩国": 410,
+  US: 842, CA: 124, AE: 784, SA: 682, QA: 634, KW: 414, OM: 512, BH: 48,
+  AU: 36, CN: 156, GB: 826, DE: 276, FR: 251, IT: 381, ES: 724, NL: 528,
+  BE: 56, JP: 392, KR: 410,
 };
+
+const CHINESE_REPORTERS: Record<string, number> = {
+  美国: 842, 加拿大: 124, 阿联酋: 784, 沙特阿拉伯: 682, 卡塔尔: 634, 科威特: 414, 阿曼: 512, 巴林: 48,
+  澳大利亚: 36, 中国: 156, 英国: 826, 德国: 276, 法国: 251, 意大利: 381, 西班牙: 724, 荷兰: 528,
+  比利时: 56, 日本: 392, 韩国: 410,
+};
+
+export function reporterCodeFor(market: string): number | undefined {
+  return REPORTERS[market] ?? CHINESE_REPORTERS[market];
+}
 
 export function commodityHsCode(subject: string): string {
   const category = resolveProduct(subject);
@@ -24,6 +33,7 @@ const rollingMonths = (end: Date, length: number) => Array.from({ length }, (_, 
   const date = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - (length - 1 - index), 1));
   return monthPeriod(date);
 });
+const wait = (milliseconds: number) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
 export interface ComtradeFetchOptions {
   apiKey?: string;
@@ -67,7 +77,7 @@ export class ComtradeProvider implements Provider {
   }
 
   async fetch(query: QueryRequest): Promise<ComtradeView> {
-    const reporterCode = REPORTERS[query.market];
+    const reporterCode = reporterCodeFor(query.market);
     const cmdCode = commodityHsCode(query.subject);
     if (!reporterCode || !cmdCode) throw new Error("该市场的官方接口正在准备中");
 
@@ -97,9 +107,22 @@ export class ComtradeProvider implements Provider {
       const chunks = Array.from({ length: Math.ceil(queryPeriods.length / 12) }, (_, index) => queryPeriods.slice(index * 12, index * 12 + 12));
       const records: Array<Record<string, unknown>> = [];
       for (const chunk of chunks) {
-        const params = new URLSearchParams({ flowCode, reporterCode: String(reporterCode), period: chunk.join(","), partnerCode, cmdCode: commodity, partner2Code: "0", customsCode: "C00", motCode: "0", maxRecords: "500" });
+        // The public preview endpoint (no API key) accepts a single period per
+        // request; the subscribed endpoint allows up to 12.
+        const periods = key ? chunk : chunk.slice(0, 1);
+        const params = new URLSearchParams({ flowCode, reporterCode: String(reporterCode), period: periods.join(","), partnerCode, cmdCode: commodity, partner2Code: "0", customsCode: "C00", motCode: "0", maxRecords: "500" });
         if (key) params.set("subscription-key", key);
+        if (!key && records.length) await wait(1100);
         const response = await this.fetchFn(`${base}?${params}`, { headers: { Accept: "application/json" } });
+        if (response.status === 429 && !key) {
+          await wait(1500);
+          const retry = await this.fetchFn(`${base}?${params}`, { headers: { Accept: "application/json" } });
+          if (!retry.ok) throw new Error(`Comtrade ${retry.status}`);
+          const retryPayload = await retry.json() as { data?: Array<Record<string, unknown>>; error?: string };
+          if (retryPayload.error) throw new Error(retryPayload.error);
+          records.push(...(retryPayload.data || []));
+          continue;
+        }
         if (!response.ok) throw new Error(`Comtrade ${response.status}`);
         const payload = await response.json() as { data?: Array<Record<string, unknown>>; error?: string };
         if (payload.error) throw new Error(payload.error);

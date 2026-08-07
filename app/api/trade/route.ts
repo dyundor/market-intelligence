@@ -5,11 +5,18 @@ import { D1CacheAdapter } from "../_shared/query-engine-d1";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+const MARKET_ISO: Record<string, string> = {
+  中国: "CN", 美国: "US", 加拿大: "CA", 阿联酋: "AE", 沙特阿拉伯: "SA", 卡塔尔: "QA", 科威特: "KW",
+  阿曼: "OM", 巴林: "BH", 澳大利亚: "AU", 英国: "GB", 德国: "DE", 法国: "FR", 意大利: "IT",
+  西班牙: "ES", 荷兰: "NL", 比利时: "BE", 日本: "JP", 韩国: "KR",
+};
+
 export async function GET(request: NextRequest) {
   const now = new Date();
   const latestClosedMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 3, 1));
   const defaultMonth = `${latestClosedMonth.getUTCFullYear()}-${String(latestClosedMonth.getUTCMonth() + 1).padStart(2, "0")}`;
-  const market = request.nextUrl.searchParams.get("market") || "美国";
+  const marketRaw = request.nextUrl.searchParams.get("market") || "美国";
+  const market = MARKET_ISO[marketRaw] || marketRaw;
   const product = request.nextUrl.searchParams.get("product") || "龙头及阀类";
   const flow = request.nextUrl.searchParams.get("flow") === "出口" ? "export" : "import";
   const granularity = request.nextUrl.searchParams.get("granularity") === "annual" ? "annual" : "monthly";
