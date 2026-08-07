@@ -5,6 +5,7 @@ import { ComtradeProvider } from "../../../lib/providers/comtrade/provider.ts";
 import { ImportYetiWebProvider, type DbLike } from "../../../lib/providers/importyeti-web/provider.ts";
 import { comtradeCapability, importYetiCapability, importYetiWebCapability } from "../../../lib/providers/mock/capabilities.ts";
 import { CacheResolver, type CacheAdapter } from "../../../lib/cache/resolver.ts";
+import { persistMonthlyRankings } from "../../../lib/ranking/persist.ts";
 import type { Provider } from "../../../lib/providers/types.ts";
 import type { PlannedQuery, QueryRequest } from "../../../lib/query/types.ts";
 
@@ -65,6 +66,11 @@ export function createQueryEngine(options: ProductionOptions = {}) {
     resolver,
     budget,
     logger,
+    persistRanking: options.db
+      ? async ranking => {
+          await persistMonthlyRankings({ db: options.db, ranking });
+        }
+      : undefined,
   });
 }
 

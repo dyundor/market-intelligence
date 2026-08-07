@@ -1,12 +1,15 @@
 import type { Provider } from "../types.ts";
 import { importYetiWebCapability } from "../mock/capabilities.ts";
 import type { QueryRequest } from "../../query/types.ts";
-
-const HS: Record<string, string> = { "龙头及阀类": "8481.80", "龙头阀门零件": "8481.90", "塑料浴缸及淋浴盆": "3922.10", "瓷制陶瓷洁具": "6910.10", "其他陶瓷洁具": "6910.90", "钢铁卫浴制品": "7324.90", "铜制卫浴制品": "7418.20" };
-const KEYWORDS: Record<string, string> = { "龙头及阀类": "faucet", "龙头阀门零件": "faucet", "塑料浴缸及淋浴盆": "shower", "瓷制陶瓷洁具": "ceramic", "其他陶瓷洁具": "ceramic", "钢铁卫浴制品": "sanitary", "铜制卫浴制品": "sanitary" };
+import { resolveProduct } from "../../products/resolver.ts";
 
 export interface DbLike {
-  prepare(sql: string): { bind(...args: unknown[]): { all(): Promise<{ results: Array<Record<string, unknown>> }> } };
+  prepare(sql: string): {
+    bind(...args: unknown[]): {
+      all(): Promise<{ results: Array<Record<string, unknown>> }>;
+      run(): Promise<unknown>;
+    };
+  };
 }
 
 export interface ImportYetiWebOptions {
@@ -23,8 +26,9 @@ export class ImportYetiWebProvider implements Provider {
 
   async fetch(query: QueryRequest): Promise<unknown> {
     const months = (query.months || []).filter(value => /^20\d{2}-\d{2}$/.test(value));
-    const hs = HS[query.subject] || "";
-    const keyword = KEYWORDS[query.subject] || "";
+    const category = resolveProduct(query.subject);
+    const hs = category?.defaultHsCode || "";
+    const keyword = category?.keywords[0] || "";
     const hsLike = `%${hs}%`;
     const keywordLike = `%${keyword}%`;
     const monthPlaceholders = months.length ? months.map(() => "?").join(",") : "''";

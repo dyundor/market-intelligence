@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   index,
   integer,
+  real,
   sqliteTable,
   text,
   uniqueIndex,
@@ -277,6 +278,41 @@ export const importYetiWebShipments = sqliteTable(
     uniqueIndex("importyeti_web_shipments_source_house_bol_uq")
       .on(table.sourceChannel, table.houseBol)
       .where(sql`${table.houseBol} is not null and ${table.houseBol} <> ''`),
+  ],
+);
+
+export const buyerMonthlyRankings = sqliteTable(
+  "buyer_monthly_rankings",
+  {
+    id: text("id").primaryKey(),
+    market: text("market").notNull(),
+    productCategory: text("product_category").notNull(),
+    year: integer("year").notNull(),
+    month: integer("month").notNull(),
+    buyerId: text("buyer_id").notNull(),
+    rank: integer("rank").notNull(),
+    metric: text("metric").notNull(),
+    metricValue: real("metric_value").notNull(),
+    source: text("source").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("buyer_monthly_rankings_scope_buyer_uq").on(
+      table.market,
+      table.productCategory,
+      table.year,
+      table.month,
+      table.metric,
+      table.buyerId,
+    ),
+    index("buyer_monthly_rankings_query_idx").on(
+      table.market,
+      table.productCategory,
+      table.year,
+      table.month,
+      table.metric,
+      table.rank,
+    ),
   ],
 );
 

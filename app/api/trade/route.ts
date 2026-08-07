@@ -10,8 +10,7 @@ export async function GET(request: NextRequest) {
   const latestClosedMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 3, 1));
   const defaultMonth = `${latestClosedMonth.getUTCFullYear()}-${String(latestClosedMonth.getUTCMonth() + 1).padStart(2, "0")}`;
   const market = request.nextUrl.searchParams.get("market") || "美国";
-  const requestedProduct = request.nextUrl.searchParams.get("product") || "龙头及阀类";
-  const product = ["花洒", "水龙头", "淋浴系统", "卫浴阀门"].includes(requestedProduct) ? "龙头及阀类" : requestedProduct;
+  const product = request.nextUrl.searchParams.get("product") || "龙头及阀类";
   const flow = request.nextUrl.searchParams.get("flow") === "出口" ? "export" : "import";
   const granularity = request.nextUrl.searchParams.get("granularity") === "annual" ? "annual" : "monthly";
   const requestedRange = Number(request.nextUrl.searchParams.get("range") || (granularity === "monthly" ? 12 : 5));

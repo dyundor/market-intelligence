@@ -1,10 +1,14 @@
+import type { BuyerRanking } from "../ranking/types.ts";
+
 export type Intent = "buyer_ranking" | "supplier_ranking" | "trade_trend";
 export type ProviderKind = "free" | "paid";
 export type TradeFlow = "import" | "export";
 export type Granularity = "monthly" | "annual";
+export type RankingMetric = "shipment_count" | "import_frequency" | "supplier_count" | "weight" | "estimated_volume";
 
 export interface RankingSpec {
   limit: number;
+  metric?: RankingMetric;
 }
 
 export interface QueryRequest {
@@ -129,7 +133,8 @@ export interface SupplierDiscovery {
 export type NormalizedData =
   | { kind: "companies"; companies: Company[] }
   | { kind: "trade"; metric: TradeMetric }
-  | { kind: "discovery"; discovery: SupplierDiscovery };
+  | { kind: "discovery"; discovery: SupplierDiscovery }
+  | { kind: "ranking"; ranking: BuyerRanking };
 
 export interface QueryCost {
   estimated: number;

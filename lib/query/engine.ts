@@ -4,7 +4,8 @@ import { validateQuery } from "./validator.ts";
 import { planQuery } from "./planner.ts";
 import type { CacheResolver } from "../cache/resolver.ts";
 import type { ProviderCapability, ProviderRegistry } from "../providers/types.ts";
-import { normalizeTrade, normalizeDiscovery, normalizeCompanies } from "../normalizers/trade.ts";
+import { normalizeTrade, normalizeRanking, normalizeCompanies } from "../normalizers/trade.ts";
+import type { BuyerRanking } from "../ranking/types.ts";
 
 export interface Budget {
   estimate(credits: number): { estimatedCredits: number; percentOfTotal: number; approved: boolean };
@@ -20,6 +21,7 @@ export interface QueryEngineDeps {
   resolver: CacheResolver;
   budget: Budget;
   logger: QueryLogger;
+  persistRanking?: (ranking: BuyerRanking) => Promise<void>;
 }
 
 export class QueryEngine {
@@ -33,7 +35,10 @@ export class QueryEngine {
     const validation = validateQuery(rawQuery);
     if (!validation.ok) return { queryId: "", intent: "trade_trend", source: [], cached: false, cost: { estimated: 0, percentOfTotal: 0 }, metadata: {}, status: "failed", reason: validation.errors.join("; ") };
 
-    const query = normalizeQuery(rawQuery as QueryRequest);
+    const raw = rawQuery as QueryRequest;
+    const query = normalizeQuery(raw);
+    const requestedLimit = raw.ranking?.limit && raw.ranking.limit >= 1 ? raw.ranking.limit : 20;
+    const requestedMetric = raw.ranking?.metric || "shipment_count";
     const queryId = await queryHash(query);
     const plan = planQuery(query, this.deps.capabilities);
     if (!plan.requiredProviders.length) {
@@ -64,7 +69,7 @@ export class QueryEngine {
         cacheHit = resolved.cacheHit;
         resolvedMeta = resolved.meta;
         status = cacheHit ? "cache_hit" : "completed";
-        data = this.normalize(provider.capability.id, resolved.raw);
+        data = this.normalize(provider.capability.id, resolved.raw, { ...query, ranking: { limit: requestedLimit, metric: requestedMetric } });
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown query error";
         await this.log({ queryId, intent: query.intent, subject: query.subject, market: query.market, period: query.period, provider: provider.capability.id, status: "failed", cost: null });
@@ -82,16 +87,30 @@ export class QueryEngine {
       cacheExpiresAt: resolvedMeta?.expiresAt || null,
     };
     if (data?.kind === "trade") metadata.trade = { availabilityStatus: data.metric.availabilityStatus, requestedPeriod: data.metric.requestedPeriod, period: data.metric.period, recordCount: data.metric.recordCount };
+    if (data?.kind === "ranking") metadata.ranking = { metric: data.ranking.metric, productCategory: data.ranking.productCategory, topLimit: data.ranking.topLimit, topCount: data.ranking.topCount, totalCount: data.ranking.totalCount };
+
+    if (data?.kind === "ranking" && !cacheHit && this.deps.persistRanking) {
+      try {
+        await this.deps.persistRanking(data.ranking);
+      } catch {
+        // Persistence must never fail a query.
+      }
+    }
 
     await this.log({ queryId, intent: query.intent, subject: query.subject, market: query.market, period: query.period, provider: source[0], status, cost: cost.estimated });
 
     return { queryId, intent: query.intent, source, cached: cacheHit, cost, data, metadata, status };
   }
 
-  private normalize(providerId: string, raw: unknown): NormalizedData {
+  private normalize(providerId: string, raw: unknown, query: QueryRequest): NormalizedData {
     if (providerId === "comtrade") return normalizeTrade(raw as Parameters<typeof normalizeTrade>[0]);
-    if (providerId === "importyeti_web") return normalizeDiscovery(raw as Parameters<typeof normalizeDiscovery>[0]);
-    return normalizeCompanies(raw);
+    if (providerId === "importyeti_web") return normalizeRanking(raw as Parameters<typeof normalizeRanking>[0], query);
+    return this.sliceCompanies(normalizeCompanies(raw), query.ranking?.limit);
+  }
+
+  private sliceCompanies(data: NormalizedData, limit?: number): NormalizedData {
+    if (data.kind !== "companies" || !limit) return data;
+    return { kind: "companies", companies: data.companies.slice(0, limit) };
   }
 
   private async log(entry: QueryLogEntry) {

@@ -7,7 +7,10 @@ export function normalizeQuery(query: QueryRequest): QueryRequest {
     market: query.market.trim().toUpperCase(),
     period: query.period.trim(),
   };
-  if (query.ranking) normalized.ranking = { limit: query.ranking.limit };
+  if (query.ranking) {
+    const metric = query.ranking.metric || "shipment_count";
+    normalized.ranking = { metric, limit: 50 };
+  }
   if (query.flow) normalized.flow = query.flow;
   if (query.granularity) normalized.granularity = query.granularity;
   if (query.range) normalized.range = query.range;

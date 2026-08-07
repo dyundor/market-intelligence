@@ -1,4 +1,5 @@
 import type { QueryRequest, QueryValidation } from "./types.ts";
+import { RANKING_METRICS } from "../ranking/engine.ts";
 
 const INTENTS = new Set(["buyer_ranking", "supplier_ranking", "trade_trend"]);
 const FLOWS = new Set(["import", "export"]);
@@ -15,6 +16,7 @@ export function validateQuery(input: unknown): QueryValidation {
   if (query.ranking !== undefined) {
     if (typeof query.ranking !== "object" || query.ranking === null) errors.push("ranking must be an object");
     else if (typeof query.ranking.limit !== "number" || query.ranking.limit < 1 || query.ranking.limit > 200) errors.push("ranking.limit must be between 1 and 200");
+    else if (query.ranking.metric !== undefined && (typeof query.ranking.metric !== "string" || !RANKING_METRICS.includes(query.ranking.metric as typeof RANKING_METRICS[number]))) errors.push(`ranking.metric must be one of: ${RANKING_METRICS.join(", ")}`);
   }
   if (query.flow !== undefined && (typeof query.flow !== "string" || !FLOWS.has(query.flow))) errors.push("flow must be import or export");
   if (query.granularity !== undefined && (typeof query.granularity !== "string" || !GRANULARITIES.has(query.granularity))) errors.push("granularity must be monthly or annual");

@@ -1,5 +1,7 @@
-import type { NormalizedData, SupplierDiscovery, TradeMetric } from "../query/types.ts";
+import type { NormalizedData, QueryRequest, SupplierDiscovery, TradeMetric } from "../query/types.ts";
 import type { ComtradeView } from "../providers/comtrade/provider.ts";
+import { rankBuyers } from "../ranking/engine.ts";
+import type { BuyerRanking } from "../ranking/types.ts";
 
 export function normalizeTrade(view: ComtradeView): NormalizedData {
   const metric: TradeMetric = {
@@ -30,6 +32,14 @@ export function normalizeTrade(view: ComtradeView): NormalizedData {
 
 export function normalizeDiscovery(view: SupplierDiscovery): NormalizedData {
   return { kind: "discovery", discovery: view };
+}
+
+export function normalizeRanking(view: SupplierDiscovery, query: QueryRequest): NormalizedData {
+  const ranking: BuyerRanking = rankBuyers(view, {
+    limit: query.ranking?.limit || 20,
+    metric: query.ranking?.metric || "shipment_count",
+  });
+  return { kind: "ranking", ranking };
 }
 
 export function normalizeCompanies(raw: unknown): NormalizedData {

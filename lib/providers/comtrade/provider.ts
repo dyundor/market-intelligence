@@ -1,6 +1,7 @@
 import type { Provider } from "../types.ts";
 import { comtradeCapability } from "../mock/capabilities.ts";
 import type { QueryRequest, TradeFlow } from "../../query/types.ts";
+import { resolveProduct } from "../../products/resolver.ts";
 
 export const REPORTERS: Record<string, number> = {
   "美国": 842, "加拿大": 124, "阿联酋": 784,
@@ -9,15 +10,11 @@ export const REPORTERS: Record<string, number> = {
   "意大利": 381, "西班牙": 724, "荷兰": 528, "比利时": 56, "日本": 392, "韩国": 410,
 };
 
-export const COMMODITIES: Record<string, string> = {
-  "龙头及阀类": "848180",
-  "龙头阀门零件": "848190",
-  "塑料浴缸及淋浴盆": "392210",
-  "瓷制陶瓷洁具": "691010",
-  "其他陶瓷洁具": "691090",
-  "钢铁卫浴制品": "732490",
-  "铜制卫浴制品": "741820",
-};
+export function commodityHsCode(subject: string): string {
+  const category = resolveProduct(subject);
+  if (!category) return "";
+  return category.defaultHsCode.replace(".", "");
+}
 
 const COUNTRY_ZH: Record<string, string> = { China: "中国", Mexico: "墨西哥", Germany: "德国", Japan: "日本", Canada: "加拿大", Italy: "意大利", "United Kingdom": "英国", "Rep. of Korea": "韩国", "Viet Nam": "越南", "Türkiye": "土耳其", Thailand: "泰国", India: "印度", France: "法国", Spain: "西班牙", Switzerland: "瑞士", "United Arab Emirates": "阿联酋" };
 
@@ -71,7 +68,7 @@ export class ComtradeProvider implements Provider {
 
   async fetch(query: QueryRequest): Promise<ComtradeView> {
     const reporterCode = REPORTERS[query.market];
-    const cmdCode = COMMODITIES[query.subject];
+    const cmdCode = commodityHsCode(query.subject);
     if (!reporterCode || !cmdCode) throw new Error("该市场的官方接口正在准备中");
 
     const now = new Date();

@@ -1,16 +1,9 @@
 import type { ProviderKind, QueryRequest } from "../../query/types.ts";
 import type { ProviderCapability } from "../types.ts";
-
-export const PRODUCT_HINTS: Record<string, string> = {
-  faucet: "Taps, faucets and valves",
-  valve: "Taps, faucets and valves",
-  shower: "Plastic baths and shower trays",
-  ceramic: "Porcelain sanitary ware",
-  sanitary: "Iron and steel sanitary ware",
-};
+import { resolveProduct } from "../../products/resolver.ts";
 
 export function productDescription(subject: string): string {
-  return PRODUCT_HINTS[subject] || subject;
+  return resolveProduct(subject)?.description || subject;
 }
 
 export function rankCount(query: QueryRequest): number {
