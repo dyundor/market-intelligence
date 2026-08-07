@@ -1,20 +1,51 @@
-import type { QueryRequest } from "./types.ts";
+import type { QueryInput, QueryRequest } from "./types.ts";
 
-export function normalizeQuery(query: QueryRequest): QueryRequest {
+const MONTH_PATTERN = /^\d{4}-\d{2}$/;
+
+function parseMonth(value: string): Date | null {
+  if (!MONTH_PATTERN.test(value)) return null;
+  return new Date(Date.UTC(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, 1));
+}
+
+function formatMonth(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export function rangeMonths(from: string, to: string): string[] {
+  const start = parseMonth(from);
+  const end = parseMonth(to);
+  if (!start || !end) return [];
+  const months: string[] = [];
+  let current = start;
+  while (current <= end && months.length < 36) {
+    months.push(formatMonth(current));
+    current = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 1));
+  }
+  return months;
+}
+
+export function normalizeQuery(input: QueryInput): QueryRequest {
+  const subject = input.subject ?? input.product ?? "";
+  let months: string[] = Array.isArray(input.months) ? [...input.months] : [];
+  if (typeof input.period === "object" && input.period !== null) {
+    months = rangeMonths(input.period.from, input.period.to);
+  }
+  const period = typeof input.period === "string" ? input.period.trim() : (input.period?.to || "").trim();
+
   const normalized: QueryRequest = {
-    intent: query.intent,
-    subject: query.subject.trim().toLowerCase(),
-    market: query.market.trim().toUpperCase(),
-    period: query.period.trim(),
+    intent: input.intent as QueryRequest["intent"],
+    subject: subject.trim().toLowerCase(),
+    market: (input.market || "").trim().toUpperCase(),
+    period,
   };
-  if (query.ranking) {
-    const metric = query.ranking.metric || "shipment_count";
+  if (input.ranking) {
+    const metric = input.ranking.metric || "shipment_count";
     normalized.ranking = { metric, limit: 50 };
   }
-  if (query.flow) normalized.flow = query.flow;
-  if (query.granularity) normalized.granularity = query.granularity;
-  if (query.range) normalized.range = query.range;
-  if (query.months?.length) normalized.months = [...query.months].sort();
+  if (input.flow) normalized.flow = input.flow;
+  if (input.granularity) normalized.granularity = input.granularity;
+  if (input.range) normalized.range = input.range;
+  if (months.length) normalized.months = [...months].sort();
   return normalized;
 }
 

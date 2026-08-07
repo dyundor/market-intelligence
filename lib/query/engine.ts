@@ -1,4 +1,4 @@
-import type { NormalizedData, QueryLogEntry, QueryRequest, QueryResult, QueryStatus } from "./types.ts";
+import type { NormalizedData, QueryInput, QueryLogEntry, QueryRequest, QueryResult, QueryStatus } from "./types.ts";
 import { normalizeQuery, queryHash } from "./hash.ts";
 import { validateQuery } from "./validator.ts";
 import { planQuery } from "./planner.ts";
@@ -35,7 +35,7 @@ export class QueryEngine {
     const validation = validateQuery(rawQuery);
     if (!validation.ok) return { queryId: "", intent: "trade_trend", source: [], cached: false, cost: { estimated: 0, percentOfTotal: 0 }, metadata: {}, status: "failed", reason: validation.errors.join("; ") };
 
-    const raw = rawQuery as QueryRequest;
+    const raw = rawQuery as QueryInput;
     const query = normalizeQuery(raw);
     const requestedLimit = raw.ranking?.limit && raw.ranking.limit >= 1 ? raw.ranking.limit : 20;
     const requestedMetric = raw.ranking?.metric || "shipment_count";

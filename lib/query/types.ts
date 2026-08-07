@@ -23,6 +23,21 @@ export interface QueryRequest {
   months?: string[];
 }
 
+export type PeriodInput = string | { from: string; to: string };
+
+export interface QueryInput {
+  intent?: Intent;
+  subject?: string;
+  product?: string;
+  market?: string;
+  period?: PeriodInput;
+  ranking?: { limit: number; metric?: RankingMetric };
+  flow?: TradeFlow;
+  granularity?: Granularity;
+  range?: number;
+  months?: string[];
+}
+
 export interface QueryValidation {
   ok: boolean;
   errors: string[];
