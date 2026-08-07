@@ -2,15 +2,7 @@ import type { Provider } from "../types.ts";
 import { importYetiWebCapability } from "../mock/capabilities.ts";
 import type { QueryRequest } from "../../query/types.ts";
 import { resolveProduct } from "../../products/resolver.ts";
-
-export interface DbLike {
-  prepare(sql: string): {
-    bind(...args: unknown[]): {
-      all(): Promise<{ results: Array<Record<string, unknown>> }>;
-      run(): Promise<unknown>;
-    };
-  };
-}
+import type { DbLike } from "../../db/types.ts";
 
 export interface ImportYetiWebOptions {
   db: DbLike;

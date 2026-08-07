@@ -1,5 +1,5 @@
 import type { BuyerRanking } from "./types.ts";
-import type { DbLike } from "../providers/importyeti-web/provider.ts";
+import type { DbLike } from "../db/types.ts";
 
 export async function persistMonthlyRankings(deps: { db: DbLike; ranking: BuyerRanking }): Promise<number> {
   const { db, ranking } = deps;

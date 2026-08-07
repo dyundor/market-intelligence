@@ -2,7 +2,8 @@ import { QueryEngine, type Budget, type QueryLogger } from "../../../lib/query/e
 import { SimpleProviderRegistry } from "../../../lib/providers/registry.ts";
 import { comtradeProvider, importYetiProvider } from "../../../lib/providers/mock/registry.ts";
 import { ComtradeProvider } from "../../../lib/providers/comtrade/provider.ts";
-import { ImportYetiWebProvider, type DbLike } from "../../../lib/providers/importyeti-web/provider.ts";
+import { ImportYetiWebProvider } from "../../../lib/providers/importyeti-web/provider.ts";
+import type { DbLike } from "../../../lib/db/types.ts";
 import { comtradeCapability, importYetiCapability, importYetiWebCapability } from "../../../lib/providers/mock/capabilities.ts";
 import { CacheResolver, type CacheAdapter } from "../../../lib/cache/resolver.ts";
 import { persistMonthlyRankings } from "../../../lib/ranking/persist.ts";
