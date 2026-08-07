@@ -1,8 +1,8 @@
 import { env } from "cloudflare:workers";
 
-type CacheSource = "database" | "coalesced" | "upstream" | "stale" | "memory";
-type CacheResult<T> = { value:T; cache:{ hit:boolean; source:CacheSource; storedAt:string; expiresAt:string } };
-type CacheOptions = {
+export type CacheSource = "database" | "coalesced" | "upstream" | "stale" | "memory";
+export type CacheResult<T> = { value:T; cache:{ hit:boolean; source:CacheSource; storedAt:string; expiresAt:string } };
+export type CacheOptions = {
   provider:string;
   cacheKey:string;
   ttlMs:number;
@@ -14,9 +14,9 @@ type CacheOptions = {
 export function canonicalCacheKey(endpoint:string,parameters:Record<string,string|number|boolean|undefined|null>) {
   const normalized = Object.entries(parameters)
     .filter((entry):entry is [string,string|number|boolean] => entry[1] !== undefined && entry[1] !== null)
-    .map(([key,value]) => [key.trim().toLowerCase(),String(value).trim().toLowerCase()] as const)
+    .map(([key,value]) => [key.trim().toLowerCase(),String(value).trim().toLowerCase()])
     .sort(([left],[right]) => left.localeCompare(right));
-  return `${endpoint.trim().toLowerCase()}?${new URLSearchParams(normalized).toString()}`;
+  return `${endpoint.trim().toLowerCase()}?${new URLSearchParams(normalized as string[][]).toString()}`;
 }
 
 const inFlight = new Map<string,Promise<CacheResult<unknown>>>();
@@ -37,15 +37,27 @@ function initializeSchema() {
 const wait = (milliseconds:number) => new Promise(resolve => setTimeout(resolve,milliseconds));
 const iso = (timestamp:number) => new Date(timestamp).toISOString();
 
-async function readRow<T>(cacheKey:string) {
+async function readRow(cacheKey:string) {
   return env.DB.prepare("SELECT state, payload, fetched_at, expires_at, stale_until, lease_token, lease_until FROM paid_api_cache WHERE cache_key = ?")
     .bind(cacheKey).first<{state:string;payload:string|null;fetched_at:number|null;expires_at:number;stale_until:number;lease_token:string|null;lease_until:number}>() as Promise<{state:string;payload:string|null;fetched_at:number|null;expires_at:number;stale_until:number;lease_token:string|null;lease_until:number}|null>;
+}
+
+export async function readCachedApiValue<T>(provider:string,cacheKey:string):Promise<CacheResult<T>|null> {
+  await initializeSchema();
+  const namespacedKey = `${provider}|${cacheKey}`;
+  const row = await readRow(namespacedKey);
+  const now = Date.now();
+  if (row?.state !== "ready" || !row.payload || row.expires_at <= now) return null;
+  return {
+    value:JSON.parse(row.payload) as T,
+    cache:{hit:true,source:"database",storedAt:iso(row.fetched_at || now),expiresAt:iso(row.expires_at)},
+  };
 }
 
 async function databaseRequest<T>(options:CacheOptions,fetcher:()=>Promise<T>,retry=0):Promise<CacheResult<T>> {
   await initializeSchema();
   const now = Date.now();
-  const existing = await readRow<T>(options.cacheKey);
+  const existing = await readRow(options.cacheKey);
   if (existing?.state === "ready" && existing.payload && existing.expires_at > now) {
     return { value:JSON.parse(existing.payload) as T, cache:{hit:true,source:"database",storedAt:iso(existing.fetched_at || now),expiresAt:iso(existing.expires_at)} };
   }
@@ -54,7 +66,7 @@ async function databaseRequest<T>(options:CacheOptions,fetcher:()=>Promise<T>,re
   const leaseUntil = now + (options.leaseMs || 90_000);
   await env.DB.prepare("INSERT INTO paid_api_cache (cache_key, provider, state, expires_at, stale_until, lease_token, lease_until) VALUES (?, ?, 'pending', 0, 0, ?, ?) ON CONFLICT(cache_key) DO UPDATE SET provider=excluded.provider, state='pending', lease_token=excluded.lease_token, lease_until=excluded.lease_until, last_error=NULL WHERE paid_api_cache.expires_at <= ? AND (paid_api_cache.state != 'pending' OR paid_api_cache.lease_until <= ?)")
     .bind(options.cacheKey,options.provider,leaseToken,leaseUntil,now,now).run();
-  const leased = await readRow<T>(options.cacheKey);
+  const leased = await readRow(options.cacheKey);
 
   if (leased?.lease_token === leaseToken) {
     try {
@@ -66,7 +78,7 @@ async function databaseRequest<T>(options:CacheOptions,fetcher:()=>Promise<T>,re
         .bind(JSON.stringify(value),storedAt,expiresAt,staleUntil,options.cacheKey,leaseToken).run();
       return {value,cache:{hit:false,source:"upstream",storedAt:iso(storedAt),expiresAt:iso(expiresAt)}};
     } catch (error) {
-      const fallback = await readRow<T>(options.cacheKey);
+      const fallback = await readRow(options.cacheKey);
       await env.DB.prepare("UPDATE paid_api_cache SET state='error', lease_token=NULL, lease_until=0, last_error=? WHERE cache_key=? AND lease_token=?")
         .bind(error instanceof Error ? error.message : "Unknown upstream error",options.cacheKey,leaseToken).run();
       if (fallback?.payload && fallback.stale_until > Date.now()) {
@@ -78,7 +90,7 @@ async function databaseRequest<T>(options:CacheOptions,fetcher:()=>Promise<T>,re
 
   for (let index=0;index<50;index+=1) {
     await wait(200);
-    const completed = await readRow<T>(options.cacheKey);
+    const completed = await readRow(options.cacheKey);
     if (completed?.state === "ready" && completed.payload && completed.expires_at > Date.now()) {
       return {value:JSON.parse(completed.payload) as T,cache:{hit:true,source:"coalesced",storedAt:iso(completed.fetched_at || now),expiresAt:iso(completed.expires_at)}};
     }

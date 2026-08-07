@@ -9,6 +9,15 @@
 - 在取得书面商业授权前，不把 ImportYeti 数据用于对外收费、再分发或批量导出。
 - 当前产品继续使用 UN Comtrade 等官方聚合数据；不得把聚合数据描述成企业级报关记录。
 
+## ImportYeti paid API 控制状态
+
+- 项目总预算固定为 100 credits，默认保留 25 credits；已批准但未执行的额度也会被占用。
+- 所有付费查询必须经过统一 gateway，按顺序检查 `paid_api_cache`、免费数据源、估算费用和管理员显式审批。
+- 审批记录和实际使用事件分别保存在 `api_usage_requests` 和 `api_usage_log`，成功付费响应的原始 JSON 保存到现有持久缓存。
+- Top 20 视图统一复用 Top 50 的查询 hash 和缓存，仅在返回时截取前 20 条。
+- 当前未注册任何真实 ImportYeti paid operation，也未配置付费 transport；执行 API 固定禁用，因此不会消耗 credits。
+- 后续启用前必须获得官方计价表与使用授权，在服务端白名单中注册 operation 和最大成本估算，并单独审核 transport。
+
 ## 免费或官方渠道
 
 ### 全球贸易统计

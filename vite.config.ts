@@ -1,17 +1,17 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
-import hostingConfig from "./.openai/hosting.json";
+import { readFile } from "node:fs/promises";
 import { sites } from "./build/sites-vite-plugin";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
 
-const { d1, r2 } = hostingConfig;
-
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
-const localBindingConfig = {
+function localBindingConfig(hostingConfig:{d1?:string;r2?:string}) {
+  const { d1,r2 } = hostingConfig;
+  return {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
   d1_databases: d1
@@ -31,9 +31,20 @@ const localBindingConfig = {
         },
       ]
     : [],
-};
+  };
+}
+
+async function readHostingConfig() {
+  try {
+    return JSON.parse(await readFile(new URL("./.openai/hosting.json",import.meta.url),"utf8")) as {d1?:string;r2?:string};
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+    throw error;
+  }
+}
 
 export default defineConfig(async () => {
+  const hostingConfig = await readHostingConfig();
   // Keep Wrangler and Miniflare state project-local. These are non-secret tool
   // settings; application environment belongs in ignored `.env*` files.
   process.env.WRANGLER_WRITE_LOGS ??= "false";
@@ -52,7 +63,7 @@ export default defineConfig(async () => {
       sites(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        config: localBindingConfig,
+        config: localBindingConfig(hostingConfig),
       }),
     ],
   };
