@@ -8,6 +8,7 @@ import { comtradeCapability, importYetiCapability, importYetiWebCapability, ship
 import { CacheResolver, type CacheAdapter } from "../../../lib/cache/resolver.ts";
 import { persistMonthlyRankings } from "../../../lib/ranking/persist.ts";
 import { ShipmentRankingProvider } from "../../../lib/providers/shipments/provider.ts";
+import { ShipmentRepository } from "../../../lib/repositories/shipment-repository.ts";
 import type { Provider } from "../../../lib/providers/types.ts";
 import type { PlannedQuery, QueryRequest } from "../../../lib/query/types.ts";
 
@@ -72,6 +73,11 @@ export function createQueryEngine(options: ProductionOptions = {}) {
     persistRanking: options.db
       ? async ranking => {
           await persistMonthlyRankings({ db: options.db, ranking });
+        }
+      : undefined,
+    persistShipments: options.db
+      ? async shipments => {
+          await new ShipmentRepository(options.db).save(shipments);
         }
       : undefined,
   });

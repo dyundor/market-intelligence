@@ -5,8 +5,9 @@ import { planQuery } from "./planner.ts";
 import type { CacheResolver } from "../cache/resolver.ts";
 import type { ProviderCapability, ProviderRegistry } from "../providers/types.ts";
 import { normalizeTrade, normalizeRanking, normalizeCompanies } from "../normalizers/trade.ts";
-import { normalizeShipmentRanking } from "../normalizers/shipments.ts";
+import { normalizeShipmentRanking, normalizeShipments } from "../normalizers/shipments.ts";
 import type { BuyerRanking } from "../ranking/types.ts";
+import type { Shipment } from "../entities/shipment.ts";
 
 export interface Budget {
   estimate(credits: number): { estimatedCredits: number; percentOfTotal: number; approved: boolean };
@@ -23,6 +24,7 @@ export interface QueryEngineDeps {
   budget: Budget;
   logger: QueryLogger;
   persistRanking?: (ranking: BuyerRanking) => Promise<void>;
+  persistShipments?: (shipments: Shipment[]) => Promise<void>;
 }
 
 export class QueryEngine {
@@ -90,6 +92,13 @@ export class QueryEngine {
     let resultData = data;
     if (data?.kind === "ranking") {
       const ranking = data.ranking;
+      if (!cacheHit && provider.capability.id === "shipment_data" && this.deps.persistShipments) {
+        try {
+          await this.deps.persistShipments(normalizeShipments(resolved.raw));
+        } catch {
+          // Persistence must never fail a query.
+        }
+      }
       if (!cacheHit && this.deps.persistRanking) {
         try {
           await this.deps.persistRanking(ranking);
