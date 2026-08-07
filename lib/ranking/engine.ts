@@ -1,5 +1,4 @@
-import type { SupplierDiscovery } from "../query/types.ts";
-import type { BuyerRanking, RankedBuyer, RankOptions } from "./types.ts";
+import type { BuyerRanking, DiscoveryView, RankedBuyer, RankOptions } from "./types.ts";
 import { resolveProduct } from "../products/resolver.ts";
 import { aggregateImporters, aggregateShipments, type AggregateEntry } from "./aggregator.ts";
 import { metricValue } from "./metrics.ts";
@@ -22,7 +21,7 @@ export interface ShipmentRankContext {
 function buildRanking(
   entries: AggregateEntry[],
   options: RankOptions,
-  view: SupplierDiscovery,
+  view: DiscoveryView,
 ): BuyerRanking {
   const sorted = entries.sort(
     (left, right) =>
@@ -59,14 +58,14 @@ function buildRanking(
   };
 }
 
-export function rankBuyers(view: SupplierDiscovery, options: RankOptions): BuyerRanking {
+export function rankBuyers(view: DiscoveryView, options: RankOptions): BuyerRanking {
   const entries = aggregateImporters(view.importers || [], view.requestedMonths.length);
   return buildRanking(entries, options, view);
 }
 
 export function rankShipments(shipments: Shipment[], context: ShipmentRankContext): BuyerRanking {
   const entries = aggregateShipments(shipments, context.requestedMonths.length);
-  const view: SupplierDiscovery = {
+  const view: DiscoveryView = {
     available: true,
     dataset: context.dataset,
     market: context.market,

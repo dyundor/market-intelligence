@@ -38,7 +38,6 @@ export class QueryEngine {
     const raw = rawQuery as QueryInput;
     const query = normalizeQuery(raw);
     const requestedLimit = raw.ranking?.limit && raw.ranking.limit >= 1 ? raw.ranking.limit : 20;
-    const requestedMetric = raw.ranking?.metric || "shipment_count";
     const queryId = await queryHash(query);
     const plan = planQuery(query, this.deps.capabilities);
     if (!plan.requiredProviders.length) {
@@ -69,7 +68,7 @@ export class QueryEngine {
         cacheHit = resolved.cacheHit;
         resolvedMeta = resolved.meta;
         status = cacheHit ? "cache_hit" : "completed";
-        data = this.normalize(provider.capability.id, resolved.raw, { ...query, ranking: { limit: requestedLimit, metric: requestedMetric } });
+        data = this.normalize(provider.capability.id, resolved.raw, query, requestedLimit);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown query error";
         await this.log({ queryId, intent: query.intent, subject: query.subject, market: query.market, period: query.period, provider: provider.capability.id, status: "failed", cost: null });
@@ -87,25 +86,39 @@ export class QueryEngine {
       cacheExpiresAt: resolvedMeta?.expiresAt || null,
     };
     if (data?.kind === "trade") metadata.trade = { availabilityStatus: data.metric.availabilityStatus, requestedPeriod: data.metric.requestedPeriod, period: data.metric.period, recordCount: data.metric.recordCount };
-    if (data?.kind === "ranking") metadata.ranking = { metric: data.ranking.metric, productCategory: data.ranking.productCategory, topLimit: data.ranking.topLimit, topCount: data.ranking.topCount, totalCount: data.ranking.totalCount };
-
-    if (data?.kind === "ranking" && !cacheHit && this.deps.persistRanking) {
-      try {
-        await this.deps.persistRanking(data.ranking);
-      } catch {
-        // Persistence must never fail a query.
+    let resultData = data;
+    if (data?.kind === "ranking") {
+      const ranking = data.ranking;
+      if (!cacheHit && this.deps.persistRanking) {
+        try {
+          await this.deps.persistRanking(ranking);
+        } catch {
+          // Persistence must never fail a query.
+        }
       }
+      if (ranking.topLimit > requestedLimit) {
+        resultData = {
+          kind: "ranking",
+          ranking: {
+            ...ranking,
+            ranked: ranking.ranked.slice(0, requestedLimit),
+            topLimit: requestedLimit,
+            topCount: Math.min(requestedLimit, ranking.ranked.length),
+          },
+        };
+      }
+      metadata.ranking = { metric: resultData.ranking.metric, productCategory: resultData.ranking.productCategory, topLimit: resultData.ranking.topLimit, topCount: resultData.ranking.topCount, totalCount: resultData.ranking.totalCount };
     }
 
     await this.log({ queryId, intent: query.intent, subject: query.subject, market: query.market, period: query.period, provider: source[0], status, cost: cost.estimated });
 
-    return { queryId, intent: query.intent, source, cached: cacheHit, cost, data, metadata, status };
+    return { queryId, intent: query.intent, source, cached: cacheHit, cost, data: resultData, metadata, status };
   }
 
-  private normalize(providerId: string, raw: unknown, query: QueryRequest): NormalizedData {
+  private normalize(providerId: string, raw: unknown, query: QueryRequest, requestedLimit: number): NormalizedData {
     if (providerId === "comtrade") return normalizeTrade(raw as Parameters<typeof normalizeTrade>[0]);
     if (providerId === "importyeti_web") return normalizeRanking(raw as Parameters<typeof normalizeRanking>[0], query);
-    return this.sliceCompanies(normalizeCompanies(raw), query.ranking?.limit);
+    return this.sliceCompanies(normalizeCompanies(raw), requestedLimit);
   }
 
   private sliceCompanies(data: NormalizedData, limit?: number): NormalizedData {

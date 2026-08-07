@@ -1,4 +1,4 @@
-import type { DiscoveryRow, RankingMetric } from "../query/types.ts";
+export type RankingMetric = "shipment_count" | "import_frequency" | "supplier_count" | "weight" | "estimated_volume";
 
 export type RankedBuyer = Record<string, unknown> & { rank: number; metric_value: number };
 
@@ -18,8 +18,8 @@ export interface BuyerRanking {
   topCount: number;
   totalCount: number;
   ranked: RankedBuyer[];
-  suppliers: DiscoveryRow[];
-  storedShipmentCoverage: DiscoveryRow[];
+  suppliers: Array<Record<string, unknown>>;
+  storedShipmentCoverage: Array<Record<string, unknown>>;
 }
 
 export interface RankOptions {
@@ -33,4 +33,19 @@ export interface BuyerMetrics {
   weightKg: number;
   containers: number;
   months: number;
+}
+
+export interface DiscoveryView {
+  available: boolean;
+  reason?: string;
+  dataset: string;
+  market: string;
+  flow: string;
+  product: string;
+  hsCode: string;
+  requestedMonths: string[];
+  latestAvailableMonth: string;
+  importers: Array<Record<string, unknown>>;
+  suppliers: Array<Record<string, unknown>>;
+  storedShipmentCoverage: Array<Record<string, unknown>>;
 }

@@ -258,3 +258,61 @@ test("rankBuyers keeps provider row passthrough with canonical identity fields",
   assert.equal(ranking.ranked[0].metric_value, 3);
   assert.equal(ranking.ranked[0].supplier_count, 1);
 });
+
+test("Query Engine pipeline persists the full Top50 ranking while responding with the requested Top20 slice", async () => {
+  const cache = new MemoryCache();
+  let calls = 0;
+  let persisted: unknown = null;
+  const provider = {
+    capability: importYetiWebCapability,
+    fetch: async () => {
+      calls += 1;
+      return makeView(50, ["2026-07"]);
+    },
+  };
+  const resolver = new CacheResolver({ cache, providers: [provider], resolveProvider: () => provider });
+  const engine = new QueryEngine({
+    capabilities: [importYetiWebCapability, importYetiCapability],
+    registry: { list: () => [], route: () => provider },
+    resolver,
+    budget: new FixedBudget(0),
+    logger: { log: async () => {} },
+    persistRanking: async ranking => {
+      persisted = ranking;
+    },
+  });
+
+  const top20 = await engine.execute({
+    intent: "buyer_ranking",
+    product: "faucet",
+    market: "US",
+    period: "2026-07",
+    months: ["2026-07"],
+    ranking: { metric: "shipment_count", limit: 20 },
+  });
+  assert.equal(top20.status, "completed");
+  assert.equal(calls, 1);
+  const view = top20.data?.kind === "ranking" ? top20.data.ranking : null;
+  assert.equal(view?.topLimit, 20);
+  assert.equal(view?.topCount, 20);
+  assert.equal(view?.totalCount, 50);
+  const stored = persisted as { topLimit: number; topCount: number; ranked: unknown[] };
+  assert.equal(stored.topLimit, 50);
+  assert.equal(stored.topCount, 50);
+  assert.equal(stored.ranked.length, 50);
+  assert.equal(stored.ranked[0] && (stored.ranked[0] as { rank: number }).rank, 1);
+
+  const top50 = await engine.execute({
+    intent: "buyer_ranking",
+    subject: "faucet",
+    market: "US",
+    period: "2026-07",
+    months: ["2026-07"],
+    ranking: { metric: "shipment_count", limit: 50 },
+  });
+  assert.equal(top50.status, "cache_hit");
+  assert.equal(calls, 1);
+  const full = top50.data?.kind === "ranking" ? top50.data.ranking : null;
+  assert.equal(full?.topLimit, 50);
+  assert.equal(full?.topCount, 50);
+});

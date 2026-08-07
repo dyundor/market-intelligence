@@ -1,5 +1,4 @@
-import type { RankingMetric } from "../query/types.ts";
-import type { BuyerMetrics } from "./types.ts";
+import type { BuyerMetrics, RankingMetric } from "./types.ts";
 
 export const RANKING_METRICS: RankingMetric[] = [
   "shipment_count",
