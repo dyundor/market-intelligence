@@ -303,6 +303,39 @@ export const buyerSupplierRelationships = sqliteTable(
   ],
 );
 
+export const buyerScores = sqliteTable(
+  "buyer_scores",
+  {
+    id: text("id").primaryKey(),
+    score: real("score").notNull(),
+    factors: text("factors").notNull(),
+    version: text("version").notNull(),
+    computedAt: text("computed_at").notNull(),
+  },
+);
+
+export const marketScores = sqliteTable(
+  "market_scores",
+  {
+    id: text("id").primaryKey(),
+    score: real("score").notNull(),
+    factors: text("factors").notNull(),
+    version: text("version").notNull(),
+    computedAt: text("computed_at").notNull(),
+  },
+);
+
+export const productScores = sqliteTable(
+  "product_scores",
+  {
+    id: text("id").primaryKey(),
+    score: real("score").notNull(),
+    factors: text("factors").notNull(),
+    version: text("version").notNull(),
+    computedAt: text("computed_at").notNull(),
+  },
+);
+
 export const buyerMonthlyRankings = sqliteTable(
   "buyer_monthly_rankings",
   {
