@@ -1,0 +1,67 @@
+import { QueryEngine, type Budget, type QueryLogger } from "../../../lib/query/engine.ts";
+import { SimpleProviderRegistry } from "../../../lib/providers/registry.ts";
+import { comtradeProvider, importYetiProvider } from "../../../lib/providers/mock/registry.ts";
+import { comtradeCapability, importYetiCapability } from "../../../lib/providers/mock/capabilities.ts";
+import { CacheResolver, type CacheAdapter } from "../../../lib/cache/resolver.ts";
+import type { Provider } from "../../../lib/providers/types.ts";
+import type { PlannedQuery, QueryRequest } from "../../../lib/query/types.ts";
+
+export class MemoryCache implements CacheAdapter {
+  private readonly store = new Map<string, unknown>();
+
+  async read(cacheKey: string) {
+    return this.store.has(cacheKey) ? { hit: true, raw: this.store.get(cacheKey) } : null;
+  }
+
+  async write(cacheKey: string, raw: unknown) {
+    this.store.set(cacheKey, raw);
+  }
+}
+
+export class NoopLogger implements QueryLogger {
+  async log() {}
+}
+
+export class FixedBudget implements Budget {
+  private readonly approvalThreshold: number;
+
+  constructor(approvalThreshold = 0) {
+    this.approvalThreshold = approvalThreshold;
+  }
+
+  estimate(credits: number) {
+    return { estimatedCredits: credits, percentOfTotal: credits / 100, approved: credits <= this.approvalThreshold };
+  }
+}
+
+export interface ProductionOptions {
+  providers?: Provider[];
+  cache?: CacheAdapter;
+  logger?: QueryLogger;
+  budget?: Budget;
+}
+
+export function createQueryEngine(options: ProductionOptions = {}) {
+  const providers = options.providers || [comtradeProvider, importYetiProvider];
+  const cache = options.cache || new MemoryCache();
+  const logger = options.logger || new NoopLogger();
+  const budget = options.budget || new FixedBudget(0);
+  const registry = new SimpleProviderRegistry(providers);
+
+  const route = (query: QueryRequest) => registry.providerFor(query);
+  const resolver = new CacheResolver({ cache, providers, resolveProvider: route });
+
+  return new QueryEngine({
+    capabilities: [comtradeCapability, importYetiCapability],
+    registry,
+    resolver,
+    budget,
+    logger,
+  });
+}
+
+export function createPreviewQueryEngine(options: ProductionOptions = {}) {
+  return createQueryEngine(options);
+}
+
+export type { PlannedQuery };
