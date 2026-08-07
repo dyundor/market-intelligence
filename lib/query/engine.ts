@@ -6,6 +6,7 @@ import type { CacheResolver } from "../cache/resolver.ts";
 import type { ProviderCapability, ProviderRegistry } from "../providers/types.ts";
 import { normalizeTrade, normalizeRanking, normalizeCompanies } from "../normalizers/trade.ts";
 import { normalizeShipmentRanking, normalizeShipments } from "../normalizers/shipments.ts";
+import { normalizeBuyerProfile } from "../normalizers/buyer-profile.ts";
 import type { BuyerRanking } from "../ranking/types.ts";
 import type { Shipment } from "../entities/shipment.ts";
 
@@ -61,6 +62,7 @@ export class QueryEngine {
     let status: QueryStatus = "completed";
     let data: NormalizedData | undefined;
     let cacheHit = false;
+    let resolvedRaw: unknown;
     let resolvedMeta: { source: string; storedAt: string; expiresAt: string } | undefined;
 
     if (primary.kind === "paid" && !budget.approved) {
@@ -70,6 +72,7 @@ export class QueryEngine {
         const resolved = await this.deps.resolver.resolve(query, queryId);
         cacheHit = resolved.cacheHit;
         resolvedMeta = resolved.meta;
+        resolvedRaw = resolved.raw;
         status = cacheHit ? "cache_hit" : "completed";
         data = this.normalize(provider.capability.id, resolved.raw, query, requestedLimit);
       } catch (error) {
@@ -94,7 +97,7 @@ export class QueryEngine {
       const ranking = data.ranking;
       if (!cacheHit && provider.capability.id === "shipment_data" && this.deps.persistShipments) {
         try {
-          await this.deps.persistShipments(normalizeShipments(resolved.raw));
+          await this.deps.persistShipments(normalizeShipments(resolvedRaw));
         } catch {
           // Persistence must never fail a query.
         }
@@ -117,7 +120,10 @@ export class QueryEngine {
           },
         };
       }
-      metadata.ranking = { metric: resultData.ranking.metric, productCategory: resultData.ranking.productCategory, topLimit: resultData.ranking.topLimit, topCount: resultData.ranking.topCount, totalCount: resultData.ranking.totalCount };
+      const metadataRanking = resultData?.kind === "ranking" ? resultData.ranking : null;
+      if (metadataRanking) {
+        metadata.ranking = { metric: metadataRanking.metric, productCategory: metadataRanking.productCategory, topLimit: metadataRanking.topLimit, topCount: metadataRanking.topCount, totalCount: metadataRanking.totalCount };
+      }
     }
 
     await this.log({ queryId, intent: query.intent, subject: query.subject, market: query.market, period: query.period, provider: source[0], status, cost: cost.estimated });
@@ -129,6 +135,7 @@ export class QueryEngine {
     if (providerId === "comtrade") return normalizeTrade(raw as Parameters<typeof normalizeTrade>[0]);
     if (providerId === "importyeti_web") return normalizeRanking(raw as Parameters<typeof normalizeRanking>[0], query);
     if (providerId === "shipment_data") return normalizeShipmentRanking(raw, query);
+    if (providerId === "buyer_profile") return normalizeBuyerProfile(raw);
     return this.sliceCompanies(normalizeCompanies(raw), requestedLimit);
   }
 
@@ -137,9 +144,9 @@ export class QueryEngine {
     return { kind: "companies", companies: data.companies.slice(0, limit) };
   }
 
-  private async log(entry: QueryLogEntry) {
+  private async log(entry: Partial<QueryLogEntry>) {
     try {
-      await this.deps.logger.log(entry);
+      await this.deps.logger.log(entry as QueryLogEntry);
     } catch {
       // Logging must never fail a query.
     }

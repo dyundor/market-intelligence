@@ -1,4 +1,4 @@
-export type RankingMetric = "shipment_count" | "import_frequency" | "supplier_count" | "weight" | "estimated_volume";
+export type RankingMetric = "shipment_count" | "import_frequency" | "supplier_count" | "weight" | "estimated_volume" | "last_import_date";
 
 export type RankedBuyer = Record<string, unknown> & { rank: number; metric_value: number };
 
@@ -33,6 +33,7 @@ export interface BuyerMetrics {
   weightKg: number;
   containers: number;
   months: number;
+  lastImportDate: number;
 }
 
 export interface DiscoveryView {

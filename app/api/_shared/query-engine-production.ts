@@ -4,11 +4,14 @@ import { comtradeProvider, importYetiProvider } from "../../../lib/providers/moc
 import { ComtradeProvider } from "../../../lib/providers/comtrade/provider.ts";
 import { ImportYetiWebProvider } from "../../../lib/providers/importyeti-web/provider.ts";
 import type { DbLike } from "../../../lib/db/types.ts";
-import { comtradeCapability, importYetiCapability, importYetiWebCapability, shipmentDataCapability } from "../../../lib/providers/mock/capabilities.ts";
+import { comtradeCapability, importYetiCapability, importYetiWebCapability, shipmentDataCapability, buyerProfileCapability } from "../../../lib/providers/mock/capabilities.ts";
 import { CacheResolver, type CacheAdapter } from "../../../lib/cache/resolver.ts";
 import { persistMonthlyRankings } from "../../../lib/ranking/persist.ts";
 import { ShipmentRankingProvider } from "../../../lib/providers/shipments/provider.ts";
 import { ShipmentRepository } from "../../../lib/repositories/shipment-repository.ts";
+import { BuyerProfileProvider } from "../../../lib/providers/buyer-profile/provider.ts";
+import { buildBuyerSupplierRelationships } from "../../../lib/relationships/engine.ts";
+import { persistBuyerSupplierRelationships } from "../../../lib/relationships/persist.ts";
 import type { Provider } from "../../../lib/providers/types.ts";
 import type { PlannedQuery, QueryRequest } from "../../../lib/query/types.ts";
 
@@ -50,10 +53,12 @@ export interface ProductionOptions {
 }
 
 export function createQueryEngine(options: ProductionOptions = {}) {
+  const db = options.db;
   const providers = options.providers || [
     new ComtradeProvider({ apiKey: options.apiKey }),
-    options.db ? new ImportYetiWebProvider({ db: options.db }) : null,
-    options.db ? new ShipmentRankingProvider({ db: options.db }) : null,
+    db ? new ImportYetiWebProvider({ db }) : null,
+    db ? new ShipmentRankingProvider({ db }) : null,
+    db ? new BuyerProfileProvider({ db }) : null,
     importYetiProvider,
   ].filter((provider): provider is Provider => provider !== null);
   const cache = options.cache || new MemoryCache();
@@ -65,19 +70,23 @@ export function createQueryEngine(options: ProductionOptions = {}) {
   const resolver = new CacheResolver({ cache, providers, resolveProvider: route });
 
   return new QueryEngine({
-    capabilities: [comtradeCapability, importYetiWebCapability, shipmentDataCapability, importYetiCapability],
+    capabilities: [comtradeCapability, importYetiWebCapability, shipmentDataCapability, buyerProfileCapability, importYetiCapability],
     registry,
     resolver,
     budget,
     logger,
-    persistRanking: options.db
+    persistRanking: db
       ? async ranking => {
-          await persistMonthlyRankings({ db: options.db, ranking });
+          await persistMonthlyRankings({ db, ranking });
         }
       : undefined,
-    persistShipments: options.db
+    persistShipments: db
       ? async shipments => {
-          await new ShipmentRepository(options.db).save(shipments);
+          await new ShipmentRepository(db).save(shipments);
+          await persistBuyerSupplierRelationships({
+            db,
+            relationships: buildBuyerSupplierRelationships(shipments),
+          });
         }
       : undefined,
   });

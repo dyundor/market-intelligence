@@ -281,6 +281,28 @@ export const importYetiWebShipments = sqliteTable(
   ],
 );
 
+export const buyerSupplierRelationships = sqliteTable(
+  "buyer_supplier_relationships",
+  {
+    id: text("id").primaryKey(),
+    buyerId: text("buyer_id").notNull(),
+    supplierId: text("supplier_id").notNull(),
+    productCategory: text("product_category").notNull().default("unknown"),
+    shipmentCount: integer("shipment_count").notNull().default(0),
+    firstSeen: text("first_seen"),
+    lastSeen: text("last_seen"),
+    source: text("source").notNull().default("importyeti_free_web"),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    index("buyer_supplier_relationships_buyer_idx").on(
+      table.buyerId,
+      table.productCategory,
+    ),
+    index("buyer_supplier_relationships_supplier_idx").on(table.supplierId),
+  ],
+);
+
 export const buyerMonthlyRankings = sqliteTable(
   "buyer_monthly_rankings",
   {

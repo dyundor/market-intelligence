@@ -1,7 +1,7 @@
 import type { QueryInput, QueryValidation } from "./types.ts";
 import { RANKING_METRICS } from "../ranking/metrics.ts";
 
-const INTENTS = new Set(["buyer_ranking", "supplier_ranking", "trade_trend"]);
+const INTENTS = new Set(["buyer_ranking", "supplier_ranking", "trade_trend", "buyer_profile"]);
 const FLOWS = new Set(["import", "export"]);
 const GRANULARITIES = new Set(["monthly", "annual"]);
 const MONTH_PATTERN = /^\d{4}-\d{2}$/;
@@ -19,6 +19,10 @@ export function validateQuery(input: unknown): QueryValidation {
   if (!input || typeof input !== "object") return { ok: false, errors: ["Query must be an object"] };
   const query = input as Partial<QueryInput>;
   if (typeof query.intent !== "string" || !INTENTS.has(query.intent)) errors.push(`intent must be one of: ${[...INTENTS].join(", ")}`);
+  if (query.intent === "buyer_profile") {
+    if (typeof query.company !== "string" || !query.company.trim()) errors.push("company is required for buyer_profile");
+    return { ok: errors.length === 0, errors };
+  }
   const subject = query.subject ?? query.product;
   if (typeof subject !== "string" || !subject.trim()) errors.push("subject or product is required");
   if (typeof query.market !== "string" || !/^[A-Za-z]{2}$/.test(query.market.trim())) errors.push("market must be a two-letter ISO code");

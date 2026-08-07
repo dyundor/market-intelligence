@@ -1,7 +1,7 @@
 import type { Shipment } from "../entities/shipment.ts";
 import { companyFromRow } from "../entities/company.ts";
 import { companyIdentityKey } from "../entities/company.ts";
-import { buyerMetrics } from "./metrics.ts";
+import { buyerMetrics, dateToYmdNumber } from "./metrics.ts";
 import type { BuyerMetrics } from "./types.ts";
 
 export interface AggregateEntry {
@@ -39,7 +39,7 @@ export function aggregateShipments(shipments: Shipment[], months: number): Aggre
         buyerId,
         buyerName,
         row: { id: buyerId, name: buyerName },
-        metrics: { shipments: 0, suppliers: 0, weightKg: 0, containers: 0, months: Math.max(1, months) },
+        metrics: { shipments: 0, suppliers: 0, weightKg: 0, containers: 0, months: Math.max(1, months), lastImportDate: 0 },
         supplierSet: new Set(),
         monthSet: new Set(),
       };
@@ -49,7 +49,11 @@ export function aggregateShipments(shipments: Shipment[], months: number): Aggre
     if (shipment.supplierId) entry.supplierSet.add(shipment.supplierId);
     entry.metrics.weightKg += shipment.weight || 0;
     entry.metrics.containers += shipment.containerCount || 0;
-    if (shipment.shipmentDate) entry.monthSet.add(shipment.shipmentDate.slice(0, 7));
+    if (shipment.shipmentDate) {
+      const ymd = dateToYmdNumber(shipment.shipmentDate);
+      if (ymd > entry.metrics.lastImportDate) entry.metrics.lastImportDate = ymd;
+      entry.monthSet.add(shipment.shipmentDate.slice(0, 7));
+    }
   }
   return [...groups.values()].map(({ supplierSet, monthSet, ...entry }) => {
     entry.metrics.suppliers = supplierSet.size;
@@ -60,6 +64,7 @@ export function aggregateShipments(shipments: Shipment[], months: number): Aggre
       supplier_count: entry.metrics.suppliers,
       selected_month_weight_kg: entry.metrics.weightKg,
       selected_month_containers: entry.metrics.containers,
+      last_import_date: entry.metrics.lastImportDate,
     };
     return entry;
   });

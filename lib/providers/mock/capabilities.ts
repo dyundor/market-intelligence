@@ -78,6 +78,22 @@ export const shipmentDataCapability: ProviderCapability = {
   },
 };
 
+export const buyerProfileCapability: ProviderCapability = {
+  id: "buyer_profile",
+  kind: "free",
+  label: "Company intelligence profiles from stored shipment records",
+  canHandle(query) {
+    return query.intent === "buyer_profile";
+  },
+  rejectReason(query) {
+    if (query.intent !== "buyer_profile") return "Company profiles support buyer_profile queries only";
+    return null;
+  },
+  estimateCredits() {
+    return 0;
+  },
+};
+
 export function mockProviderKind(): ProviderKind {
   return "free";
 }

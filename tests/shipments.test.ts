@@ -82,7 +82,7 @@ test("enrichShipmentRow adds canonical fields without dropping raw columns", () 
   assert.equal(enriched.weight_kg, "12000");
   assert.equal(enriched.weight, 12000);
   assert.equal(enriched.productCategory, "faucet");
-  assert.ok(enriched.productKeywords.includes("faucet"));
+  assert.ok((enriched.productKeywords as string[]).includes("faucet"));
   assert.equal(enriched.month, "2026-07");
   assert.equal(enriched.hsCode, null);
 });
@@ -145,7 +145,8 @@ test("ranking is generated from normalized shipments", () => {
     months: ["2026-07"],
     ranking: { metric: "supplier_count", limit: 50 },
   });
-  assert.equal(bySuppliers.ranking.ranked[0].metric_value, 1);
+  const bySuppliersRanking = bySuppliers.kind === "ranking" ? bySuppliers.ranking : null;
+  assert.equal(bySuppliersRanking?.ranked[0].metric_value, 1);
 });
 
 test("Query Engine shipment flow: Top20 reuses Top50 ranking and cache prevents duplicate provider calls", async () => {

@@ -1,6 +1,7 @@
 import type { BuyerRanking, RankingMetric } from "../ranking/types.ts";
+import type { CompanyProfile } from "../intelligence/company-profile.ts";
 
-export type Intent = "buyer_ranking" | "supplier_ranking" | "trade_trend";
+export type Intent = "buyer_ranking" | "supplier_ranking" | "trade_trend" | "buyer_profile";
 export type ProviderKind = "free" | "paid";
 export type TradeFlow = "import" | "export";
 export type Granularity = "monthly" | "annual";
@@ -15,6 +16,7 @@ export interface QueryRequest {
   subject: string;
   market: string;
   period: string;
+  company?: string;
   ranking?: RankingSpec;
   flow?: TradeFlow;
   granularity?: Granularity;
@@ -30,6 +32,7 @@ export interface QueryInput {
   product?: string;
   market?: string;
   period?: PeriodInput;
+  company?: string;
   ranking?: { limit: number; metric?: RankingMetric };
   flow?: TradeFlow;
   granularity?: Granularity;
@@ -148,7 +151,8 @@ export type NormalizedData =
   | { kind: "companies"; companies: Company[] }
   | { kind: "trade"; metric: TradeMetric }
   | { kind: "discovery"; discovery: SupplierDiscovery }
-  | { kind: "ranking"; ranking: BuyerRanking };
+  | { kind: "ranking"; ranking: BuyerRanking }
+  | { kind: "buyer_profile"; profile: CompanyProfile | null };
 
 export interface QueryCost {
   estimated: number;

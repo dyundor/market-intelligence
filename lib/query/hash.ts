@@ -35,9 +35,10 @@ export function normalizeQuery(input: QueryInput): QueryRequest {
   const normalized: QueryRequest = {
     intent: input.intent as QueryRequest["intent"],
     subject: subject.trim().toLowerCase(),
-    market: (input.market || "").trim().toUpperCase(),
+    market: (input.market || "US").trim().toUpperCase(),
     period,
   };
+  if (input.company) normalized.company = input.company.trim().toLowerCase();
   if (input.ranking) {
     const metric = input.ranking.metric || "shipment_count";
     normalized.ranking = { metric, limit: 50 };
