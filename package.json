@@ -19,7 +19,8 @@
     "contacts:research": "node --experimental-strip-types scripts/import-contact-research.mjs",
     "capture:promote": "node scripts/promote-importyeti-capture.mjs",
     "sales:initialize": "node --experimental-strip-types scripts/initialize-real-sales-pipeline.mjs",
-    "sales:drafts": "node --experimental-strip-types scripts/initialize-outreach-packages.mjs"
+    "sales:drafts": "node --experimental-strip-types scripts/initialize-outreach-packages.mjs",
+    "sales:tasks": "node --experimental-strip-types scripts/initialize-sales-review-tasks.mjs"
   },
   "dependencies": {
     "@use-gesture/react": "10.3.1",

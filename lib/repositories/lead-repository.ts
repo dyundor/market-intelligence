@@ -196,7 +196,7 @@ export class LeadRepository {
 
   async createAction(row: Omit<LeadActionRow, "id" | "createdAt">): Promise<LeadActionRow> {
     const now = new Date().toISOString();
-    const id = `la-${row.companyId}-${Date.now()}`;
+    const id = `la-${row.companyId}-${crypto.randomUUID()}`;
     await this.db
       .prepare(
         `INSERT INTO lead_actions (id, company_id, action_type, direction, channel, summary, outcome,
@@ -210,6 +210,10 @@ export class LeadRepository {
         row.qualificationFeedback ?? null, row.feedbackReason ?? null, row.nextAction ?? null,
         row.nextActionDue ?? null, row.performedBy, now,
       )
+      .run();
+    await this.db
+      .prepare("UPDATE lead_actions SET next_action_due = NULL WHERE company_id = ? AND id <> ? AND next_action_due IS NOT NULL")
+      .bind(row.companyId, id)
       .run();
 
     const saved = await this.db

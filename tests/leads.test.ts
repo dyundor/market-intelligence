@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { generateLeadStrategy } from "../lib/leads/strategy.ts";
 import { qualifyBuyer } from "../lib/qualification/factors.ts";
 import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
@@ -11,6 +12,8 @@ import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
 import { evaluateOutreachReadiness } from "../lib/leads/outreach-readiness.ts";
 import { shouldInitializeSalesLead, sortSalesLeads } from "../lib/leads/pipeline-selection.ts";
 import { contactRouteNote, draftChannelForContact, selectBestVerifiedContact } from "../lib/leads/outreach-package.ts";
+import { scheduleReviewDate } from "../lib/leads/sales-task.ts";
+import { LeadRepository } from "../lib/repositories/lead-repository.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -183,6 +186,29 @@ describe("Verified outreach package", () => {
   });
   it("rejects contacts without verified HTTPS evidence", () => {
     assert.equal(selectBestVerifiedContact([{...contacts[0],sourceUrl:"http://buyer.example",verificationStatus:"verified"}]), null);
+  });
+});
+
+describe("Sales review task scheduling", () => {
+  it("assigns two priority reviews per business day and skips weekends", () => {
+    assert.deepEqual([0,1,2,3,4].map(index => scheduleReviewDate(index, "2026-08-08")), ["2026-08-10","2026-08-10","2026-08-11","2026-08-11","2026-08-12"]);
+  });
+  it("rejects invalid task schedule inputs", () => {
+    assert.throws(() => scheduleReviewDate(-1, "2026-08-08"));
+    assert.throws(() => scheduleReviewDate(0, "08/08/2026"));
+  });
+  it("replaces the previous current task only after saving the new activity", async () => {
+    const raw = new DatabaseSync(":memory:");
+    raw.exec(`CREATE TABLE lead_actions (id TEXT PRIMARY KEY,company_id TEXT,action_type TEXT,direction TEXT,channel TEXT,summary TEXT,outcome TEXT,outcome_code TEXT,qualification_feedback TEXT,feedback_reason TEXT,next_action TEXT,next_action_due TEXT,performed_by TEXT,created_at TEXT)`);
+    const db = {prepare(sql: string) {const statement=raw.prepare(sql);return {bind(...args: unknown[]) {return {async run(){const result=statement.run(...args);return {meta:{changes:result.changes}}},async all(){return {results:statement.all(...args)}}}}}}};
+    const repository = new LeadRepository(db);
+    const base = {companyId:"buyer-1",actionType:"review_outreach",direction:"outbound" as const,channel:"email",summary:"Review package",outcome:null,outcomeCode:null,qualificationFeedback:null,feedbackReason:null,nextAction:"Send manually",nextActionDue:"2026-08-10",performedBy:"system"};
+    const first = await repository.createAction(base);
+    const second = await repository.createAction({...base,actionType:"outreach",summary:"Sent manually",nextAction:"Follow up",nextActionDue:"2026-08-14",performedBy:"manual"});
+    const rows = raw.prepare("SELECT id,next_action_due FROM lead_actions ORDER BY created_at,id").all();
+    assert.equal(rows.find(row=>row.id===first.id)?.next_action_due, null);
+    assert.equal(rows.find(row=>row.id===second.id)?.next_action_due, "2026-08-14");
+    raw.close();
   });
 });
 
