@@ -17,6 +17,7 @@ import { addBusinessDays, nextAvailableReviewDate, scheduleReviewDate } from "..
 import { LeadRepository } from "../lib/repositories/lead-repository.ts";
 import { draftSentActionId, shouldSyncDraftSent } from "../lib/leads/draft-lifecycle.ts";
 import { contactHref, emailDraftHref } from "../lib/leads/contact-link.ts";
+import { quoteReadiness, validateQualificationQuantity, validateQualificationText } from "../lib/leads/qualification-profile.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -522,7 +523,7 @@ describe("Contact research queue", () => {
 
 describe("Sales-ready lead export", () => {
   it("creates a UTF-8 CSV with verified-contact evidence fields", () => {
-    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"qualified",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,opportunityValueUsd:75000,opportunityProbability:40,expectedCloseDate:"2026-10-31",weightedValueUsd:30000,draftChannel:"email",draftStatus:"sent",draftSubject:"Aqua × Yundor",draftBody:"Hello,\n\nProduct fit.",evidenceSummary:"12 shipment records",personalizationNotes:"Review before sending",researchReason:"Current importer with certification risk",researchNextAction:"Verify test documents before quoting",lastOutcome:"interested",lastOutcomeNotes:"Asked for MOQ",qualificationFeedback:"confirmed_fit",feedbackReason:"Needs basin faucet line",nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
+    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"qualified",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,opportunityValueUsd:75000,opportunityProbability:40,expectedCloseDate:"2026-10-31",weightedValueUsd:30000,targetMarket:"United States",requiredCertifications:"cUPC",estimatedAnnualUnits:12000,targetMoq:500,quoteRequirements:"Matte black basin faucet; retail packaging",quoteReady:"yes",missingQuoteFields:"",draftChannel:"email",draftStatus:"sent",draftSubject:"Aqua × Yundor",draftBody:"Hello,\n\nProduct fit.",evidenceSummary:"12 shipment records",personalizationNotes:"Review before sending",researchReason:"Current importer with certification risk",researchNextAction:"Verify test documents before quoting",lastOutcome:"interested",lastOutcomeNotes:"Asked for MOQ",qualificationFeedback:"confirmed_fit",feedbackReason:"Needs basin faucet line",nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
     assert.ok(csv.startsWith("\ufeff"));
     assert.match(csv,/"Aqua, Inc\."/);
     assert.match(csv,/buyer@aqua\.example/);
@@ -536,11 +537,28 @@ describe("Sales-ready lead export", () => {
     assert.match(csv,/interested/);
     assert.match(csv,/Needs basin faucet line/);
     assert.match(csv,/Opportunity Value USD/);
+    assert.match(csv,/Required Certifications/);
+    assert.match(csv,/Matte black basin faucet/);
+    assert.match(csv,/Quote Ready/);
     assert.match(csv,/"30000"/);
     assert.match(csv,/Hello,\n\nProduct fit\./);
   });
   it("neutralizes spreadsheet formulas in exported values", () => {
     assert.equal(csvCell("=HYPERLINK(\"bad\")"),"\"'=HYPERLINK(\"\"bad\"\")\"");
+  });
+});
+
+describe("Quote qualification profile", () => {
+  it("requires every commercial input before a quote is ready", () => {
+    assert.deepEqual(quoteReadiness({targetMarket:"US",requiredCertifications:"cUPC",estimatedAnnualUnits:12000,targetMoq:null,quoteRequirements:"Brushed nickel; branded carton"}),{ready:false,missing:["target_moq"]});
+  });
+  it("marks a complete positive-volume profile ready", () => {
+    assert.deepEqual(quoteReadiness({targetMarket:"US",requiredCertifications:"cUPC / NSF",estimatedAnnualUnits:12000,targetMoq:500,quoteRequirements:"Brushed nickel; branded carton"}),{ready:true,missing:[]});
+  });
+  it("rejects unsafe quantities and oversized text", () => {
+    assert.equal(validateQualificationQuantity(-1),false);
+    assert.equal(validateQualificationQuantity(1.5),false);
+    assert.equal(validateQualificationText("x".repeat(1001)),false);
   });
 });
 

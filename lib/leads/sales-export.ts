@@ -15,6 +15,13 @@ export interface SalesExportRow {
   opportunityProbability: number | null;
   expectedCloseDate: string;
   weightedValueUsd: number | null;
+  targetMarket: string;
+  requiredCertifications: string;
+  estimatedAnnualUnits: number | null;
+  targetMoq: number | null;
+  quoteRequirements: string;
+  quoteReady: string;
+  missingQuoteFields: string;
   draftChannel: string;
   draftStatus: string;
   draftSubject: string;
@@ -39,6 +46,10 @@ const HEADERS: Array<[keyof SalesExportRow, string]> = [
   ["outreachScore","Outreach Score"],["opportunityValueUsd","Opportunity Value USD"],
   ["opportunityProbability","Probability Percent"],["expectedCloseDate","Expected Close Date"],
   ["weightedValueUsd","Weighted Value USD"],["draftChannel","Draft Channel"],["draftStatus","Draft Status"],
+  ["targetMarket","Target Market"],["requiredCertifications","Required Certifications"],
+  ["estimatedAnnualUnits","Estimated Annual Units"],["targetMoq","Target MOQ"],
+  ["quoteRequirements","Quote Requirements"],["quoteReady","Quote Ready"],
+  ["missingQuoteFields","Missing Quote Fields"],
   ["draftSubject","Draft Subject"],["draftBody","Draft Body"],["evidenceSummary","Trade Evidence Summary"],
   ["personalizationNotes","Manual Review Notes"],["researchReason","Buyer Research Rationale"],
   ["researchNextAction","Research Recommended Action"],["lastOutcome","Latest Outcome"],["lastOutcomeNotes","Outcome Notes"],

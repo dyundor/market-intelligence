@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import { buildSalesExportCsv, type SalesExportRow } from "../../../../lib/leads/sales-export.ts";
+import { quoteReadiness } from "../../../../lib/leads/qualification-profile.ts";
 
 export async function GET() {
   if (!env.DB) return Response.json({error:"Database unavailable"},{status:503});
@@ -8,6 +9,7 @@ export async function GET() {
       c.contact_type,c.contact_value,c.label contact_label,c.source_url contact_source_url,
       w.outreach_strategy,w.recommended_products,w.commercial_fit_score,w.outreach_score,
       w.opportunity_value_usd,w.opportunity_probability,w.expected_close_date,
+      w.target_market,w.required_certifications,w.estimated_annual_units,w.target_moq,w.quote_requirements,
       d.channel draft_channel,d.status draft_status,d.subject draft_subject,d.body draft_body,
       d.evidence_summary,d.personalization_notes,
       r.reason research_reason,r.next_action research_next_action,
@@ -31,19 +33,22 @@ export async function GET() {
        AND (r.id IS NULL OR r.status='verified')
      ORDER BY COALESCE(w.outreach_score,0) DESC,e.name,c.contact_type,c.contact_value`,
   ).bind().all();
-  const items: SalesExportRow[] = (rows.results||[]).map(row=>({
+  const items: SalesExportRow[] = (rows.results||[]).map(row=>{
+    const readiness=quoteReadiness({targetMarket:row.target_market?String(row.target_market):null,requiredCertifications:row.required_certifications?String(row.required_certifications):null,estimatedAnnualUnits:row.estimated_annual_units==null?null:Number(row.estimated_annual_units),targetMoq:row.target_moq==null?null:Number(row.target_moq),quoteRequirements:row.quote_requirements?String(row.quote_requirements):null});
+    return ({
     companyName:String(row.company_name||""),country:String(row.country||""),website:String(row.website||""),leadStatus:String(row.lead_status||""),
     contactType:String(row.contact_type||""),contactValue:String(row.contact_value||""),contactLabel:String(row.contact_label||""),contactSourceUrl:String(row.contact_source_url||""),
     outreachStrategy:String(row.outreach_strategy||""),recommendedProducts:String(row.recommended_products||""),
     commercialFitScore:row.commercial_fit_score==null?null:Number(row.commercial_fit_score),outreachScore:row.outreach_score==null?null:Number(row.outreach_score),
     opportunityValueUsd:row.opportunity_value_usd==null?null:Number(row.opportunity_value_usd),opportunityProbability:row.opportunity_probability==null?null:Number(row.opportunity_probability),
     expectedCloseDate:String(row.expected_close_date||""),weightedValueUsd:row.opportunity_value_usd==null||row.opportunity_probability==null?null:Math.round(Number(row.opportunity_value_usd)*Number(row.opportunity_probability)/100),
+    targetMarket:String(row.target_market||""),requiredCertifications:String(row.required_certifications||""),estimatedAnnualUnits:row.estimated_annual_units==null?null:Number(row.estimated_annual_units),targetMoq:row.target_moq==null?null:Number(row.target_moq),quoteRequirements:String(row.quote_requirements||""),quoteReady:readiness.ready?"yes":"no",missingQuoteFields:readiness.missing.join("; "),
     draftChannel:String(row.draft_channel||""),draftStatus:String(row.draft_status||""),draftSubject:String(row.draft_subject||""),draftBody:String(row.draft_body||""),
     evidenceSummary:String(row.evidence_summary||""),personalizationNotes:String(row.personalization_notes||""),
     researchReason:String(row.research_reason||""),researchNextAction:String(row.research_next_action||""),
     lastOutcome:String(row.last_outcome||""),lastOutcomeNotes:String(row.last_outcome_notes||""),
     qualificationFeedback:String(row.qualification_feedback||""),feedbackReason:String(row.feedback_reason||""),
     nextAction:String(row.next_action||""),nextActionDue:String(row.next_action_due||""),
-  }));
+  })});
   return new Response(buildSalesExportCsv(items),{headers:{"Content-Type":"text/csv; charset=utf-8","Content-Disposition":`attachment; filename="yundor-sales-ready-leads-${new Date().toISOString().slice(0,10)}.csv"`,"X-Exported-Leads":String(new Set(items.map(item=>item.companyName)).size)}});
 }

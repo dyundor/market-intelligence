@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
 import { validateExpectedCloseDate, validateOpportunityProbability, validateOpportunityValue } from "../../../lib/leads/opportunity-pipeline.ts";
+import { validateQualificationQuantity, validateQualificationText } from "../../../lib/leads/qualification-profile.ts";
 
 const STATUSES = new Set(["new", "researching", "contacted", "quoted", "customer"]);
 const LEAD_STATUSES = new Set([
@@ -15,6 +16,7 @@ export async function GET(_request: NextRequest) {
       w.lead_status,w.outreach_strategy,w.recommended_products,w.confidence,
       w.commercial_fit_score,w.outreach_score,w.opportunity_value_usd,
       w.opportunity_probability,w.expected_close_date,
+      w.target_market,w.required_certifications,w.estimated_annual_units,w.target_moq,w.quote_requirements,
       e.name company_name,e.country company_country,e.country_code company_country_code,e.entity_type,
       e.total_shipments,e.latest_shipment_date,e.website,e.city_name,e.admin1_name
       FROM buyer_watchlist w LEFT JOIN importyeti_web_entities e ON e.id=w.company_id
@@ -34,6 +36,11 @@ export async function GET(_request: NextRequest) {
     opportunityValueUsd: row.opportunity_value_usd != null ? Number(row.opportunity_value_usd) : null,
     opportunityProbability: row.opportunity_probability != null ? Number(row.opportunity_probability) : null,
     expectedCloseDate: row.expected_close_date ? String(row.expected_close_date) : null,
+    targetMarket: row.target_market ? String(row.target_market) : null,
+    requiredCertifications: row.required_certifications ? String(row.required_certifications) : null,
+    estimatedAnnualUnits: row.estimated_annual_units != null ? Number(row.estimated_annual_units) : null,
+    targetMoq: row.target_moq != null ? Number(row.target_moq) : null,
+    quoteRequirements: row.quote_requirements ? String(row.quote_requirements) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     company: row.company_name ? {
@@ -79,6 +86,11 @@ interface WatchlistPatch {
   opportunityValueUsd?: number;
   opportunityProbability?: number;
   expectedCloseDate?: string;
+  targetMarket?: string;
+  requiredCertifications?: string;
+  estimatedAnnualUnits?: number;
+  targetMoq?: number;
+  quoteRequirements?: string;
 }
 
 export async function PATCH(request: NextRequest) {
@@ -94,13 +106,20 @@ export async function PATCH(request: NextRequest) {
   if (body?.opportunityValueUsd !== undefined && !validateOpportunityValue(body.opportunityValueUsd)) return NextResponse.json({ error: "invalid opportunity_value_usd" }, { status: 400 });
   if (body?.opportunityProbability !== undefined && !validateOpportunityProbability(body.opportunityProbability)) return NextResponse.json({ error: "invalid opportunity_probability" }, { status: 400 });
   if (body?.expectedCloseDate !== undefined && !validateExpectedCloseDate(body.expectedCloseDate)) return NextResponse.json({ error: "invalid expected_close_date" }, { status: 400 });
+  for (const [field,value] of [["target_market",body?.targetMarket],["required_certifications",body?.requiredCertifications],["quote_requirements",body?.quoteRequirements]] as const) {
+    if (value !== undefined && !validateQualificationText(value)) return NextResponse.json({error:`invalid ${field}`},{status:400});
+  }
+  if (body?.estimatedAnnualUnits !== undefined && !validateQualificationQuantity(body.estimatedAnnualUnits)) return NextResponse.json({error:"invalid estimated_annual_units"},{status:400});
+  if (body?.targetMoq !== undefined && !validateQualificationQuantity(body.targetMoq)) return NextResponse.json({error:"invalid target_moq"},{status:400});
 
   const hasUpdate = (body?.status !== undefined || body?.notes !== undefined ||
     body?.leadStatus !== undefined || body?.outreachStrategy !== undefined ||
     body?.recommendedProducts !== undefined || body?.confidence !== undefined ||
     body?.commercialFitScore !== undefined || body?.outreachScore !== undefined ||
     body?.opportunityValueUsd !== undefined || body?.opportunityProbability !== undefined ||
-    body?.expectedCloseDate !== undefined);
+    body?.expectedCloseDate !== undefined || body?.targetMarket !== undefined ||
+    body?.requiredCertifications !== undefined || body?.estimatedAnnualUnits !== undefined ||
+    body?.targetMoq !== undefined || body?.quoteRequirements !== undefined);
   if (!hasUpdate) return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
   const now = new Date().toISOString();
@@ -118,6 +137,11 @@ export async function PATCH(request: NextRequest) {
   if (body?.opportunityValueUsd !== undefined) { set.push("opportunity_value_usd=?"); args.push(body.opportunityValueUsd); }
   if (body?.opportunityProbability !== undefined) { set.push("opportunity_probability=?"); args.push(body.opportunityProbability); }
   if (body?.expectedCloseDate !== undefined) { set.push("expected_close_date=?"); args.push(body.expectedCloseDate); }
+  if (body?.targetMarket !== undefined) { set.push("target_market=?"); args.push(body.targetMarket); }
+  if (body?.requiredCertifications !== undefined) { set.push("required_certifications=?"); args.push(body.requiredCertifications); }
+  if (body?.estimatedAnnualUnits !== undefined) { set.push("estimated_annual_units=?"); args.push(body.estimatedAnnualUnits); }
+  if (body?.targetMoq !== undefined) { set.push("target_moq=?"); args.push(body.targetMoq); }
+  if (body?.quoteRequirements !== undefined) { set.push("quote_requirements=?"); args.push(body.quoteRequirements); }
 
   set.push("updated_at=?");
   args.push(now, id);
@@ -159,6 +183,11 @@ function mapWatchlistRow(row: Record<string, unknown>) {
     opportunityValueUsd: row.opportunity_value_usd != null ? Number(row.opportunity_value_usd) : null,
     opportunityProbability: row.opportunity_probability != null ? Number(row.opportunity_probability) : null,
     expectedCloseDate: row.expected_close_date ? String(row.expected_close_date) : null,
+    targetMarket: row.target_market ? String(row.target_market) : null,
+    requiredCertifications: row.required_certifications ? String(row.required_certifications) : null,
+    estimatedAnnualUnits: row.estimated_annual_units != null ? Number(row.estimated_annual_units) : null,
+    targetMoq: row.target_moq != null ? Number(row.target_moq) : null,
+    quoteRequirements: row.quote_requirements ? String(row.quote_requirements) : null,
     createdAt: String(row.created_at || ""),
     updatedAt: String(row.updated_at || ""),
   };
