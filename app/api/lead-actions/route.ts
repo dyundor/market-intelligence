@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
 import { LeadRepository } from "../../../lib/repositories/lead-repository.ts";
 import { defaultFollowUpForOutcome, leadStatusForOutcome, type OutcomeCode } from "../../../lib/leads/feedback.ts";
+import { quoteReadiness } from "../../../lib/leads/qualification-profile.ts";
 
 const OUTCOMES = new Set(["no_response", "replied", "interested", "meeting_booked", "quote_requested", "quote_sent", "not_fit", "bounced", "won", "lost"]);
 const FIT_FEEDBACK = new Set(["confirmed_fit", "needs_review", "disqualified"]);
@@ -23,6 +24,13 @@ export async function POST(request: NextRequest) {
   }
   const outcomeCode = body.outcomeCode ? String(body.outcomeCode) : null;
   if (outcomeCode && !OUTCOMES.has(outcomeCode)) return NextResponse.json({ error: "invalid outcomeCode" }, { status: 400 });
+  if(outcomeCode==="quote_sent"){
+    const result=await env.DB.prepare(`SELECT target_market,required_certifications,estimated_annual_units,target_moq,quote_requirements FROM buyer_watchlist WHERE company_id=? LIMIT 1`).bind(String(body.companyId)).all();
+    const row=(result.results||[])[0];
+    if(!row)return NextResponse.json({error:"lead not found"},{status:404});
+    const readiness=quoteReadiness({targetMarket:row.target_market?String(row.target_market):null,requiredCertifications:row.required_certifications?String(row.required_certifications):null,estimatedAnnualUnits:row.estimated_annual_units==null?null:Number(row.estimated_annual_units),targetMoq:row.target_moq==null?null:Number(row.target_moq),quoteRequirements:row.quote_requirements?String(row.quote_requirements):null});
+    if(!readiness.ready)return NextResponse.json({error:"quote_qualification_incomplete",missing:readiness.missing},{status:409});
+  }
   const qualificationFeedback = body.qualificationFeedback ? String(body.qualificationFeedback) : null;
   if (qualificationFeedback && !FIT_FEEDBACK.has(qualificationFeedback)) return NextResponse.json({ error: "invalid qualificationFeedback" }, { status: 400 });
   const defaultFollowUp = outcomeCode

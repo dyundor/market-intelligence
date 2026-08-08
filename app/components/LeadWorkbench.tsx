@@ -91,7 +91,7 @@ export function LeadWorkbench({items,loading,locale,onUpdate,onRemove,onOpenComp
     const formElement=event.currentTarget;
     const form=new FormData(formElement);
     const response=await fetch("/api/lead-actions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({companyId:selected.companyId,actionType:form.get("actionType"),channel:form.get("channel"),summary:form.get("summary"),outcome:form.get("outcome"),outcomeCode:form.get("outcomeCode")||null,qualificationFeedback:form.get("qualificationFeedback")||null,feedbackReason:form.get("feedbackReason"),nextAction:form.get("nextAction"),nextActionDue:form.get("nextActionDue")})});
-    if(!response.ok){setMessage(zh?"跟进记录保存失败":"Activity could not be saved");return;}
+    if(!response.ok){const error=await response.json().catch(()=>null) as {error?:string;missing?:string[]}|null;setMessage(error?.error==="quote_qualification_incomplete"?(zh?`报价尚不能标记为已发送：缺少 ${error.missing?.length||0} 项资料`:`Quote cannot be marked sent: ${error.missing?.length||0} qualification fields are missing`):(zh?"跟进记录保存失败":"Activity could not be saved"));return;}
     const action=await response.json() as Action;
     setActions(previous=>[action,...previous]);
     if(action.leadStatus)await onUpdate(selected.id,{leadStatus:action.leadStatus});
