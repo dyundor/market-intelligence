@@ -21,6 +21,7 @@ import { quoteReadiness, validateQualificationQuantity, validateQualificationTex
 import { buildQuoteHandoff } from "../lib/leads/quote-handoff.ts";
 import { computeQuoteFunnel } from "../lib/leads/quote-funnel.ts";
 import { bestVerifiedContact, contactRouteGuidance, contactRoutePriority, contactRouteQuality } from "../lib/leads/contact-quality.ts";
+import { buildContactGapQueue } from "../lib/leads/contact-gap.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -270,6 +271,21 @@ describe("Contact route quality",()=>{
     assert.equal(contactRouteQuality({contactType:"email",contactValue:"support@buyer.example",label:"Customer Support"}),"general_route");
     assert.equal(contactRouteQuality({contactType:"phone",contactValue:"+1-555-0100",label:"Front Desk"}),"fallback");
     assert.match(contactRouteGuidance("general_route"),/routing to purchasing/);
+  });
+});
+
+describe("Decision-owner contact gap queue",()=>{
+  it("prioritizes high-fit buyers lacking a direct purchasing route",()=>{
+    const queue=buildContactGapQueue([
+      {companyId:"danco",companyName:"Danco",leadStatus:"contact_ready",commercialFitScore:88,outreachScore:87,bestContactRouteQuality:"business_route",bestContactLabel:"Business Form",nextActionDue:"2026-08-20"},
+      {companyId:"generic",companyName:"Generic",leadStatus:"contact_ready",commercialFitScore:40,outreachScore:80,bestContactRouteQuality:"general_route",bestContactLabel:"Customer Service"},
+      {companyId:"direct",companyName:"Direct",leadStatus:"contact_ready",commercialFitScore:95,outreachScore:95,bestContactRouteQuality:"decision_maker",bestContactLabel:"Purchasing Manager"},
+      {companyId:"research",companyName:"Research",leadStatus:"researching",commercialFitScore:99,outreachScore:99,bestContactRouteQuality:null},
+      {companyId:"reply",companyName:"Replied",leadStatus:"follow_up",commercialFitScore:99,outreachScore:99,bestContactRouteQuality:null},
+    ]);
+    assert.deepEqual(queue.map(item=>item.companyId),["danco","generic"]);
+    assert.match(queue[0].recommendedAction,/sourcing or product-development owner/);
+    assert.ok(queue[0].priorityScore>queue[1].priorityScore);
   });
 });
 

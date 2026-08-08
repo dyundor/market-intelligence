@@ -303,3 +303,9 @@ html[lang]:not([lang="zh-CN"]) .importer-list>.section-step>div::after { content
 .contact-quality.decision_maker { color:#16734d; }
 .contact-quality.business_route { color:#276d91; }
 .contact-quality.general_route,.contact-quality.fallback { color:#9a6c2d; }
+.contact-gap-queue { display:flex; flex-direction:column; gap:5px; margin:0 0 10px; padding:10px; border:1px solid #ead9b9; border-radius:9px; background:#fffaf0; }
+.contact-gap-queue>strong { color:#785c28; font-size:9px; }
+.contact-gap-queue>button { display:grid; grid-template-columns:30px 140px 1fr; align-items:center; gap:8px; padding:7px 9px; border:0; border-radius:6px; background:white; color:#4d5e59; text-align:left; cursor:pointer; }
+.contact-gap-queue>button>b { color:#a06c22; font:700 14px Georgia,serif; }
+.contact-gap-queue span strong,.contact-gap-queue span small { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.contact-gap-queue span strong { font-size:8px; }.contact-gap-queue span small,.contact-gap-queue em { color:#7f8d89; font-size:7px; font-style:normal; }
