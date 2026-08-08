@@ -222,6 +222,11 @@ describe("Public contact enrichment", () => {
     assert.deepEqual(payload.companies.map((company: {companyName: string}) => company.companyName), ["B&K LLC", "Posey Supply"]);
     assert.ok(payload.companies.every((company: Parameters<typeof validatePublicEvidence>[0]) => validatePublicEvidence(company).length === 0));
   });
+  it("keeps the third official-source contact wave valid", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-lead-contacts-wave3-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.map((company: {companyName: string}) => company.companyName), ["Therma Glass", "Bain D P T Inc"]);
+    assert.ok(payload.companies.every((company: Parameters<typeof validatePublicEvidence>[0]) => validatePublicEvidence(company).length === 0));
+  });
 });
 
 describe("Contact research queue", () => {
@@ -240,6 +245,11 @@ describe("Contact research queue", () => {
     const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave2-2026-08-08.json", import.meta.url), "utf8"));
     assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
     assert.deepEqual(summarizeContactResearch(payload.companies), {total:5, verified:2, needsIdentityMatch:2, unresolved:1, coveragePercent:40});
+  });
+  it("keeps Cross International unresolved in the third research wave", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave3-2026-08-08.json", import.meta.url), "utf8"));
+    assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
+    assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:2, needsIdentityMatch:1, unresolved:0, coveragePercent:67});
   });
 });
 

@@ -1,0 +1,9 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Highest-outreach-score real leads; official sources only; no paid provider and no guessed contact",
+  "companies": [
+    {"companyName":"Therma Glass","status":"verified","reasonCode":"official_contact_found","reason":"Official Therma-Glass site address matches the public shipment consignee address at 2300 SE Beta Street, Milwaukie, Oregon; company products and contacts verified.","nextAction":"Prepare an OEM/ODM shower-base and coordinated shower-system introduction using the official email.","evidenceUrls":["https://www.therma-glass.com/","https://www.therma-glass.com/specifications"]},
+    {"companyName":"Bain D P T Inc","status":"verified","reasonCode":"official_contact_found","reason":"Public shipment identity at 1200 Michele-Bohec, Blainville matches Bain Depot official product and contact material.","nextAction":"Use the official contact route for a bathroom faucet and shower-system supply introduction.","evidenceUrls":["https://www.bathdepot.com/","https://www.bathdepot.com/contact-us"]},
+    {"companyName":"Cross International Trade Company","status":"needs_identity_match","reasonCode":"identity_not_confirmed","reason":"Recent public shipment records confirm a Hialeah bathroom-products importer, but no company-controlled official domain or public contact was verified.","nextAction":"Confirm the legal entity and official company domain before adding any contact.","evidenceUrls":[]}
+  ]
+}

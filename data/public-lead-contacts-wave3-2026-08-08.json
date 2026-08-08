@@ -1,0 +1,23 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Official company websites only; identity cross-checked against public shipment address; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Therma Glass",
+      "website": "https://www.therma-glass.com/",
+      "websiteSourceUrl": "https://www.therma-glass.com/",
+      "contacts": [
+        {"type":"email","value":"info@therma-glass.com","label":"Company Information","sourceUrl":"https://www.therma-glass.com/","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-503-653-2418","label":"Company Telephone","sourceUrl":"https://www.therma-glass.com/","verificationStatus":"verified"}
+      ]
+    },
+    {
+      "companyName": "Bain D P T Inc",
+      "website": "https://www.bathdepot.com/",
+      "websiteSourceUrl": "https://www.bathdepot.com/contact-us",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://www.bathdepot.com/contact-us","label":"Customer Service Contact","sourceUrl":"https://www.bathdepot.com/contact-us","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}
