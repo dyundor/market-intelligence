@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDrag } from "@use-gesture/react";
 import { formatCopy, getCopy, localeOptions, type Locale } from "./i18n";
+import { LeadWorkbench, type WatchlistItem } from "./components/LeadWorkbench";
 
 type Market = "中国" | "美国" | "加拿大" | "阿联酋" | "沙特阿拉伯" | "卡塔尔" | "科威特" | "阿曼" | "巴林" | "澳大利亚" | "英国" | "德国" | "法国" | "意大利" | "西班牙" | "荷兰" | "比利时" | "日本" | "韩国";
 type Product = "龙头及阀类" | "龙头阀门零件" | "塑料浴缸及淋浴盆" | "瓷制陶瓷洁具" | "其他陶瓷洁具" | "钢铁卫浴制品" | "铜制卫浴制品";
@@ -28,7 +29,6 @@ type ShipmentRow={id:string;shipment_date:string;date_basis:string;actual_arriva
 type ScoreFactor={id:string;label:string;value:number;weight:number;contribution:number};
 type ScoredResult={entityId:string;score:number;factors:ScoreFactor[];version:string;computedAt:string};
 type ScoresPayload={market:ScoredResult;product:ScoredResult;buyer:ScoredResult|null;buyers?:ScoredResult[];dataset?:string;scope?:string};
-type WatchlistItem={id:string;companyId:string;status:string;notes:string;createdAt:string;updatedAt:string;company:{id:string;name:string;country:string;countryCode:string|null;entityType:string;totalShipments:number|null;latestShipmentDate:string|null;website:string|null;location:string}|null};
 type ShipmentPage={page:number;pageSize:number;total:number;totalPages:number;month:string;months:Array<{month:string;shipments:number}>;shipments:ShipmentRow[]};
 
 const markets: Record<Market, { flag: string }> = {
@@ -270,7 +270,6 @@ export default function Home() {
   const [scoresState,setScoresState]=useState<"idle"|"loading"|"ready"|"unavailable">("idle");
   const [watchlist,setWatchlist]=useState<WatchlistItem[]>([]);
   const [watchlistState,setWatchlistState]=useState<"idle"|"loading"|"ready">("idle");
-  const watchlistStatuses=["new","researching","contacted","quoted","customer"] as const;
   const watchlistStatusLabel:Record<string,string>={new:countryNameLanguage==="zh-CN"?"新发现":"New",researching:countryNameLanguage==="zh-CN"?"调研中":"Researching",contacted:countryNameLanguage==="zh-CN"?"已联系":"Contacted",quoted:countryNameLanguage==="zh-CN"?"已报价":"Quoted",customer:countryNameLanguage==="zh-CN"?"已成客户":"Customer"};
   const monthOptions = useMemo(() => Array.from({ length: 36 }, (_, index) => {
     const date = new Date(latestClosedMonthDate.getFullYear(), latestClosedMonthDate.getMonth() - index, 1);
@@ -389,12 +388,12 @@ export default function Home() {
       setWatchlist(previous=>[data,...previous.filter(item=>item.companyId!==companyId)]);
     }catch{}
   }
-  async function updateWatchlist(id:string,changes:{status?:string;notes?:string}){
+  async function updateWatchlist(id:string,changes:Record<string,string|number>){
     try{
       const response=await fetch("/api/watchlist",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,...changes})});
       if(!response.ok)return;
       const data=await response.json() as WatchlistItem;
-      setWatchlist(previous=>previous.map(item=>item.id===id?data:item));
+      setWatchlist(previous=>previous.map(item=>item.id===id?{...item,...data,company:data.company??item.company}:item));
     }catch{}
   }
   async function removeFromWatchlist(id:string){
@@ -679,8 +678,8 @@ export default function Home() {
         </section> : null}
 
         {activeView === "watchlist" ? <section id="buyer-watchlist" className="buyer-watchlist" aria-busy={watchlistState==="loading"}>
-          <div className="discovery-heading"><div><span>BUYER WATCHLIST</span><h2>{countryNameLanguage==="zh-CN"?"买家清单":"Buyer watchlist"}</h2><p>{countryNameLanguage==="zh-CN"?`已保存 ${watchlist.length} 家潜在客户 · 状态：新发现 / 已联系 / 跟进中 / 已成客户`:`${watchlist.length} saved prospects · status: new / contacted / follow-up / customer`}</p></div></div>
-          {watchlist.length?<div className="watchlist-list">{watchlist.map(item=>{const company=item.company;return <article className="watchlist-row" key={item.id}><span className="supplier-rank">{String(watchlist.indexOf(item)+1).padStart(2,"0")}</span><div className="watchlist-company"><button className="watchlist-name" onClick={()=>openCompanyDetail(item.companyId)}><strong>{company?.name||item.companyId}</strong></button>{company?<small>{entityLocation(company.countryCode||company.country).flag} {entityLocation(company.countryCode||company.country).country}{company.location?` · ${company.location}`:""}{company.totalShipments?` · ${countryNameLanguage==="zh-CN"?"历史":"history"} ${company.totalShipments} BOLs`:""}{company.latestShipmentDate?` · ${countryNameLanguage==="zh-CN"?"最近":"last"} ${company.latestShipmentDate.slice(0,10)}`:""}</small>:<small>{item.companyId}</small>}</div><label className="watchlist-status"><span>{countryNameLanguage==="zh-CN"?"状态":"Status"}</span><select value={item.status} onChange={event=>updateWatchlist(item.id,{status:event.target.value})}>{watchlistStatuses.map(status=><option key={status} value={status}>{watchlistStatusLabel[status]}</option>)}</select></label><label className="watchlist-notes"><span>{countryNameLanguage==="zh-CN"?"备注":"Notes"}</span><input defaultValue={item.notes} placeholder={countryNameLanguage==="zh-CN"?"联系人、报价、下次跟进…":"Contact, quote, next follow-up…"} onBlur={event=>{if(event.target.value!==item.notes)updateWatchlist(item.id,{notes:event.target.value});}} /></label><button className="watchlist-remove" onClick={()=>removeFromWatchlist(item.id)} aria-label={countryNameLanguage==="zh-CN"?"移除":"Remove"}>✕</button></article>;})}</div>:<div className="supplier-empty"><strong>{countryNameLanguage==="zh-CN"?"清单为空":"Watchlist is empty"}</strong><span>{countryNameLanguage==="zh-CN"?"在进口商排名或企业详情页点击「保存到清单」，把潜在客户加入这里。":"Open an importer from the ranking or its detail page and use \"Save to watchlist\" to add prospects here."}</span></div>}
+          <div className="discovery-heading"><div><span>SALES EXECUTION</span><h2>{countryNameLanguage==="zh-CN"?"销售 Lead 工作台":"Sales lead workbench"}</h2><p>{countryNameLanguage==="zh-CN"?`已保存 ${watchlist.length} 家潜在客户 · 联系证据、开发策略与跟进动作集中管理`:`${watchlist.length} saved prospects · contacts, strategy, and follow-up in one place`}</p></div></div>
+          <LeadWorkbench items={watchlist} loading={watchlistState==="loading"} locale={countryNameLanguage} onUpdate={updateWatchlist} onRemove={removeFromWatchlist} onOpenCompany={openCompanyDetail}/>
         </section> : null}
 
         {activeView === "data-sources" ? <section id="data-sources" className="data-pipeline" aria-label={tr("dataSources")}>
