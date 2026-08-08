@@ -430,6 +430,13 @@ describe("Contact research queue", () => {
     assert.equal(payload.companies.find((company: {companyName:string})=>company.companyName==="Bath Authority Llc").status,"needs_identity_match");
     assert.equal(payload.companies.find((company: {companyName:string})=>company.companyName==="DC Import LLC").status,"unresolved");
   });
+  it("excludes acquired and inactive high-volume identities in the tenth research wave", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave10-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validateContactResearch),[]);
+    assert.ok(payload.companies.every((company: {status:string})=>company.status==="disqualified"));
+    assert.match(payload.companies[0].nextAction,/Homewerks Worldwide/);
+    assert.ok(payload.companies[0].evidenceUrls.some((url:string)=>url.includes("prweb.com")));
+  });
 });
 
 describe("Sales-ready lead export", () => {

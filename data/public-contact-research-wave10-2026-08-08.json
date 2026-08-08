@@ -1,0 +1,33 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "High-volume fuzzy importer identities checked against official successor/acquisition evidence and current company-controlled websites; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "LDR Global Industries",
+      "status": "disqualified",
+      "reasonCode": "inactive_or_defunct",
+      "reason": "Homewerks and LDR announced that Homewerks acquired LDR's faucets, showerheads, bath hardware, valves, repair segments, and LDR brand in 2019. The remaining company changed its name to STZ Industries and focused on pipe and fittings, so the historical LDR faucet importer is not a current standalone outreach identity.",
+      "nextAction": "Exclude historical LDR from outreach. Research Homewerks Worldwide as a separate successor account without transferring LDR shipment history or contacts.",
+      "evidenceUrls": [
+        "https://www.prweb.com/releases/homewerks-worldwide-llc-acquires-product-lines-and-brands-from-ldr-global-industries-llc-844847289.html",
+        "https://www.homewerks.com/about/"
+      ]
+    },
+    {
+      "companyName": "Luxaris",
+      "status": "disqualified",
+      "reasonCode": "inactive_or_defunct",
+      "reason": "Luxaris and Russian Sauna resolve to the same historical Warminster business and addresses. Its former luxaris.com domain is no longer active, while available public import history ends in 2019; no current company-controlled contact route was verified.",
+      "nextAction": "Exclude the historical alias from outreach and preserve its shower enclosure trade history for market analysis only.",
+      "evidenceUrls": []
+    },
+    {
+      "companyName": "Russian Sauna",
+      "status": "disqualified",
+      "reasonCode": "inactive_or_defunct",
+      "reason": "Russian Sauna LLC is an alternate name of the same historical Luxaris business in Warminster. The former company website is inactive and available public import history ends in 2019, so there is no safe current outreach identity.",
+      "nextAction": "Exclude the historical alias from outreach; do not merge its records into the active DreamLine/Bath Authority account despite the shared historical area.",
+      "evidenceUrls": []
+    }
+  ]
+}
