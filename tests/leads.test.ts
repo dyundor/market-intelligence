@@ -544,6 +544,15 @@ describe("Contact research queue", () => {
     assert.match(payload.companies[0].reason,/at least three relevant 2026 import events/);
     assert.match(payload.companies[0].nextAction,/certification/);
   });
+  it("keeps the Westbrass buyer pack tied to official identity, contacts, and free manifest evidence",()=>{
+    const sql=readFileSync(new URL("../data/public-buyer-westbrass-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/https:\/\/www\.importinfo\.com\/the-westbrass-company/);
+    assert.match(sql,/https:\/\/westbrass\.com\/contact-us\//);
+    assert.match(sql,/orders@westbrass\.com/);
+    assert.match(sql,/Assorted bathroom and shower accessories/);
+    assert.match(sql,/ON CONFLICT\(id\) DO UPDATE/);
+    assert.doesNotMatch(sql,/importyeti-paid|subscription-key|api\.importyeti/);
+  });
 });
 
 describe("Sales-ready lead export", () => {
