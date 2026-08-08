@@ -550,6 +550,8 @@ describe("Contact research queue", () => {
     assert.match(sql,/https:\/\/westbrass\.com\/contact-us\//);
     assert.match(sql,/orders@westbrass\.com/);
     assert.match(sql,/Assorted bathroom and shower accessories/);
+    assert.match(sql,/The Westbrass Company × Yundor — bathroom product supply opportunity/);
+    assert.match(sql,/'draft-public-westbrass-initial'.*'draft'/s);
     assert.match(sql,/ON CONFLICT\(id\) DO UPDATE/);
     assert.doesNotMatch(sql,/importyeti-paid|subscription-key|api\.importyeti/);
   });

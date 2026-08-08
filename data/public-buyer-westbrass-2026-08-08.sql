@@ -52,4 +52,19 @@ VALUES
   ('review-public-westbrass','importer:the-westbrass-company','review_outreach','outbound','email','Review Westbrass evidence and prepare a tailored OEM/ODM introduction',NULL,NULL,NULL,NULL,'Review evidence, generate the outreach draft, and send manually to the official orders route','2026-08-20','system','2026-08-08T23:00:00.000Z')
 ON CONFLICT(id) DO NOTHING;
 
+INSERT INTO lead_outreach_drafts
+  (id,company_id,channel,subject,body,status,evidence_summary,personalization_notes,created_at,updated_at)
+VALUES
+  ('draft-public-westbrass-initial','importer:the-westbrass-company','email','The Westbrass Company × Yundor — bathroom product supply opportunity','Hello,
+
+I’m reaching out from Yundor, a bathroom-product manufacturing partner supporting international brands and distributors. Based on our review of The Westbrass Company’s public company and trade activity, your business appears relevant to our Shower Systems + Bathroom Accessories + Coordinated Finishes capabilities. We noticed relevant sourcing activity recorded as recently as 2025-06-02.
+
+We can support OEM/ODM bathroom faucets and shower systems tailored to your product roadmap, with OEM/ODM development, coordinated finishes, quality control, and export-ready fulfillment from China.
+
+Would a short introduction and product fit review be useful? If you are not the right contact, I would appreciate being directed to the person responsible for sourcing or product development.
+
+Best regards,
+Yundor Business Development','draft','The Westbrass Company: 394 historical shipment records, with the latest activity recorded on 2025-06-02. Recommended approach: OEM/ODM Pitch. Recommended products: Shower Systems + Bathroom Accessories + Coordinated Finishes.','Confirm the recipient''s role and the cited company evidence before approval. Replace generic greeting when a verified contact name is available. Buyer research for reviewer: Exact official-to-consignee address match with public China sanitary-ware sourcing. Recommended next step: Lead with shower systems, coordinated finishes, certification support, and sourcing resilience.','2026-08-08T23:00:00.000Z','2026-08-08T23:00:00.000Z')
+ON CONFLICT(id) DO UPDATE SET subject=CASE WHEN lead_outreach_drafts.status='archived' THEN excluded.subject ELSE lead_outreach_drafts.subject END,body=CASE WHEN lead_outreach_drafts.status='archived' THEN excluded.body ELSE lead_outreach_drafts.body END,status=CASE WHEN lead_outreach_drafts.status='archived' THEN 'draft' ELSE lead_outreach_drafts.status END,evidence_summary=excluded.evidence_summary,personalization_notes=excluded.personalization_notes,updated_at=CASE WHEN lead_outreach_drafts.status='archived' THEN excluded.updated_at ELSE lead_outreach_drafts.updated_at END;
+
 COMMIT;
