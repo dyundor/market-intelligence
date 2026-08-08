@@ -1,0 +1,33 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Official company websites and official product documents only; identity cross-checked against stored importer name/location; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Giagni",
+      "website": "https://giagni.com/",
+      "websiteSourceUrl": "https://giagni.com/wp-content/uploads/2015/10/LL102-PC_MONOBLOCE-GLOBE-INSTALL-NEW-LOGO-11.9.15.pdf",
+      "contacts": [
+        {"type":"email","value":"info@giagni.com","label":"Customer Service","sourceUrl":"https://giagni.com/wp-content/uploads/2015/10/LL102-PC_MONOBLOCE-GLOBE-INSTALL-NEW-LOGO-11.9.15.pdf","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-888-560-5222","label":"Customer Service","sourceUrl":"https://giagni.com/wp-content/uploads/2015/10/LL102-PC_MONOBLOCE-GLOBE-INSTALL-NEW-LOGO-11.9.15.pdf","verificationStatus":"verified"}
+      ]
+    },
+    {
+      "companyName": "Arizona Shower Doors Llc",
+      "website": "https://www.arizonashowerdoor.com/",
+      "websiteSourceUrl": "https://www.arizonashowerdoor.com/about",
+      "contacts": [
+        {"type":"email","value":"sales@arizonashowerdoor.com","label":"Corporate Sales","sourceUrl":"https://www.arizonashowerdoor.com/about","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-602-447-0000","label":"Corporate Sales","sourceUrl":"https://www.arizonashowerdoor.com/about","verificationStatus":"verified"}
+      ]
+    },
+    {
+      "companyName": "Maax Bath",
+      "website": "https://maax.ca/",
+      "websiteSourceUrl": "https://maax.ca/en-CA/services/contact/general-inquiry",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://maax.ca/en-CA/services/contact/general-inquiry","label":"General and Business Inquiry","sourceUrl":"https://maax.ca/en-CA/services/contact/general-inquiry","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-877-438-6229","label":"Customer Service","sourceUrl":"https://maax.ca/en-CA/services/contact/general-inquiry","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

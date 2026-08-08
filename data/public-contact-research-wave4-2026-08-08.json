@@ -1,0 +1,9 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Product-relevant real sales leads; official company sources only; no paid provider and no guessed contact",
+  "companies": [
+    {"companyName":"Giagni","status":"verified","reasonCode":"official_contact_found","reason":"Stored Mount Vernon importer address matches the Giagni company identity; official Giagni product documentation provides customer-service email and telephone.","nextAction":"Prepare a faucet-focused OEM/ODM introduction using the official customer-service route.","evidenceUrls":["https://giagni.com/","https://giagni.com/wp-content/uploads/2015/10/LL102-PC_MONOBLOCE-GLOBE-INSTALL-NEW-LOGO-11.9.15.pdf"]},
+    {"companyName":"Arizona Shower Doors Llc","status":"verified","reasonCode":"official_contact_found","reason":"Stored Phoenix importer identity matches the official Arizona Shower Door corporate office and shower-enclosure business.","nextAction":"Prepare a coordinated shower-system and OEM component introduction for corporate sales.","evidenceUrls":["https://www.arizonashowerdoor.com/about"]},
+    {"companyName":"Maax Bath","status":"verified","reasonCode":"official_contact_found","reason":"Exact MAAX Bath importer identity matches the official Canadian bathware manufacturer and its business inquiry route.","nextAction":"Prepare a complementary faucet and shower-system supply proposal through the official business inquiry route.","evidenceUrls":["https://maax.ca/","https://maax.ca/en-CA/services/contact/general-inquiry"]}
+  ]
+}
