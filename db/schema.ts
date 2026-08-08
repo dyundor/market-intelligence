@@ -551,3 +551,16 @@ export const leadContactResearch = sqliteTable(
     index("lead_contact_research_company_idx").on(table.companyId),
   ],
 );
+
+export const capturePromotions = sqliteTable(
+  "capture_promotions",
+  {
+    id: text("id").primaryKey(),
+    manifestPath: text("manifest_path").notNull(),
+    sourceChannel: text("source_channel").notNull(),
+    capturedAt: text("captured_at").notNull(),
+    appliedAt: text("applied_at").notNull(),
+    reportJson: text("report_json").notNull(),
+  },
+  (table) => [index("capture_promotions_source_date_idx").on(table.sourceChannel, table.capturedAt)],
+);

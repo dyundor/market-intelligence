@@ -1,0 +1,24 @@
+{
+  "manifestVersion": 1,
+  "capturedAt": "2026-08-05",
+  "sourceChannel": "importyeti_free_web",
+  "purpose": "Promote previously captured and reviewed company and shipment evidence; no API request is performed",
+  "minimums": {"realImporters": 20, "shipments": 150, "relationships": 20},
+  "files": [
+    {"path":"data/importyeti-web-capture-2026-08-05.sql","sha256":"3b907d48d86ef972686c3c822348cf2f14dac51967336ff4bd7c6da1c40ed097"},
+    {"path":"data/importyeti-domustar-2026-08-05.sql","sha256":"e6c55df47443b89d6f3912cd9506e4ce3eae53d51147c2540799e1b4bc1c54f3"},
+    {"path":"data/importyeti-importer-profiles-2026-08-05.sql","sha256":"2604076cd97a36f1a85bb4a251c971654e50aebe291266d2797851e4f913c471"},
+    {"path":"data/importyeti-importer-expansion-2026-08-05.sql","sha256":"d9e9a0878a15e1cc5c0a5911a833d64d6b4b6d73ae1035ad2891b2fcc06b2661"},
+    {"path":"data/importyeti-supplier-profile-enrichment-2026-08-05.sql","sha256":"d4be3c60b1b855d85f66cd7d102d1ec35b84b6350758b1a291a40a7c7d68dc27"},
+    {"path":"data/importyeti-sagarit-shipments-2026-08-05.sql","sha256":"2d4f20bc797b271be710ff499a9f535032c1df21047f29d4dabffc93a6776874"},
+    {"path":"data/importyeti-recent-50-shipments-2026-08-05.sql","sha256":"1561a26af5d91541013dd47bb065f5ce7951fd0d6033963cfc175ebed3cc0446"},
+    {"path":"data/backfill-shipment-relationships-2026-08-05.sql","sha256":"268513ef37ad2626fca9cbe33a129f1707bb79e1bbf69c4eb081abff0e12f23a"},
+    {"path":"data/entity-locations-2026-08-05.sql","sha256":"29e03375a29599ace4caea4ab2f1b7fc6a4dcc720bb8bc675fd170aacb863cab"},
+    {"path":"data/supplier-web-presence-2026-08-05.sql","sha256":"d6de57e83786e032aa35c3221ca3754b59b9a57992bde7d0c5022fb2d448f870"},
+    {"path":"data/remove-unverified-importer-websites-2026-08-05.sql","sha256":"845a2af024d6b55326fda2a4b280434e0f0d5fc5cd5dbef32f3e6e200c3399b5"},
+    {"path":"data/fix-shipment-importer-backfill-2026-08-08.sql","sha256":"7924f654f3a82d5c880c2d9509f3998f42485d8d9debe83b31ac7f0458fb4277"},
+    {"path":"data/fix-identity-merge-2026-08-08.sql","sha256":"311d2e94391ea905259a0b882bc8ff658c516a907f4a915c6adb5963f00a1d90","allowsControlledDelete":true},
+    {"path":"data/fix-data-preservation-2026-08-08.sql","sha256":"c473975aeb5849904e02436dbf86b429e4cb64ed1eed735206bc95ba3c677ae9"},
+    {"path":"data/fix-identity-confidence-2026-08-08.sql","sha256":"5a8e9608b5f9396da757d1a1e242a1480e08e6a22c6d23cf6b80fa8435eca8d7"}
+  ]
+}
