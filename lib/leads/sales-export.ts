@@ -7,6 +7,8 @@ export interface SalesExportRow {
   contactValue: string;
   contactLabel: string;
   contactSourceUrl: string;
+  contactRouteQuality: string;
+  contactRouteGuidance: string;
   outreachStrategy: string;
   recommendedProducts: string;
   commercialFitScore: number | null;
@@ -41,7 +43,8 @@ export interface SalesExportRow {
 const HEADERS: Array<[keyof SalesExportRow, string]> = [
   ["companyName","Company"],["country","Country"],["website","Website"],["leadStatus","Lead Status"],
   ["contactType","Contact Type"],["contactValue","Verified Contact"],["contactLabel","Contact Label"],
-  ["contactSourceUrl","Contact Evidence"],["outreachStrategy","Outreach Strategy"],
+  ["contactSourceUrl","Contact Evidence"],["contactRouteQuality","Contact Route Quality"],
+  ["contactRouteGuidance","Contact Route Guidance"],["outreachStrategy","Outreach Strategy"],
   ["recommendedProducts","Recommended Products"],["commercialFitScore","Commercial Fit Score"],
   ["outreachScore","Outreach Score"],["opportunityValueUsd","Opportunity Value USD"],
   ["opportunityProbability","Probability Percent"],["expectedCloseDate","Expected Close Date"],

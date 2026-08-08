@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { buildSalesExportCsv, type SalesExportRow } from "../../../../lib/leads/sales-export.ts";
 import { quoteReadiness } from "../../../../lib/leads/qualification-profile.ts";
+import { contactRouteGuidance, contactRouteQuality } from "../../../../lib/leads/contact-quality.ts";
 
 export async function GET() {
   if (!env.DB) return Response.json({error:"Database unavailable"},{status:503});
@@ -23,7 +24,11 @@ export async function GET() {
      JOIN importyeti_web_entities e ON e.id=w.company_id
      JOIN lead_contacts c ON c.id=(SELECT best.id FROM lead_contacts best
        WHERE best.company_id=w.company_id AND best.verification_status='verified'
-       ORDER BY CASE best.contact_type WHEN 'email' THEN 0 WHEN 'website_contact_page' THEN 1 WHEN 'linkedin' THEN 2 WHEN 'phone' THEN 3 ELSE 9 END,
+       ORDER BY CASE
+           WHEN lower(COALESCE(best.label,'')) GLOB '*purchas*' OR lower(COALESCE(best.label,'')) GLOB '*procurement*' OR lower(COALESCE(best.label,'')) GLOB '*sourcing*' OR lower(COALESCE(best.label,'')) GLOB '*buyer*' OR lower(COALESCE(best.label,'')) GLOB '*product development*' THEN 0
+           WHEN lower(COALESCE(best.label,'')) GLOB '*sales*' OR lower(COALESCE(best.label,'')) GLOB '*order*' OR lower(COALESCE(best.label,'')) GLOB '*business*' OR lower(COALESCE(best.label,'')) GLOB '*subcontractor*' OR lower(COALESCE(best.label,'')) GLOB '*corporate*' THEN 1
+           ELSE 2 END,
+         CASE best.contact_type WHEN 'email' THEN 0 WHEN 'website_contact_page' THEN 1 WHEN 'linkedin' THEN 2 WHEN 'phone' THEN 3 ELSE 9 END,
          best.verified_at DESC,best.created_at DESC LIMIT 1)
      LEFT JOIN lead_outreach_drafts d ON d.id=(SELECT latest.id FROM lead_outreach_drafts latest
        WHERE latest.company_id=w.company_id AND latest.status<>'archived' ORDER BY latest.updated_at DESC LIMIT 1)
@@ -38,6 +43,8 @@ export async function GET() {
     return ({
     companyName:String(row.company_name||""),country:String(row.country||""),website:String(row.website||""),leadStatus:String(row.lead_status||""),
     contactType:String(row.contact_type||""),contactValue:String(row.contact_value||""),contactLabel:String(row.contact_label||""),contactSourceUrl:String(row.contact_source_url||""),
+    contactRouteQuality:contactRouteQuality({contactType:String(row.contact_type||""),contactValue:String(row.contact_value||""),label:String(row.contact_label||"")}),
+    contactRouteGuidance:contactRouteGuidance(contactRouteQuality({contactType:String(row.contact_type||""),contactValue:String(row.contact_value||""),label:String(row.contact_label||"")})),
     outreachStrategy:String(row.outreach_strategy||""),recommendedProducts:String(row.recommended_products||""),
     commercialFitScore:row.commercial_fit_score==null?null:Number(row.commercial_fit_score),outreachScore:row.outreach_score==null?null:Number(row.outreach_score),
     opportunityValueUsd:row.opportunity_value_usd==null?null:Number(row.opportunity_value_usd),opportunityProbability:row.opportunity_probability==null?null:Number(row.opportunity_probability),

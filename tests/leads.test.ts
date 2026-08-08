@@ -20,6 +20,7 @@ import { contactHref, emailDraftHref } from "../lib/leads/contact-link.ts";
 import { quoteReadiness, validateQualificationQuantity, validateQualificationText } from "../lib/leads/qualification-profile.ts";
 import { buildQuoteHandoff } from "../lib/leads/quote-handoff.ts";
 import { computeQuoteFunnel } from "../lib/leads/quote-funnel.ts";
+import { bestVerifiedContact, contactRouteGuidance, contactRoutePriority, contactRouteQuality } from "../lib/leads/contact-quality.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -250,6 +251,25 @@ describe("Contact execution links", () => {
     assert.ok(href?.includes("subject=OEM+faucet+program"));
     assert.ok(href?.includes("body=Hello%2C%0ACan+we+talk%3F"));
     assert.equal(emailDraftHref("invalid", "Subject", "Body"), null);
+  });
+});
+
+describe("Contact route quality",()=>{
+  it("prioritizes a purchasing owner over a generic inbox or phone",()=>{
+    const contacts=[
+      {contactType:"email",contactValue:"info@buyer.example",label:"General Information",verificationStatus:"verified"},
+      {contactType:"phone",contactValue:"+1-555-0100",label:"Headquarters",verificationStatus:"verified"},
+      {contactType:"email",contactValue:"buyer@buyer.example",label:"Purchasing Manager",verificationStatus:"verified"},
+    ];
+    assert.equal(bestVerifiedContact(contacts)?.contactValue,"buyer@buyer.example");
+    assert.equal(contactRouteQuality(contacts[2]),"decision_maker");
+    assert.ok(contactRoutePriority(contacts[2])<contactRoutePriority(contacts[0]));
+  });
+  it("distinguishes a business route from general and fallback routes",()=>{
+    assert.equal(contactRouteQuality({contactType:"website_contact_page",contactValue:"https://buyer.example/contact",label:"Business Inquiry"}),"business_route");
+    assert.equal(contactRouteQuality({contactType:"email",contactValue:"support@buyer.example",label:"Customer Support"}),"general_route");
+    assert.equal(contactRouteQuality({contactType:"phone",contactValue:"+1-555-0100",label:"Front Desk"}),"fallback");
+    assert.match(contactRouteGuidance("general_route"),/routing to purchasing/);
   });
 });
 
@@ -572,11 +592,13 @@ describe("Contact research queue", () => {
 
 describe("Sales-ready lead export", () => {
   it("creates a UTF-8 CSV with verified-contact evidence fields", () => {
-    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"qualified",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,opportunityValueUsd:75000,opportunityProbability:40,expectedCloseDate:"2026-10-31",weightedValueUsd:30000,targetMarket:"United States",requiredCertifications:"cUPC",estimatedAnnualUnits:12000,targetMoq:500,quoteRequirements:"Matte black basin faucet; retail packaging",quoteReady:"yes",missingQuoteFields:"",draftChannel:"email",draftStatus:"sent",draftSubject:"Aqua × Yundor",draftBody:"Hello,\n\nProduct fit.",evidenceSummary:"12 shipment records",personalizationNotes:"Review before sending",researchReason:"Current importer with certification risk",researchNextAction:"Verify test documents before quoting",lastOutcome:"interested",lastOutcomeNotes:"Asked for MOQ",qualificationFeedback:"confirmed_fit",feedbackReason:"Needs basin faucet line",nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
+    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"qualified",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",contactRouteQuality:"decision_maker",contactRouteGuidance:"Direct purchasing route",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,opportunityValueUsd:75000,opportunityProbability:40,expectedCloseDate:"2026-10-31",weightedValueUsd:30000,targetMarket:"United States",requiredCertifications:"cUPC",estimatedAnnualUnits:12000,targetMoq:500,quoteRequirements:"Matte black basin faucet; retail packaging",quoteReady:"yes",missingQuoteFields:"",draftChannel:"email",draftStatus:"sent",draftSubject:"Aqua × Yundor",draftBody:"Hello,\n\nProduct fit.",evidenceSummary:"12 shipment records",personalizationNotes:"Review before sending",researchReason:"Current importer with certification risk",researchNextAction:"Verify test documents before quoting",lastOutcome:"interested",lastOutcomeNotes:"Asked for MOQ",qualificationFeedback:"confirmed_fit",feedbackReason:"Needs basin faucet line",nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
     assert.ok(csv.startsWith("\ufeff"));
     assert.match(csv,/"Aqua, Inc\."/);
     assert.match(csv,/buyer@aqua\.example/);
     assert.match(csv,/Contact Evidence/);
+    assert.match(csv,/Contact Route Quality/);
+    assert.match(csv,/decision_maker/);
     assert.match(csv,/Draft Subject/);
     assert.match(csv,/Trade Evidence Summary/);
     assert.match(csv,/Buyer Research Rationale/);

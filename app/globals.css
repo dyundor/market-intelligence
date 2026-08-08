@@ -299,3 +299,7 @@ html[lang]:not([lang="zh-CN"]) .importer-list>.section-step>div::after { content
 .qual-factors em { display:inline-block; padding:1px 5px; border-radius:4px; font-size:7px; font-style:normal; font-weight:600; white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis; }
 .qual-positive { background:#d2f3e5; color:#15603e; }
 .qual-risk { background:#fce8e4; color:#9a402d; }
+.contact-quality { display:block; margin-top:3px; color:#71817c; font-size:6px; font-weight:700; text-transform:uppercase; }
+.contact-quality.decision_maker { color:#16734d; }
+.contact-quality.business_route { color:#276d91; }
+.contact-quality.general_route,.contact-quality.fallback { color:#9a6c2d; }
