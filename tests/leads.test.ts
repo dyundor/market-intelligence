@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { generateLeadStrategy } from "../lib/leads/strategy.ts";
 import { qualifyBuyer } from "../lib/qualification/factors.ts";
+import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -136,5 +137,22 @@ describe("Qualification → Lead pipeline", () => {
   it("qualification does not call any paid APIs", () => {
     const qual = qualifyBuyer(faucetRow, faucetContext);
     assert.ok(qual.qualificationScore > 0, "qualification still computes");
+  });
+});
+
+describe("Outreach draft", () => {
+  it("uses buyer evidence and recommended products without inventing a contact", () => {
+    const draft = generateOutreachDraft({companyName:"AquaPro Trading Co.",totalShipments:36,latestShipmentDate:"2026-07-15",outreachStrategy:"Distribution Partnership",recommendedProducts:"Basin Faucets + Shower Systems"});
+    assert.match(draft.subject,/AquaPro Trading Co\./);
+    assert.match(draft.body,/Basin Faucets \+ Shower Systems/);
+    assert.match(draft.body,/Hello,/);
+    assert.match(draft.evidenceSummary,/36 historical shipment records/);
+    assert.doesNotMatch(draft.body,/Dear Purchasing Manager/);
+  });
+
+  it("personalizes the greeting only when a contact name is supplied", () => {
+    const draft = generateOutreachDraft({companyName:"North Bath",contactName:"Morgan",outreachStrategy:"Private Label Pitch"});
+    assert.match(draft.body,/Hi Morgan,/);
+    assert.match(draft.body,/private-label bathroom collections/);
   });
 });

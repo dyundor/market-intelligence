@@ -506,3 +506,23 @@ export const leadActions = sqliteTable(
     index("lead_actions_type_idx").on(table.actionType),
   ],
 );
+
+export const leadOutreachDrafts = sqliteTable(
+  "lead_outreach_drafts",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    channel: text("channel").notNull().default("email"),
+    subject: text("subject").notNull(),
+    body: text("body").notNull(),
+    status: text("status").notNull().default("draft"),
+    evidenceSummary: text("evidence_summary").notNull(),
+    personalizationNotes: text("personalization_notes").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    index("lead_outreach_drafts_company_idx").on(table.companyId),
+    index("lead_outreach_drafts_status_idx").on(table.status),
+  ],
+);

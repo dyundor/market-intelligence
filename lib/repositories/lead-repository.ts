@@ -29,6 +29,19 @@ export interface LeadActionRow {
   createdAt: string;
 }
 
+export interface OutreachDraftRow {
+  id: string;
+  companyId: string;
+  channel: "email" | "linkedin";
+  subject: string;
+  body: string;
+  status: "draft" | "approved" | "sent" | "archived";
+  evidenceSummary: string;
+  personalizationNotes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 function mapContactRow(row: Record<string, unknown>): LeadContactRow {
   return {
     id: String(row.id || ""),
@@ -59,6 +72,21 @@ function mapActionRow(row: Record<string, unknown>): LeadActionRow {
     nextActionDue: row.next_action_due ? String(row.next_action_due) : null,
     performedBy: String(row.performed_by || "manual"),
     createdAt: String(row.created_at || ""),
+  };
+}
+
+function mapDraftRow(row: Record<string, unknown>): OutreachDraftRow {
+  return {
+    id: String(row.id || ""),
+    companyId: String(row.company_id || ""),
+    channel: String(row.channel || "email") as OutreachDraftRow["channel"],
+    subject: String(row.subject || ""),
+    body: String(row.body || ""),
+    status: String(row.status || "draft") as OutreachDraftRow["status"],
+    evidenceSummary: String(row.evidence_summary || ""),
+    personalizationNotes: String(row.personalization_notes || ""),
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
   };
 }
 
@@ -180,6 +208,39 @@ export class LeadRepository {
       .bind(id)
       .all();
     return mapActionRow((saved.results || [])[0] || {});
+  }
+
+  async listDrafts(companyId: string): Promise<OutreachDraftRow[]> {
+    const result = await this.db
+      .prepare("SELECT * FROM lead_outreach_drafts WHERE company_id = ? ORDER BY updated_at DESC")
+      .bind(companyId)
+      .all();
+    return (result.results || []).map(mapDraftRow);
+  }
+
+  async createDraft(row: Omit<OutreachDraftRow, "id" | "createdAt" | "updatedAt">): Promise<OutreachDraftRow> {
+    const now = new Date().toISOString();
+    const id = `lod-${row.companyId}-${Date.now()}`;
+    await this.db.prepare(
+      `INSERT INTO lead_outreach_drafts
+       (id, company_id, channel, subject, body, status, evidence_summary, personalization_notes, created_at, updated_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    ).bind(id, row.companyId, row.channel, row.subject, row.body, row.status, row.evidenceSummary, row.personalizationNotes, now, now).run();
+    const saved = await this.db.prepare("SELECT * FROM lead_outreach_drafts WHERE id = ?").bind(id).all();
+    return mapDraftRow((saved.results || [])[0] || {});
+  }
+
+  async updateDraft(id: string, updates: Partial<Pick<OutreachDraftRow, "subject" | "body" | "status">>): Promise<OutreachDraftRow | null> {
+    const set: string[] = ["updated_at = ?"];
+    const args: unknown[] = [new Date().toISOString()];
+    if (updates.subject !== undefined) { set.push("subject = ?"); args.push(updates.subject); }
+    if (updates.body !== undefined) { set.push("body = ?"); args.push(updates.body); }
+    if (updates.status !== undefined) { set.push("status = ?"); args.push(updates.status); }
+    args.push(id);
+    await this.db.prepare(`UPDATE lead_outreach_drafts SET ${set.join(", ")} WHERE id = ?`).bind(...args).run();
+    const result = await this.db.prepare("SELECT * FROM lead_outreach_drafts WHERE id = ?").bind(id).all();
+    const row = (result.results || [])[0];
+    return row ? mapDraftRow(row) : null;
   }
 
   private async markContactReady(companyId: string): Promise<void> {

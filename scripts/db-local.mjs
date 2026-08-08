@@ -8,6 +8,7 @@
  *
  * Usage:
  *   node scripts/db-local.mjs migrate        # apply drizzle journal migrations
+ *   node scripts/db-local.mjs apply <file>   # apply one migration without rebuilding
  *   node scripts/db-local.mjs seed [file]    # apply a SQL file (default scripts/seed-dev.sql)
  *   node scripts/db-local.mjs query "<sql>"  # run arbitrary SQL
  *   node scripts/db-local.mjs tables         # list local tables
@@ -95,6 +96,21 @@ switch (command) {
     console.log(`Seeded ${file}`);
     break;
   }
+  case "apply": {
+    const file = rest[0];
+    if (!file || !/^drizzle\/[A-Za-z0-9_-]+\.sql$/.test(file)) {
+      console.error("Usage: node scripts/db-local.mjs apply drizzle/<migration>.sql");
+      process.exit(1);
+    }
+    const path = join(root, file);
+    if (!existsSync(path)) {
+      console.error(`Migration file not found: ${path}`);
+      process.exit(1);
+    }
+    db.exec(readFileSync(path, "utf8"));
+    console.log(`Applied incremental migration ${file}`);
+    break;
+  }
   case "query": {
     const rows = db.prepare(rest.join(" ")).all();
     console.log(JSON.stringify(rows, null, 2));
@@ -108,7 +124,7 @@ switch (command) {
     break;
   }
   default: {
-    console.log("Usage: node scripts/db-local.mjs <migrate|seed|query|tables>");
+    console.log("Usage: node scripts/db-local.mjs <migrate|apply|seed|query|tables>");
     process.exit(1);
   }
 }
