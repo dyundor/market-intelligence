@@ -42,4 +42,19 @@ describe("Reviewed capture promotion",()=>{
     assert.equal(second.mode,"already-applied");
     assert.deepEqual(second.after,first.after);
   });
+
+  it("initializes qualified real buyers without regressing an existing contact-ready lead",()=>{
+    const db=new DatabaseSync(dbPath);
+    db.prepare("INSERT INTO buyer_watchlist (id,company_id,status,notes,lead_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?)").run("test-am","importer:am-conservation-group","researching","verified public contact","contact_ready","2026-08-08","2026-08-08");
+    db.close();
+    const report=JSON.parse(execFileSync(process.execPath,["--experimental-strip-types","scripts/initialize-real-sales-pipeline.mjs",`--db=${dbPath}`,"--apply"],{cwd:root,encoding:"utf8"}));
+    assert.ok(report.selected>=10);
+    const verifiedDb=new DatabaseSync(dbPath);
+    const am=verifiedDb.prepare("SELECT lead_status,outreach_strategy,recommended_products,outreach_score FROM buyer_watchlist WHERE company_id='importer:am-conservation-group'").get();
+    assert.equal(am.lead_status,"contact_ready");
+    assert.ok(am.outreach_strategy);
+    assert.ok(am.recommended_products);
+    assert.ok(Number(am.outreach_score)>0);
+    verifiedDb.close();
+  });
 });

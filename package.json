@@ -17,7 +17,8 @@
     "db:setup": "node scripts/db-local.mjs migrate && node scripts/db-local.mjs seed",
     "contacts:import": "node --experimental-strip-types scripts/import-public-lead-contacts.mjs",
     "contacts:research": "node --experimental-strip-types scripts/import-contact-research.mjs",
-    "capture:promote": "node scripts/promote-importyeti-capture.mjs"
+    "capture:promote": "node scripts/promote-importyeti-capture.mjs",
+    "sales:initialize": "node --experimental-strip-types scripts/initialize-real-sales-pipeline.mjs"
   },
   "dependencies": {
     "@use-gesture/react": "10.3.1",

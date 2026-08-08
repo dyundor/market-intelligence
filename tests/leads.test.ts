@@ -8,6 +8,7 @@ import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/publi
 import { contactResearchId, summarizeContactResearch, validateContactResearch } from "../lib/leads/contact-research.ts";
 import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
 import { evaluateOutreachReadiness } from "../lib/leads/outreach-readiness.ts";
+import { shouldInitializeSalesLead, sortSalesLeads } from "../lib/leads/pipeline-selection.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -228,5 +229,30 @@ describe("Outreach readiness gate", () => {
   });
   it("explains every blocker without hiding unresolved research", () => {
     assert.deepEqual(evaluateOutreachReadiness({identityVerified:false,verifiedContactCount:0,contactResearchStatus:"needs_identity_match"}),{ready:false,blockers:["identity_unverified","verified_contact_missing","contact_research_unresolved"]});
+  });
+});
+
+describe("Real sales pipeline selection",()=>{
+  const qualifiedLead={companyId:"buyer-1",leadStatus:"researching" as const,outreachStrategy:"OEM/ODM Pitch" as const,recommendedProducts:"Faucets",confidence:"HIGH" as const,commercialFitScore:72,outreachScore:68};
+  it("selects commercially useful, source-verified buyers",()=>{
+    assert.deepEqual(shouldInitializeSalesLead({existing:false,identityStatus:"source_verified",identityConfidence:90,evidenceShipments:12,lead:qualifiedLead}),{selected:true,reason:"sales_threshold"});
+  });
+  it("keeps existing leads eligible for strategy enrichment without stage regression",()=>{
+    assert.deepEqual(shouldInitializeSalesLead({existing:true,identityStatus:"fuzzy_candidate",identityConfidence:70,evidenceShipments:1,lead:{...qualifiedLead,outreachStrategy:"Research Only",commercialFitScore:10,outreachScore:5}}),{selected:true,reason:"existing_watchlist"});
+  });
+  it("rejects fuzzy identities before creating a new sales lead",()=>{
+    assert.deepEqual(shouldInitializeSalesLead({existing:false,identityStatus:"fuzzy_candidate",identityConfidence:70,evidenceShipments:12,lead:qualifiedLead}),{selected:false,reason:"identity_not_ready"});
+  });
+  it("requires at least three relevant trade records for a new lead",()=>{
+    assert.deepEqual(shouldInitializeSalesLead({existing:false,identityStatus:"source_verified",identityConfidence:90,evidenceShipments:2,lead:qualifiedLead}),{selected:false,reason:"insufficient_trade_evidence"});
+  });
+  it("orders actionable stages before research and uses scores within a stage",()=>{
+    const ordered=sortSalesLeads([
+      {leadStatus:"researching",outreachScore:90,commercialFitScore:90,company:{name:"Research"}},
+      {leadStatus:"contact_ready",outreachScore:60,commercialFitScore:60,company:{name:"Ready"}},
+      {leadStatus:"qualified",outreachScore:50,commercialFitScore:50,company:{name:"Qualified"}},
+      {leadStatus:"contact_ready",outreachScore:80,commercialFitScore:60,company:{name:"Ready High"}},
+    ]);
+    assert.deepEqual(ordered.map(item=>item.company.name),["Qualified","Ready High","Ready","Research"]);
   });
 });

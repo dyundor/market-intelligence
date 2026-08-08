@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { sortSalesLeads } from "../../lib/leads/pipeline-selection.ts";
 
 export type LeadStatus = "new" | "researching" | "contact_ready" | "contacted" | "follow_up" | "qualified" | "opportunity";
 
@@ -25,7 +26,8 @@ const STATUS_ZH:Record<LeadStatus,string>={new:"新线索",researching:"调研�
 export function LeadWorkbench({items,loading,locale,onUpdate,onRemove,onOpenCompany}:{items:WatchlistItem[];loading:boolean;locale:string;onUpdate:(id:string,changes:Record<string,string|number>)=>Promise<void>;onRemove:(id:string)=>Promise<void>;onOpenCompany:(id:string)=>void}){
   const zh=locale==="zh-CN";
   const [selectedId,setSelectedId]=useState<string|null>(null);
-  const selected=items.find(item=>item.id===selectedId)??items[0]??null;
+  const orderedItems=sortSalesLeads(items);
+  const selected=orderedItems.find(item=>item.id===selectedId)??orderedItems[0]??null;
   const selectedCompanyId=selected?.companyId??null;
   const [contacts,setContacts]=useState<Contact[]>([]);
   const [actions,setActions]=useState<Action[]>([]);
@@ -109,7 +111,7 @@ export function LeadWorkbench({items,loading,locale,onUpdate,onRemove,onOpenComp
     <div className="lead-pipeline">{STATUS_OPTIONS.map(status=><span key={status}><b>{items.filter(item=>(item.leadStatus||"new")===status).length}</b>{zh?STATUS_ZH[status]:status.replaceAll("_"," ")}</span>)}</div>
     {contactResearch?<section className="contact-research-queue"><header><div><strong>{zh?"联系人研究覆盖":"Contact research coverage"}</strong><small>{zh?`Top Prospect 中 ${contactResearch.summary.verified}/${contactResearch.summary.total} 已核验`:`${contactResearch.summary.verified}/${contactResearch.summary.total} top prospects verified`}</small></div><b>{contactResearch.summary.coveragePercent}%</b></header><div className="contact-research-bar"><i style={{width:`${contactResearch.summary.coveragePercent}%`}} /></div>{contactResearch.items.some(item=>item.status!=="verified")?<details><summary>{zh?`${contactResearch.summary.needsIdentityMatch+contactResearch.summary.unresolved} 家待解析公司`:`${contactResearch.summary.needsIdentityMatch+contactResearch.summary.unresolved} companies need resolution`}</summary><div>{contactResearch.items.filter(item=>item.status!=="verified").map(item=><article key={item.id}><span className={item.status}>{item.status==="needs_identity_match"?(zh?"需核对身份":"Identity match"):(zh?"未解析":"Unresolved")}</span><strong>{item.companyName}</strong><p>{item.reason}</p><small>{zh?"下一步":"Next"}: {item.nextAction}</small>{item.companyId?<button onClick={()=>setSelectedId(items.find(lead=>lead.companyId===item.companyId)?.id||null)}>{zh?"打开 Lead":"Open lead"}</button>:null}</article>)}</div></details>:null}</section>:null}
     <div className="lead-layout">
-      <div className="lead-list">{items.map((item,index)=><button key={item.id} className={selected?.id===item.id?"active":""} onClick={()=>setSelectedId(item.id)}><i>{String(index+1).padStart(2,"0")}</i><span><strong>{item.company?.name||item.companyId}</strong><small>{item.outreachStrategy|| (zh?"待制定开发策略":"Strategy pending")}</small></span><em>{item.outreachScore??"—"}</em></button>)}</div>
+      <div className="lead-list">{orderedItems.map((item,index)=><button key={item.id} className={selected?.id===item.id?"active":""} onClick={()=>setSelectedId(item.id)}><i>{String(index+1).padStart(2,"0")}</i><span><strong>{item.company?.name||item.companyId}</strong><small>{item.outreachStrategy|| (zh?"待制定开发策略":"Strategy pending")}</small></span><em>{item.outreachScore??"—"}</em></button>)}</div>
       {selected?<section className="lead-detail">
         <header><div><small>{selected.company?.country||"—"} · {selected.company?.totalShipments??0} BOLs</small><button onClick={()=>onOpenCompany(selected.companyId)}>{selected.company?.name||selected.companyId}</button><p>{selected.recommendedProducts|| (zh?"推荐产品待确认":"Products pending")}</p></div><div><b>{selected.commercialFitScore??"—"}<small>/100 FIT</small></b><b>{selected.outreachScore??"—"}<small>/100 OUTREACH</small></b></div></header>
         <div className="lead-controls"><label>{zh?"销售阶段":"Lead stage"}<select value={selected.leadStatus||"new"} onChange={event=>onUpdate(selected.id,{leadStatus:event.target.value})}>{STATUS_OPTIONS.map(status=><option value={status} key={status}>{zh?STATUS_ZH[status]:status.replaceAll("_"," ")}</option>)}</select></label><label>{zh?"开发策略":"Outreach strategy"}<input defaultValue={selected.outreachStrategy||""} onBlur={event=>{if(event.target.value!==selected.outreachStrategy)onUpdate(selected.id,{outreachStrategy:event.target.value})}}/></label><label>{zh?"销售备注":"Sales notes"}<input defaultValue={selected.notes} onBlur={event=>{if(event.target.value!==selected.notes)onUpdate(selected.id,{notes:event.target.value})}}/></label><button className="lead-remove" onClick={()=>onRemove(selected.id)}>{zh?"移出清单":"Remove"}</button></div>

@@ -61,13 +61,31 @@ export class LeadInitializer {
     return buyers;
   }
 
+  async getEvidenceBuyers(limit = 25): Promise<TopBuyerEntry[]> {
+    const result = await this.db.prepare(
+      `SELECT e.*,
+        COALESCE(SUM(CASE WHEN r.hs_codes LIKE '%8481.80%' OR lower(COALESCE(r.product_descriptions,'')) LIKE '%faucet%' OR lower(COALESCE(r.product_descriptions,'')) LIKE '%shower%' THEN COALESCE(r.shipment_count,0) ELSE 0 END),0) evidence_shipments,
+        COUNT(DISTINCT r.supplier_id) evidence_suppliers,
+        MAX(r.period_end) evidence_latest_date
+       FROM importyeti_web_entities e
+       JOIN importyeti_web_relationships r ON r.importer_id=e.id
+       WHERE e.entity_type='importer' AND e.id NOT LIKE 'seed-%'
+       GROUP BY e.id
+       HAVING evidence_shipments>0
+       ORDER BY CASE e.identity_status WHEN 'source_verified' THEN 0 ELSE 1 END,
+         COALESCE(e.identity_confidence,0) DESC,evidence_shipments DESC,e.name
+       LIMIT ?`,
+    ).bind(limit).all();
+    return (result.results||[]).map((entity,index)=>({buyerId:String(entity.id),rank:index+1,metric:"relationship_shipment_count",metricValue:Number(entity.evidence_shipments||0),entity}));
+  }
+
   buildQualificationRow(entry: TopBuyerEntry): Record<string, unknown> {
     const e = entry.entity;
     const row: Record<string, unknown> = {
       id: e.id,
       name: e.name,
-      total_shipments: e.total_shipments,
-      latest_shipment_date: e.latest_shipment_date,
+      total_shipments: e.total_shipments ?? e.evidence_shipments,
+      latest_shipment_date: e.latest_shipment_date ?? e.evidence_latest_date,
       identity_confidence: e.identity_confidence,
       website_status: e.website_status,
       entity_type: e.entity_type,
@@ -158,7 +176,7 @@ export class LeadInitializer {
           ?,?,?,?,
           ?,?,?,?)
          ON CONFLICT(company_id) DO UPDATE SET
-          lead_status=excluded.lead_status,
+          lead_status=CASE WHEN buyer_watchlist.lead_status IN ('contact_ready','contacted','follow_up','qualified','opportunity') THEN buyer_watchlist.lead_status ELSE excluded.lead_status END,
           outreach_strategy=excluded.outreach_strategy,
           recommended_products=excluded.recommended_products,
           confidence=excluded.confidence,
