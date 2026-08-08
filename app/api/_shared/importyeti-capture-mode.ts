@@ -1,23 +1,19 @@
 /**
- * ImportYeti Capture-Only Mode — Sprint 14.6
+ * ImportYeti Capture-Only Mode — Sprint 14.8
  *
- * Safe first-run capture with refined validation rules.
- *
- * Field importance levels:
- *   Critical  — blocks full pipeline if missing (name, shipment records)
- *   Important — warning if missing (address, supplier info)
- *   Optional  — informational only (website, contact data)
- *
- * Record count rules:
- *   0 companies  → BLOCKED
- *   <5 companies → WARNING (valid narrow query)
- *   ≥45 companies → WARNING (near API limit, some results may be truncated)
- *   Any count    → OK (valid queries return various sizes)
+ * Execution modes:
+ *   dry_run      — simulation, no API call, 0 credits consumed
+ *   capture_only — real API call, validates response, no ranking update
+ *   production   — full pipeline with ranking and entity storage
  */
 
 import type { ImportYetiSearchParams, ImportYetiSearchResult } from "./importyeti-production-provider.ts";
 import { executeImportYetiSearch } from "./importyeti-production-provider.ts";
 import type { ImportYetiEnv } from "./importyeti-production-provider.ts";
+
+// ─────── Execution mode ───────
+
+export type ExecutionMode = "dry_run" | "capture_only" | "production";
 
 // ─────── Field importance ───────
 
@@ -45,6 +41,7 @@ const FIELD_DEFS: FieldDef[] = [
 // ─────── Credit report ───────
 
 export interface CreditUsageReport {
+  executionMode: ExecutionMode;
   totalBudget: number;
   reserveBudget: number;
   creditsBefore: number;
@@ -54,6 +51,8 @@ export interface CreditUsageReport {
   remainingAvailable: number;
   reserveRemaining: number;
   percentOfTotalUsed: number;
+  /** Real ImportYeti account credits (unknown unless API provides it) */
+  importYetiAccountCredits: number | null;
 }
 
 // ─────── Validation types ───────
@@ -66,6 +65,7 @@ export interface FieldPresence {
 }
 
 export interface CaptureReport {
+  executionMode: ExecutionMode;
   status: "ok" | "warnings" | "blocked";
   query: string;
   capturedAt: string;
@@ -109,22 +109,23 @@ function sampleValue(value: unknown): string {
   return String(value).slice(0, 80);
 }
 
-function buildCreditReport(estimatedCost: number, actualCost: number): CreditUsageReport {
-  // In production these would come from UsageStore.costs().
-  // For capture mode, we use the estimate as a preview.
+function buildCreditReport(mode: ExecutionMode, estimatedCost: number, actualCost: number): CreditUsageReport {
   const creditsBefore = TOTAL_BUDGET;
-  const creditsAfter = creditsBefore - actualCost;
+  const realCost = mode === "dry_run" ? 0 : actualCost;
+  const creditsAfter = creditsBefore - realCost;
   const remainingAvailable = Math.max(0, creditsAfter - RESERVE_BUDGET);
   return {
+    executionMode: mode,
     totalBudget: TOTAL_BUDGET,
     reserveBudget: RESERVE_BUDGET,
     creditsBefore,
     estimatedCost,
-    actualCost,
+    actualCost: realCost,
     creditsAfter,
     remainingAvailable,
     reserveRemaining: RESERVE_BUDGET,
-    percentOfTotalUsed: Math.round(actualCost / TOTAL_BUDGET * 100),
+    percentOfTotalUsed: Math.round(realCost / TOTAL_BUDGET * 100),
+    importYetiAccountCredits: null, // Unknown unless API provides this data
   };
 }
 
@@ -133,6 +134,7 @@ function buildCreditReport(estimatedCost: number, actualCost: number): CreditUsa
 export function validateImportYetiResponse(
   result: ImportYetiSearchResult,
   query: string,
+  mode: ExecutionMode,
   estimatedCost: number,
   actualCost: number,
 ): CaptureReport {
@@ -226,9 +228,10 @@ export function validateImportYetiResponse(
   }
 
   // ── Credit report ──
-  const creditReport = buildCreditReport(estimatedCost, actualCost);
+  const creditReport = buildCreditReport(mode, estimatedCost, actualCost);
 
   return {
+    executionMode: mode,
     status,
     query,
     capturedAt: new Date().toISOString(),
@@ -260,6 +263,7 @@ export function validateImportYetiResponse(
 export async function executeCaptureOnly(
   env: ImportYetiEnv,
   query: string,
+  mode: ExecutionMode = "capture_only",
   hsCode?: string,
 ): Promise<CaptureResult> {
   const estimatedCost = 2 + Math.ceil(50 / 25); // Max 50 results → 4 credits
@@ -269,6 +273,6 @@ export async function executeCaptureOnly(
     entityType: "importer",
     limit: 50,
   });
-  const report = validateImportYetiResponse(result.raw, query, estimatedCost, result.actualCost);
+  const report = validateImportYetiResponse(result.raw, query, mode, estimatedCost, result.actualCost);
   return { report, raw: result.raw, actualCost: result.actualCost };
 }
