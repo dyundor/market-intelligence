@@ -1,6 +1,7 @@
 import { POSITIVE_REASONS, RISK_REASONS, type QualificationContext, type QualificationResult } from "./types.ts";
 import { computePriorityScore, priorityFromScore } from "./score.ts";
 import { classifyBuyer } from "./classify.ts";
+import { analyzeSupplierIntelligence } from "./supplier-intel.ts";
 
 function gatherPositiveFactors(
   row: Record<string, unknown>,
@@ -8,7 +9,7 @@ function gatherPositiveFactors(
 ): string[] {
   const out: string[] = [];
 
-  const totalShipments = Number(row.total_shipments) || 0;
+  const totalShipments = Number(row.totalShipments) || 0;
   const supplierCount = Number(row.supplier_count) || 0;
   const containers = Number(row.selected_month_containers) || 0;
   const freightUsd = Number(row.selected_month_freight_usd) || 0;
@@ -23,6 +24,11 @@ function gatherPositiveFactors(
   if (supplierCount >= 3) out.push(POSITIVE_REASONS.multiple_suppliers);
   if (containers >= 1) out.push(POSITIVE_REASONS.containerized_freight);
   if (freightUsd >= 10000) out.push(POSITIVE_REASONS.high_order_value);
+
+  const chinaFactor = factors.get("supplier_china");
+  if (chinaFactor !== undefined && chinaFactor >= 50) out.push(POSITIVE_REASONS.china_supplier);
+
+  if (supplierCount >= 3) out.push(POSITIVE_REASONS.diversified_sourcing);
 
   const relevance = factors.get("product_relevance");
   if (relevance !== undefined && relevance >= 50) out.push(POSITIVE_REASONS.product_focus);
@@ -51,12 +57,24 @@ function gatherRiskFactors(row: Record<string, unknown>): string[] {
     out.push(RISK_REASONS.missing_website);
   if (identityConfidence > 0 && identityConfidence < 70)
     out.push(RISK_REASONS.low_identity);
-
   if (!totalShipments)
     out.push(RISK_REASONS.no_shipment_data);
-
   if (totalShipments >= 50 && supplierCount === 1)
     out.push(RISK_REASONS.missing_suppliers);
+
+  // Supplier intelligence risks
+  if (supplierCount === 1 && totalShipments > 0)
+    out.push(RISK_REASONS.supplier_concentration);
+
+  let hasChinaSupplier = false;
+  if (typeof row.supplierNames === "object" && Array.isArray(row.supplierNames)) {
+    const names = row.supplierNames as string[];
+    hasChinaSupplier = names.some((s: string) =>
+      /china|chinese|shenzhen|guangzhou|shanghai|ningbo|yiwu|foshan|dongguan|xiamen|tianjin|zhejiang|jiangsu|guangdong|fujian|shandong|wenzhou|kaiping|nanan|chaozhou|taizhou|crescent|regent|rin shing/i.test(s)
+    );
+  }
+  if (!hasChinaSupplier && totalShipments > 0)
+    out.push(RISK_REASONS.no_china_supplier);
 
   return out;
 }
@@ -78,6 +96,17 @@ export function qualifyBuyer(
 
   const classification = classifyBuyer(productsRaw, companyName);
 
+  const supplierNames = (
+    typeof row.supplierNames === "object" && Array.isArray(row.supplierNames)
+      ? row.supplierNames as string[]
+      : typeof row.suppliers === "string" ? row.suppliers.split(",").map(s => s.trim())
+      : []
+  );
+  const supplierIntel = analyzeSupplierIntelligence(
+    supplierNames,
+    Number(row.total_shipments) || 0,
+  );
+
   return {
     priority,
     qualificationScore: score,
@@ -85,6 +114,7 @@ export function qualifyBuyer(
     productMatch: classification.productMatch,
     buyerType: classification.buyerType,
     classificationReason: classification.productMatchReason,
+    supplierIntelligence: supplierIntel,
     positiveFactors: gatherPositiveFactors(row, factorMap),
     riskFactors: gatherRiskFactors(row),
     factors,

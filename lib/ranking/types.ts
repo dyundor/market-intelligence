@@ -9,6 +9,14 @@ export type RankedBuyer = Record<string, unknown> & {
   productMatch?: "HIGH" | "MEDIUM" | "LOW";
   buyerType?: "Bathroom Specialist" | "Mixed Bathroom/Kitchen" | "General Plumbing" | "Unknown";
   classificationReason?: string;
+  supplierIntelligence?: {
+    supplierCount: number;
+    supplierNames: string[];
+    diversityScore: number;
+    chinaSupplierCount: number;
+    chinaSupplierConfidence: number;
+    concentrationRisk: "LOW" | "MEDIUM" | "HIGH";
+  };
   positiveFactors?: string[];
   riskFactors?: string[];
 };

@@ -45,6 +45,23 @@ export function computePriorityScore(
     weight: w.supplierDiversity,
   });
 
+  let chinaSupplierValue = 0;
+  if (typeof row.supplierNames === "object" && Array.isArray(row.supplierNames)) {
+    const names = row.supplierNames as string[];
+    const chinaHits = names.filter((s: string) =>
+      /china|chinese|shenzhen|guangzhou|shanghai|ningbo|yiwu|foshan|dongguan|xiamen|tianjin|zhejiang|jiangsu|guangdong|fujian|shandong|wenzhou|kaiping|nanan|chaozhou|taizhou|crescent|regent|rin shing/i.test(s)
+    ).length;
+    chinaSupplierValue = supplierCount > 0
+      ? ratioScale(chinaHits, Math.min(supplierCount, 3))
+      : 0;
+  }
+  values.push({
+    id: "supplier_china",
+    label: "China supplier",
+    value: chinaSupplierValue,
+    weight: w.supplierChina,
+  });
+
   values.push({
     id: "container_volume",
     label: "Container volume",
