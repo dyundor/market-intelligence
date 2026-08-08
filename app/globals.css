@@ -255,6 +255,10 @@ html[lang]:not([lang="zh-CN"]) .importer-list>.section-step>div::after { content
 .contact-research-queue article p,.contact-research-queue article small { margin:0; color:#65766d; line-height:1.4; }
 .contact-research-queue article button { width:max-content; border:0; padding:0; background:none; color:#176b4d; font-weight:700; cursor:pointer; }
 .lead-dashboard>a { align-self:stretch; display:grid; place-items:center; padding:0 14px; border-radius:9px; background:#176b4d; color:#fff; font-size:12px; font-weight:750; text-decoration:none; }
+.outreach-readiness { display:flex; justify-content:space-between; gap:12px; margin:10px 0; padding:10px 12px; border-radius:9px; font-size:12px; }
+.outreach-readiness.ready { background:#e5f3eb; color:#176443; }
+.outreach-readiness.blocked { background:#f6ece3; color:#825224; }
+.outreach-readiness span { text-align:right; }
 .opportunity-total { flex:none; margin-left:auto; text-align:right; color:#195a49; font:700 20px/1 Georgia,serif; }.opportunity-total small { display:block; color:#8a9592; font-size:7px; font-weight:600; }.opportunity-total em { font-size:8px; font-style:normal; color:#8a9592; }
 .opportunity-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
 .opportunity-card { padding:11px 12px; border:1px solid #e2e8e4; border-radius:9px; background:#fbfcfb; }

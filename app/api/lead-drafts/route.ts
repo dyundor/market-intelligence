@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
 import { generateOutreachDraft } from "../../../lib/leads/outreach-draft.ts";
 import { LeadRepository } from "../../../lib/repositories/lead-repository.ts";
+import { evaluateOutreachReadiness } from "../../../lib/leads/outreach-readiness.ts";
 
 const STATUSES = new Set(["draft", "approved", "sent", "archived"]);
 
@@ -34,6 +35,20 @@ export async function PATCH(request: NextRequest) {
   const id = String(body?.id || "");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
   if (body?.status != null && !STATUSES.has(String(body.status))) return NextResponse.json({ error: "invalid status" }, { status: 400 });
+  if (body?.status === "approved" || body?.status === "sent") {
+    const draftRows=await env.DB.prepare("SELECT company_id FROM lead_outreach_drafts WHERE id=?").bind(id).all();
+    const companyId=(draftRows.results||[])[0]?.company_id;
+    if (!companyId) return NextResponse.json({error:"not found"},{status:404});
+    const readinessRows=await env.DB.prepare(
+      `SELECT e.identity_status,
+        (SELECT COUNT(*) FROM lead_contacts c WHERE c.company_id=e.id AND c.verification_status='verified') verified_contact_count,
+        (SELECT status FROM lead_contact_research r WHERE r.company_id=e.id LIMIT 1) contact_research_status
+       FROM importyeti_web_entities e WHERE e.id=?`,
+    ).bind(companyId).all();
+    const row=(readinessRows.results||[])[0];
+    const readiness=evaluateOutreachReadiness({identityVerified:String(row?.identity_status||"")==="source_verified",verifiedContactCount:Number(row?.verified_contact_count||0),contactResearchStatus:row?.contact_research_status?String(row.contact_research_status):null});
+    if (!readiness.ready) return NextResponse.json({error:"outreach_not_ready",blockers:readiness.blockers},{status:409});
+  }
   const draft = await new LeadRepository(env.DB).updateDraft(id, {
     subject: body?.subject != null ? String(body.subject) : undefined,
     body: body?.body != null ? String(body.body) : undefined,

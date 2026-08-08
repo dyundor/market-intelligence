@@ -7,6 +7,7 @@ import { computePipelineMetrics, leadStatusForOutcome } from "../lib/leads/feedb
 import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/public-contact-enrichment.ts";
 import { contactResearchId, summarizeContactResearch, validateContactResearch } from "../lib/leads/contact-research.ts";
 import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
+import { evaluateOutreachReadiness } from "../lib/leads/outreach-readiness.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -218,5 +219,14 @@ describe("Sales-ready lead export", () => {
   });
   it("neutralizes spreadsheet formulas in exported values", () => {
     assert.equal(csvCell("=HYPERLINK(\"bad\")"),"\"'=HYPERLINK(\"\"bad\"\")\"");
+  });
+});
+
+describe("Outreach readiness gate", () => {
+  it("allows approval only with verified identity and contact", () => {
+    assert.deepEqual(evaluateOutreachReadiness({identityVerified:true,verifiedContactCount:1,contactResearchStatus:"verified"}),{ready:true,blockers:[]});
+  });
+  it("explains every blocker without hiding unresolved research", () => {
+    assert.deepEqual(evaluateOutreachReadiness({identityVerified:false,verifiedContactCount:0,contactResearchStatus:"needs_identity_match"}),{ready:false,blockers:["identity_unverified","verified_contact_missing","contact_research_unresolved"]});
   });
 });
