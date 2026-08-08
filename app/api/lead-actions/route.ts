@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
 import { LeadRepository } from "../../../lib/repositories/lead-repository.ts";
-import { leadStatusForOutcome, type OutcomeCode } from "../../../lib/leads/feedback.ts";
+import { defaultFollowUpForOutcome, leadStatusForOutcome, type OutcomeCode } from "../../../lib/leads/feedback.ts";
 
 const OUTCOMES = new Set(["no_response", "replied", "interested", "meeting_booked", "quote_requested", "not_fit", "bounced", "won", "lost"]);
 const FIT_FEEDBACK = new Set(["confirmed_fit", "needs_review", "disqualified"]);
@@ -25,6 +25,9 @@ export async function POST(request: NextRequest) {
   if (outcomeCode && !OUTCOMES.has(outcomeCode)) return NextResponse.json({ error: "invalid outcomeCode" }, { status: 400 });
   const qualificationFeedback = body.qualificationFeedback ? String(body.qualificationFeedback) : null;
   if (qualificationFeedback && !FIT_FEEDBACK.has(qualificationFeedback)) return NextResponse.json({ error: "invalid qualificationFeedback" }, { status: 400 });
+  const defaultFollowUp = outcomeCode
+    ? defaultFollowUpForOutcome(outcomeCode as OutcomeCode, new Date().toISOString().slice(0, 10))
+    : null;
 
   const repo = new LeadRepository(env.DB);
   const action = await repo.createAction({
@@ -37,8 +40,8 @@ export async function POST(request: NextRequest) {
     outcomeCode,
     qualificationFeedback,
     feedbackReason: body.feedbackReason ? String(body.feedbackReason) : null,
-    nextAction: body.nextAction ? String(body.nextAction) : null,
-    nextActionDue: body.nextActionDue ? String(body.nextActionDue) : null,
+    nextAction: body.nextAction ? String(body.nextAction) : defaultFollowUp?.nextAction ?? null,
+    nextActionDue: body.nextActionDue ? String(body.nextActionDue) : defaultFollowUp?.nextActionDue ?? null,
     performedBy: String(body.performedBy || "manual"),
   });
   const leadStatus = outcomeCode ? leadStatusForOutcome(outcomeCode as OutcomeCode) : null;

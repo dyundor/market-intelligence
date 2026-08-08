@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { generateLeadStrategy } from "../lib/leads/strategy.ts";
 import { qualifyBuyer } from "../lib/qualification/factors.ts";
 import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
-import { computePipelineMetrics, leadStatusForOutcome } from "../lib/leads/feedback.ts";
+import { computePipelineMetrics, defaultFollowUpForOutcome, leadStatusForOutcome } from "../lib/leads/feedback.ts";
 import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/public-contact-enrichment.ts";
 import { contactResearchId, summarizeContactResearch, validateContactResearch } from "../lib/leads/contact-research.ts";
 import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
@@ -272,6 +272,19 @@ describe("Sales feedback loop", () => {
     assert.equal(metrics.dueToday,1);
     assert.equal(metrics.contacted,2);
     assert.equal(metrics.positiveRate,50);
+  });
+
+  it("keeps actionable outcomes in the task queue with business-day defaults", () => {
+    assert.deepEqual(defaultFollowUpForOutcome("interested", "2026-08-07"), {
+      nextAction:"Qualify buyer needs and propose the next step",
+      nextActionDue:"2026-08-10",
+    });
+    assert.deepEqual(defaultFollowUpForOutcome("no_response", "2026-08-07"), {
+      nextAction:"Send a concise follow-up",
+      nextActionDue:"2026-08-12",
+    });
+    assert.equal(defaultFollowUpForOutcome("won", "2026-08-07"), null);
+    assert.equal(defaultFollowUpForOutcome("lost", "2026-08-07"), null);
   });
 });
 

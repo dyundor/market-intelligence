@@ -1,4 +1,5 @@
 import type { LeadStatus } from "../qualification/types.ts";
+import { addBusinessDays } from "./sales-task.ts";
 
 export type OutcomeCode = "no_response" | "replied" | "interested" | "meeting_booked" | "quote_requested" | "not_fit" | "bounced" | "won" | "lost";
 export type QualificationFeedback = "confirmed_fit" | "needs_review" | "disqualified";
@@ -10,6 +11,18 @@ export function leadStatusForOutcome(outcome: OutcomeCode): LeadStatus {
   if (outcome === "bounced") return "researching";
   if (outcome === "not_fit" || outcome === "lost") return "contacted";
   return "contacted";
+}
+
+export function defaultFollowUpForOutcome(outcome: OutcomeCode, today: string): {nextAction: string; nextActionDue: string} | null {
+  const defaults: Partial<Record<OutcomeCode, {nextAction: string; businessDays: number}>> = {
+    no_response: {nextAction:"Send a concise follow-up", businessDays:3},
+    replied: {nextAction:"Review the reply and respond", businessDays:1},
+    interested: {nextAction:"Qualify buyer needs and propose the next step", businessDays:1},
+    meeting_booked: {nextAction:"Prepare buyer meeting brief", businessDays:1},
+    quote_requested: {nextAction:"Prepare and send quotation", businessDays:1},
+  };
+  const rule = defaults[outcome];
+  return rule ? {nextAction:rule.nextAction,nextActionDue:addBusinessDays(today,rule.businessDays)} : null;
 }
 
 export interface PipelineMetricInput {
