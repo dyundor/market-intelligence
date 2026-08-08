@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { cachedApiRequest,readCachedApiValue } from "./paid-cache";
 import { IMPORTYETI_PROVIDER,type PaidGatewayStatus } from "./importyeti-credit-policy";
 import { ImportYetiPaidGateway,type UsageEvent,type UsageRequest,type UsageStore } from "./importyeti-paid-gateway";
-import { createCompanySearchOperation } from "./importyeti-production-provider";
+import { createCompanySearchOperation, createProductSearchOperation } from "./importyeti-production-provider";
 
 let schemaReady:Promise<void>|null = null;
 async function initializeUsageSchema() {
@@ -38,6 +38,10 @@ function mapRow(row:Record<string,unknown>):UsageRequest { const n=(v:unknown)=>
 export function createProductionImportYetiGateway() {
   const operations: Record<string, typeof import("./importyeti-paid-gateway.ts")["PaidOperation"]> = {
     importyeti_company_search: createCompanySearchOperation({
+      IMPORTYETI_API_KEY: (env as Record<string, string>).IMPORTYETI_API_KEY,
+      IMPORTYETI_API_URL: (env as Record<string, string>).IMPORTYETI_API_URL,
+    }),
+    importyeti_product_search: createProductSearchOperation({
       IMPORTYETI_API_KEY: (env as Record<string, string>).IMPORTYETI_API_KEY,
       IMPORTYETI_API_URL: (env as Record<string, string>).IMPORTYETI_API_URL,
     }),

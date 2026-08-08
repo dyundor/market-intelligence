@@ -8,7 +8,7 @@
  */
 
 import type { ImportYetiSearchParams, ImportYetiSearchResult } from "./importyeti-production-provider.ts";
-import { executeImportYetiSearch } from "./importyeti-production-provider.ts";
+import { executeProductCompanySearch } from "./importyeti-production-provider.ts";
 import type { ImportYetiEnv } from "./importyeti-production-provider.ts";
 
 // ─────── Execution mode ───────
@@ -264,15 +264,19 @@ export async function executeCaptureOnly(
   env: ImportYetiEnv,
   query: string,
   mode: ExecutionMode = "capture_only",
-  hsCode?: string,
+  _hsCode?: string,
 ): Promise<CaptureResult> {
-  const estimatedCost = 2 + Math.ceil(50 / 25); // Max 50 results → 4 credits
-  const result = await executeImportYetiSearch(env, {
-    query,
-    hsCode,
-    entityType: "importer",
-    limit: 50,
-  });
+  const estimatedCost = 2 + Math.ceil(50 / 25);
+
+  if (mode === "dry_run") {
+    const emptyResult: ImportYetiSearchResult = { companies: [], totalResults: 0, page: 0 };
+    const report = validateImportYetiResponse(emptyResult, query, mode, estimatedCost, 0);
+    return { report, raw: emptyResult, actualCost: 0 };
+  }
+
+  // Use the official /v1.0/product/{product}/companies endpoint
+  // for targeted bathroom product discovery
+  const result = await executeProductCompanySearch(env, query, 50);
   const report = validateImportYetiResponse(result.raw, query, mode, estimatedCost, result.actualCost);
   return { report, raw: result.raw, actualCost: result.actualCost };
 }
