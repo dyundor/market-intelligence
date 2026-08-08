@@ -389,13 +389,16 @@ describe("Contact research queue", () => {
 
 describe("Sales-ready lead export", () => {
   it("creates a UTF-8 CSV with verified-contact evidence fields", () => {
-    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"contact_ready",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,draftChannel:"email",draftStatus:"draft",draftSubject:"Aqua × Yundor",draftBody:"Hello,\n\nProduct fit.",evidenceSummary:"12 shipment records",personalizationNotes:"Review before sending",nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
+    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"qualified",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,draftChannel:"email",draftStatus:"sent",draftSubject:"Aqua × Yundor",draftBody:"Hello,\n\nProduct fit.",evidenceSummary:"12 shipment records",personalizationNotes:"Review before sending",lastOutcome:"interested",lastOutcomeNotes:"Asked for MOQ",qualificationFeedback:"confirmed_fit",feedbackReason:"Needs basin faucet line",nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
     assert.ok(csv.startsWith("\ufeff"));
     assert.match(csv,/"Aqua, Inc\."/);
     assert.match(csv,/buyer@aqua\.example/);
     assert.match(csv,/Contact Evidence/);
     assert.match(csv,/Draft Subject/);
     assert.match(csv,/Trade Evidence Summary/);
+    assert.match(csv,/Latest Outcome/);
+    assert.match(csv,/interested/);
+    assert.match(csv,/Needs basin faucet line/);
     assert.match(csv,/Hello,\n\nProduct fit\./);
   });
   it("neutralizes spreadsheet formulas in exported values", () => {

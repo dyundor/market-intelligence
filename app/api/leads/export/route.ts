@@ -9,6 +9,10 @@ export async function GET() {
       w.outreach_strategy,w.recommended_products,w.commercial_fit_score,w.outreach_score,
       d.channel draft_channel,d.status draft_status,d.subject draft_subject,d.body draft_body,
       d.evidence_summary,d.personalization_notes,
+      (SELECT outcome_code FROM lead_actions a WHERE a.company_id=w.company_id AND a.outcome_code IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) last_outcome,
+      (SELECT outcome FROM lead_actions a WHERE a.company_id=w.company_id AND a.outcome_code IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) last_outcome_notes,
+      (SELECT qualification_feedback FROM lead_actions a WHERE a.company_id=w.company_id AND a.qualification_feedback IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) qualification_feedback,
+      (SELECT feedback_reason FROM lead_actions a WHERE a.company_id=w.company_id AND a.qualification_feedback IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) feedback_reason,
       (SELECT next_action FROM lead_actions a WHERE a.company_id=w.company_id AND a.next_action IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) next_action,
       (SELECT next_action_due FROM lead_actions a WHERE a.company_id=w.company_id AND a.next_action_due IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) next_action_due
      FROM buyer_watchlist w
@@ -32,6 +36,8 @@ export async function GET() {
     commercialFitScore:row.commercial_fit_score==null?null:Number(row.commercial_fit_score),outreachScore:row.outreach_score==null?null:Number(row.outreach_score),
     draftChannel:String(row.draft_channel||""),draftStatus:String(row.draft_status||""),draftSubject:String(row.draft_subject||""),draftBody:String(row.draft_body||""),
     evidenceSummary:String(row.evidence_summary||""),personalizationNotes:String(row.personalization_notes||""),
+    lastOutcome:String(row.last_outcome||""),lastOutcomeNotes:String(row.last_outcome_notes||""),
+    qualificationFeedback:String(row.qualification_feedback||""),feedbackReason:String(row.feedback_reason||""),
     nextAction:String(row.next_action||""),nextActionDue:String(row.next_action_due||""),
   }));
   return new Response(buildSalesExportCsv(items),{headers:{"Content-Type":"text/csv; charset=utf-8","Content-Disposition":`attachment; filename="yundor-sales-ready-leads-${new Date().toISOString().slice(0,10)}.csv"`,"X-Exported-Leads":String(new Set(items.map(item=>item.companyName)).size)}});

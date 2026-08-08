@@ -17,6 +17,10 @@ export interface SalesExportRow {
   draftBody: string;
   evidenceSummary: string;
   personalizationNotes: string;
+  lastOutcome: string;
+  lastOutcomeNotes: string;
+  qualificationFeedback: string;
+  feedbackReason: string;
   nextAction: string;
   nextActionDue: string;
 }
@@ -28,7 +32,9 @@ const HEADERS: Array<[keyof SalesExportRow, string]> = [
   ["recommendedProducts","Recommended Products"],["commercialFitScore","Commercial Fit Score"],
   ["outreachScore","Outreach Score"],["draftChannel","Draft Channel"],["draftStatus","Draft Status"],
   ["draftSubject","Draft Subject"],["draftBody","Draft Body"],["evidenceSummary","Trade Evidence Summary"],
-  ["personalizationNotes","Manual Review Notes"],["nextAction","Next Action"],["nextActionDue","Next Action Due"],
+  ["personalizationNotes","Manual Review Notes"],["lastOutcome","Latest Outcome"],["lastOutcomeNotes","Outcome Notes"],
+  ["qualificationFeedback","Qualification Feedback"],["feedbackReason","Feedback Reason"],
+  ["nextAction","Next Action"],["nextActionDue","Next Action Due"],
 ];
 
 export function csvCell(value: unknown): string {
