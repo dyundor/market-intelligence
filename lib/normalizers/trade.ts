@@ -48,7 +48,7 @@ export function normalizeRanking(view: SupplierDiscovery, query: QueryRequest): 
   for (const buyer of ranking.ranked) {
     const q = qualifyBuyer(buyer, qualificationContext);
     buyer.priority = q.priority;
-    buyer.priorityScore = q.priorityScore;
+    buyer.qualificationScore = q.qualificationScore;
     buyer.positiveFactors = q.positiveFactors;
     buyer.riskFactors = q.riskFactors;
   }

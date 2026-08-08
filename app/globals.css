@@ -264,3 +264,8 @@ html[lang]:not([lang="zh-CN"]) .importer-list>.section-step>div::after { content
 .priority-B { background:#f5efcd; color:#6e5d19; }
 .priority-C { background:#f5e4d6; color:#8a402d; }
 .importer-row .priority-badge { vertical-align:middle; margin-top:-1px; }
+.qual-score { display:inline-block; margin:0 4px 1px 0; padding:1px 5px; border-radius:6px; font-size:7px; font-weight:700; background:#eef3f8; color:#3d5a73; white-space:nowrap; }
+.qual-factors { display:flex; flex-wrap:wrap; gap:2px 4px; margin-top:3px; }
+.qual-factors em { display:inline-block; padding:1px 5px; border-radius:4px; font-size:7px; font-style:normal; font-weight:600; white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis; }
+.qual-positive { background:#d2f3e5; color:#15603e; }
+.qual-risk { background:#fce8e4; color:#9a402d; }

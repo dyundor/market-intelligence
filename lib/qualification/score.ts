@@ -17,6 +17,7 @@ export function computePriorityScore(
   const freightUsd = Number(row.selected_month_freight_usd) || 0;
   const lsd = typeof row.latest_shipment_date === "string" ? row.latest_shipment_date : null;
   const products = typeof row.products === "string" ? row.products : "";
+  const identityConfidence = Number(row.identity_confidence) || 0;
   const weights = DEFAULT_WEIGHTS;
 
   const w = weights;
@@ -55,6 +56,13 @@ export function computePriorityScore(
     label: "Freight value",
     value: logScale(freightUsd, 100000),
     weight: w.freightValue,
+  });
+
+  values.push({
+    id: "identity_confidence",
+    label: "Identity confidence",
+    value: ratioScale(identityConfidence, 100),
+    weight: w.identityConfidence,
   });
 
   let relevanceValue = 70;

@@ -12,6 +12,7 @@ function gatherPositiveFactors(
   const containers = Number(row.selected_month_containers) || 0;
   const freightUsd = Number(row.selected_month_freight_usd) || 0;
   const lsd = typeof row.latest_shipment_date === "string" ? row.latest_shipment_date : null;
+  const identityConfidence = Number(row.identity_confidence) || 0;
 
   if (totalShipments >= 50) out.push(POSITIVE_REASONS.frequent_importer);
   if (lsd) {
@@ -24,6 +25,8 @@ function gatherPositiveFactors(
 
   const relevance = factors.get("product_relevance");
   if (relevance !== undefined && relevance >= 50) out.push(POSITIVE_REASONS.product_focus);
+
+  if (identityConfidence >= 80) out.push(POSITIVE_REASONS.high_identity);
 
   return out;
 }
@@ -62,7 +65,7 @@ export function qualifyBuyer(
 
   return {
     priority,
-    priorityScore: score,
+    qualificationScore: score,
     positiveFactors: gatherPositiveFactors(row, factorMap),
     riskFactors: gatherRiskFactors(row),
     factors,

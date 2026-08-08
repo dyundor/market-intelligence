@@ -8,7 +8,7 @@ export interface Factor {
 
 export interface QualificationResult {
   priority: "A" | "B" | "C";
-  priorityScore: number;
+  qualificationScore: number;
   positiveFactors: string[];
   riskFactors: string[];
   factors: Factor[];
@@ -26,15 +26,17 @@ export interface PriorityWeights {
   containerVolume: number;
   freightValue: number;
   productRelevance: number;
+  identityConfidence: number;
 }
 
 export const DEFAULT_WEIGHTS: PriorityWeights = {
-  shipmentVolume: 25,
+  shipmentVolume: 20,
   shipmentRecency: 20,
   supplierDiversity: 15,
   containerVolume: 15,
-  freightValue: 15,
+  freightValue: 10,
   productRelevance: 10,
+  identityConfidence: 10,
 };
 
 export const PRIORITY_THRESHOLDS = { a: 55, b: 25 };
@@ -46,6 +48,7 @@ export const POSITIVE_REASONS: Record<string, string> = {
   containerized_freight: "Containerized cargo — significant order scale",
   high_order_value: "High freight value — substantial purchase orders",
   product_focus: "Strong product relevance to target category",
+  high_identity: "High entity identity confidence — verified company profile",
 };
 
 export const RISK_REASONS: Record<string, string> = {
