@@ -23,6 +23,9 @@ export interface LeadActionRow {
   channel: string | null;
   summary: string;
   outcome: string | null;
+  outcomeCode: string | null;
+  qualificationFeedback: string | null;
+  feedbackReason: string | null;
   nextAction: string | null;
   nextActionDue: string | null;
   performedBy: string;
@@ -68,6 +71,9 @@ function mapActionRow(row: Record<string, unknown>): LeadActionRow {
     channel: row.channel ? String(row.channel) : null,
     summary: String(row.summary || ""),
     outcome: row.outcome ? String(row.outcome) : null,
+    outcomeCode: row.outcome_code ? String(row.outcome_code) : null,
+    qualificationFeedback: row.qualification_feedback ? String(row.qualification_feedback) : null,
+    feedbackReason: row.feedback_reason ? String(row.feedback_reason) : null,
     nextAction: row.next_action ? String(row.next_action) : null,
     nextActionDue: row.next_action_due ? String(row.next_action_due) : null,
     performedBy: String(row.performed_by || "manual"),
@@ -179,6 +185,7 @@ export class LeadRepository {
     const result = await this.db
       .prepare(
         `SELECT id, company_id, action_type, direction, channel, summary, outcome,
+          outcome_code, qualification_feedback, feedback_reason,
           next_action, next_action_due, performed_by, created_at
          FROM lead_actions WHERE company_id = ? ORDER BY created_at DESC`,
       )
@@ -193,12 +200,14 @@ export class LeadRepository {
     await this.db
       .prepare(
         `INSERT INTO lead_actions (id, company_id, action_type, direction, channel, summary, outcome,
+          outcome_code, qualification_feedback, feedback_reason,
           next_action, next_action_due, performed_by, created_at)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       )
       .bind(
         id, row.companyId, row.actionType, row.direction, row.channel ?? null,
-        row.summary, row.outcome ?? null, row.nextAction ?? null,
+        row.summary, row.outcome ?? null, row.outcomeCode ?? null,
+        row.qualificationFeedback ?? null, row.feedbackReason ?? null, row.nextAction ?? null,
         row.nextActionDue ?? null, row.performedBy, now,
       )
       .run();

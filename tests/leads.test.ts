@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { generateLeadStrategy } from "../lib/leads/strategy.ts";
 import { qualifyBuyer } from "../lib/qualification/factors.ts";
 import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
+import { computePipelineMetrics, leadStatusForOutcome } from "../lib/leads/feedback.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -154,5 +155,25 @@ describe("Outreach draft", () => {
     const draft = generateOutreachDraft({companyName:"North Bath",contactName:"Morgan",outreachStrategy:"Private Label Pitch"});
     assert.match(draft.body,/Hi Morgan,/);
     assert.match(draft.body,/private-label bathroom collections/);
+  });
+});
+
+describe("Sales feedback loop", () => {
+  it("moves positive outcomes forward and bounced contacts back to research", () => {
+    assert.equal(leadStatusForOutcome("interested"), "qualified");
+    assert.equal(leadStatusForOutcome("quote_requested"), "opportunity");
+    assert.equal(leadStatusForOutcome("bounced"), "researching");
+  });
+
+  it("computes overdue tasks and positive response rate", () => {
+    const metrics = computePipelineMetrics([
+      {leadStatus:"qualified",outcomeCode:"interested",nextActionDue:"2026-08-07"},
+      {leadStatus:"follow_up",outcomeCode:"no_response",nextActionDue:"2026-08-08"},
+      {leadStatus:"researching",outcomeCode:null,nextActionDue:"2026-08-10"},
+    ],"2026-08-08");
+    assert.equal(metrics.overdue,1);
+    assert.equal(metrics.dueToday,1);
+    assert.equal(metrics.contacted,2);
+    assert.equal(metrics.positiveRate,50);
   });
 });
