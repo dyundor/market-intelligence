@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { generateLeadStrategy } from "../lib/leads/strategy.ts";
 import { qualifyBuyer } from "../lib/qualification/factors.ts";
-import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
+import { generateFollowUpDraft, generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
 import { computePipelineMetrics, defaultFollowUpForOutcome, leadStatusForOutcome } from "../lib/leads/feedback.ts";
 import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/public-contact-enrichment.ts";
 import { contactResearchId, summarizeContactResearch, validateContactResearch } from "../lib/leads/contact-research.ts";
@@ -176,6 +176,16 @@ describe("Outreach draft", () => {
     assert.doesNotMatch(draft.body,/Certification history/);
     assert.match(draft.personalizationNotes,/Certification history requires review/);
     assert.match(draft.personalizationNotes,/Verify test documents before quoting/);
+  });
+
+  it("generates outcome-specific follow-up content without auto-sending", () => {
+    const noResponse=generateFollowUpDraft({companyName:"North Bath",recommendedProducts:"Shower Systems",outcomeCode:"no_response"});
+    const quote=generateFollowUpDraft({companyName:"North Bath",recommendedProducts:"Shower Systems",outcomeCode:"quote_requested",outcomeNotes:"Asked for matte black pricing"});
+    assert.match(noResponse.subject,/Following up/);
+    assert.match(noResponse.body,/briefly follow up/);
+    assert.match(quote.body,/required certifications/);
+    assert.match(quote.personalizationNotes,/Asked for matte black pricing/);
+    assert.match(quote.personalizationNotes,/never sent automatically/);
   });
 });
 

@@ -17,6 +17,8 @@ export interface GeneratedOutreachDraft {
   personalizationNotes: string;
 }
 
+export type FollowUpOutcome = "no_response" | "replied" | "interested" | "meeting_booked" | "quote_requested";
+
 function greeting(contactName?: string | null): string {
   return contactName?.trim() ? `Hi ${contactName.trim()},` : "Hello,";
 }
@@ -46,5 +48,25 @@ export function generateOutreachDraft(input: OutreachDraftInput): GeneratedOutre
     body: `${greeting(input.contactName)}\n\nI’m reaching out from Yundor, a bathroom-product manufacturing partner supporting international brands and distributors. Based on our review of ${company}’s public company and trade activity, your business appears relevant to our ${products} capabilities.${recentActivity}\n\nWe can support ${offerFor(strategy)}, with OEM/ODM development, coordinated finishes, quality control, and export-ready fulfillment from China.\n\nWould a short introduction and product fit review be useful? If you are not the right contact, I would appreciate being directed to the person responsible for sourcing or product development.\n\nBest regards,\nYundor Business Development`,
     evidenceSummary,
     personalizationNotes,
+  };
+}
+
+export function generateFollowUpDraft(input: OutreachDraftInput & {outcomeCode: FollowUpOutcome; outcomeNotes?: string | null}): GeneratedOutreachDraft {
+  const initial = generateOutreachDraft(input);
+  const company = input.companyName.trim() || "your company";
+  const products = input.recommendedProducts?.trim() || "bathroom faucets and shower systems";
+  const messages: Record<FollowUpOutcome,string> = {
+    no_response: `I wanted to briefly follow up on my earlier note about Yundor's ${products} capabilities. If this category is relevant to your current sourcing plans, I can send a focused introduction rather than a broad catalog.`,
+    replied: `Thank you for your reply. To keep the next step useful, we can focus on the ${products} requirements most relevant to ${company}, including target specifications, finishes, certification needs, volume, and timeline.`,
+    interested: `Thank you for your interest. We can prepare a focused product-fit proposal for ${products}, including suitable specifications, finish options, certification support, indicative MOQ, and development timing.`,
+    meeting_booked: `Thank you for arranging time with us. For a productive discussion, we propose covering your priority ${products} requirements, target market and certifications, expected volume, finish direction, and development timeline.`,
+    quote_requested: `Thank you for the quotation request. Before finalizing pricing, could you confirm the target models or specifications, required certifications, finishes, estimated order quantity, packaging needs, and preferred delivery timing for ${products}?`,
+  };
+  const outcomeContext = input.outcomeNotes?.trim() ? ` Reviewer context from the latest result: ${input.outcomeNotes.trim()}` : "";
+  return {
+    subject: `Following up — ${company} × Yundor`,
+    body: `${greeting(input.contactName)}\n\n${messages[input.outcomeCode]}\n\nPlease let me know the best next step, or who on your sourcing or product team I should coordinate with.\n\nBest regards,\nYundor Business Development`,
+    evidenceSummary: `${initial.evidenceSummary} Follow-up basis: ${input.outcomeCode}.`,
+    personalizationNotes: `${initial.personalizationNotes}${outcomeContext} Confirm the latest conversation before approval; this follow-up is never sent automatically.`,
   };
 }

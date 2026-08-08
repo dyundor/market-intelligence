@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
-import { generateOutreachDraft } from "../../../lib/leads/outreach-draft.ts";
+import { generateFollowUpDraft, generateOutreachDraft, type FollowUpOutcome } from "../../../lib/leads/outreach-draft.ts";
 import { LeadRepository } from "../../../lib/repositories/lead-repository.ts";
 import { evaluateOutreachReadiness } from "../../../lib/leads/outreach-readiness.ts";
 import { draftSentActionId, shouldSyncDraftSent } from "../../../lib/leads/draft-lifecycle.ts";
 import { addBusinessDays } from "../../../lib/leads/sales-task.ts";
 
 const STATUSES = new Set(["draft", "approved", "sent", "archived"]);
+const FOLLOW_UP_OUTCOMES = new Set(["no_response", "replied", "interested", "meeting_booked", "quote_requested"]);
 
 export async function GET(request: NextRequest) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
@@ -19,16 +20,20 @@ export async function POST(request: NextRequest) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   if (!body?.companyId) return NextResponse.json({ error: "companyId required" }, { status: 400 });
+  const purpose=body.purpose ? String(body.purpose) : "initial";
+  if (purpose!=="initial"&&purpose!=="follow_up") return NextResponse.json({error:"invalid purpose"},{status:400});
   const sourceRows=await env.DB.prepare(`SELECT e.name company_name,e.entity_type,e.total_shipments,
       COALESCE(e.latest_shipment_date,(SELECT MAX(s.shipment_date) FROM importyeti_web_shipments s WHERE s.importer_id=e.id)) latest_shipment_date,
-      w.outreach_strategy,w.recommended_products,r.reason research_reason,r.next_action research_next_action
+      w.outreach_strategy,w.recommended_products,r.reason research_reason,r.next_action research_next_action,
+      (SELECT a.outcome_code FROM lead_actions a WHERE a.company_id=e.id AND a.outcome_code IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) latest_outcome_code,
+      (SELECT a.outcome FROM lead_actions a WHERE a.company_id=e.id AND a.outcome_code IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) latest_outcome_notes
     FROM importyeti_web_entities e
     JOIN buyer_watchlist w ON w.company_id=e.id
     LEFT JOIN lead_contact_research r ON r.company_id=e.id
     WHERE e.id=? LIMIT 1`).bind(String(body.companyId)).all();
   const source=(sourceRows.results||[])[0];
   if (!source) return NextResponse.json({ error: "lead not found" }, { status: 404 });
-  const generated = generateOutreachDraft({
+  const draftInput = {
     companyName: String(source.company_name), contactName: body.contactName ? String(body.contactName) : null,
     totalShipments: source.total_shipments == null ? null : Number(source.total_shipments),
     latestShipmentDate: source.latest_shipment_date ? String(source.latest_shipment_date) : null,
@@ -37,7 +42,12 @@ export async function POST(request: NextRequest) {
     companyType: source.entity_type ? String(source.entity_type) : null,
     researchReason: source.research_reason ? String(source.research_reason) : null,
     researchNextAction: source.research_next_action ? String(source.research_next_action) : null,
-  });
+  };
+  const outcomeCode=source.latest_outcome_code?String(source.latest_outcome_code):null;
+  if (purpose==="follow_up"&&!FOLLOW_UP_OUTCOMES.has(outcomeCode||"")) return NextResponse.json({error:"follow_up_not_applicable",outcomeCode},{status:409});
+  const generated = purpose==="follow_up"
+    ? generateFollowUpDraft({...draftInput,outcomeCode:outcomeCode as FollowUpOutcome,outcomeNotes:source.latest_outcome_notes?String(source.latest_outcome_notes):null})
+    : generateOutreachDraft(draftInput);
   const draft = await new LeadRepository(env.DB).createDraft({companyId:String(body.companyId),channel:"email",status:"draft",...generated});
   return NextResponse.json(draft, { status: 201 });
 }
