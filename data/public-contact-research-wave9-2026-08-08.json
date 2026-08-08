@@ -1,0 +1,44 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Next free-data buyer expansion candidates; official company-controlled sources only; ambiguous identities remain blocked; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Legion Furniture LLC",
+      "status": "verified",
+      "reasonCode": "official_contact_found",
+      "reason": "The official site identifies Legion Furniture as a U.S. wholesale distributor of bathroom vanities, bathtubs, faucets, and shower doors, and publishes a Sacramento corporate office, sales email, and phone. The exact company name matches five stored bathroom-vanity import records.",
+      "nextAction": "Prepare a reviewed OEM/ODM bathroom collection introduction for the official sales route.",
+      "evidenceUrls": [
+        "https://www.legionfurniture.com/company/",
+        "https://www.legionfurniture.com/contact/"
+      ]
+    },
+    {
+      "companyName": "Bath Authority Llc",
+      "status": "needs_identity_match",
+      "reasonCode": "identity_not_confirmed",
+      "reason": "DreamLine official pages confirm Bath Authority LLC and the Warminster address, but DreamLine is now an American Bath Group subsidiary and MAAX is already an active account in the sales list. A parent-account ownership decision is required to avoid duplicate group outreach.",
+      "nextAction": "Confirm whether American Bath Group purchasing is centralized before creating a separate DreamLine outreach account.",
+      "evidenceUrls": [
+        "https://dreamline.com/contact-us",
+        "https://dreamline.com/terms-and-conditions"
+      ]
+    },
+    {
+      "companyName": "Builders Surplus",
+      "status": "needs_identity_match",
+      "reasonCode": "ambiguous_company_name",
+      "reason": "Multiple active North American retailers use the exact Builders Surplus name, while the stored shipment evidence has no address or official domain that uniquely links the importer to one of them.",
+      "nextAction": "Obtain a shipment address or consignee identifier before linking an official retailer contact route.",
+      "evidenceUrls": []
+    },
+    {
+      "companyName": "DC Import LLC",
+      "status": "unresolved",
+      "reasonCode": "no_official_site",
+      "reason": "Stored records show three bathroom-vanity shipments from 2022, but no current company-controlled website, official business contact, or unique operating address was verified.",
+      "nextAction": "Keep blocked until a current official domain or registry-to-operating-address match is available.",
+      "evidenceUrls": []
+    }
+  ]
+}

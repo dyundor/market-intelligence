@@ -37,9 +37,26 @@ for (const company of payload.companies) {
     website_verified_at=COALESCE(website_verified_at,?),
     contact_data_status='available'
     WHERE id=?`).run(company.website,company.websiteSourceUrl,now,companyId);
+  if (company.identityEvidence) {
+    const identityNote = `Official identity verified: ${company.identityEvidence.legalName}; ${company.identityEvidence.sourceUrl}; ${company.identityEvidence.note}`;
+    db.prepare(`UPDATE importyeti_web_entities SET
+      identity_status='source_verified',
+      identity_confidence=MAX(COALESCE(identity_confidence,0),90),
+      identity_notes=CASE
+        WHEN identity_notes IS NULL OR identity_notes='' THEN ?
+        WHEN INSTR(identity_notes,?)>0 THEN identity_notes
+        ELSE identity_notes || ' | ' || ? END
+      WHERE id=?`).run(identityNote,company.identityEvidence.sourceUrl,identityNote,companyId);
+  }
   db.prepare(`INSERT INTO buyer_watchlist (id,company_id,status,notes,lead_status,created_at,updated_at)
     VALUES (?,?, 'researching','Public contact enrichment','researching',?,?)
     ON CONFLICT(company_id) DO UPDATE SET updated_at=excluded.updated_at`).run(`wl-${companyId}-public`,companyId,now,now);
+  if (company.businessFit) {
+    db.prepare(`UPDATE buyer_watchlist SET outreach_strategy=?,recommended_products=?,notes=?,updated_at=? WHERE company_id=?`).run(
+      company.businessFit.outreachStrategy,company.businessFit.recommendedProducts,
+      `Public contact enrichment: ${company.businessFit.reason}`,now,companyId,
+    );
+  }
   for (const contact of company.contacts) {
     db.prepare(`INSERT INTO lead_contacts
       (id,company_id,contact_type,contact_value,label,source_url,source_type,verified_at,verification_status,notes,created_at,updated_at)

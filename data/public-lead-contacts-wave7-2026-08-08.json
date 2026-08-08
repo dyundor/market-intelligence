@@ -1,0 +1,25 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Legion Furniture official company, product, and contact pages matched to the exact importer name and bathroom-vanity trade evidence; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Legion Furniture LLC",
+      "website": "https://www.legionfurniture.com/",
+      "websiteSourceUrl": "https://www.legionfurniture.com/company/",
+      "identityEvidence": {
+        "legalName": "Legion Furniture LLC",
+        "sourceUrl": "https://www.legionfurniture.com/contact/",
+        "note": "Official site identifies the Sacramento corporate office and a wholesale bathroom range; exact legal importer name matches five stored bathroom-vanity shipment records."
+      },
+      "businessFit": {
+        "outreachStrategy": "OEM/ODM Pitch",
+        "recommendedProducts": "Bathroom Vanities + Faucets + Shower Doors",
+        "reason": "Official company profile describes a wholesale bathroom range and collaboration with 12 overseas factories; pitch differentiated OEM/ODM development rather than generic distribution."
+      },
+      "contacts": [
+        {"type":"email","value":"sales@legionfurniture.com","label":"Legion Furniture Sales","sourceUrl":"https://www.legionfurniture.com/contact/","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-916-737-5688","label":"Legion Furniture Corporate Office","sourceUrl":"https://www.legionfurniture.com/contact/","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

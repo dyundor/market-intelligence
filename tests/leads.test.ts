@@ -355,6 +355,14 @@ describe("Public contact enrichment", () => {
     assert.deepEqual(payload.companies.map((company: {companyName: string}) => company.companyName), ["Your Source Products"]);
     assert.ok(payload.companies.every((company: Parameters<typeof validatePublicEvidence>[0]) => validatePublicEvidence(company).length === 0));
   });
+  it("requires explicit official identity evidence for the seventh contact wave", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-lead-contacts-wave7-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validatePublicEvidence),[]);
+    assert.equal(payload.companies[0].identityEvidence.legalName,"Legion Furniture LLC");
+    assert.equal(payload.companies[0].contacts[0].value,"sales@legionfurniture.com");
+    assert.equal(payload.companies[0].businessFit.outreachStrategy,"OEM/ODM Pitch");
+    assert.ok(payload.companies[0].identityEvidence.sourceUrl.startsWith("https://www.legionfurniture.com/"));
+  });
 });
 
 describe("Contact research queue", () => {
@@ -415,6 +423,13 @@ describe("Contact research queue", () => {
     assert.equal(company.reasonCode, "inactive_or_defunct");
     assert.ok(company.evidenceUrls.every((url: string) => url.includes("gordonbrothers")));
   });
+  it("expands only Legion while preserving ambiguous candidates in the ninth research wave", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave9-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validateContactResearch),[]);
+    assert.equal(payload.companies.find((company: {companyName:string})=>company.companyName==="Legion Furniture LLC").status,"verified");
+    assert.equal(payload.companies.find((company: {companyName:string})=>company.companyName==="Bath Authority Llc").status,"needs_identity_match");
+    assert.equal(payload.companies.find((company: {companyName:string})=>company.companyName==="DC Import LLC").status,"unresolved");
+  });
 });
 
 describe("Sales-ready lead export", () => {
@@ -463,6 +478,9 @@ describe("Real sales pipeline selection",()=>{
   });
   it("requires at least three relevant trade records for a new lead",()=>{
     assert.deepEqual(shouldInitializeSalesLead({existing:false,identityStatus:"source_verified",identityConfidence:90,evidenceShipments:2,lead:qualifiedLead}),{selected:false,reason:"insufficient_trade_evidence"});
+  });
+  it("treats raw shipment evidence as eligible when relationship aggregation is not ready",()=>{
+    assert.deepEqual(shouldInitializeSalesLead({existing:false,identityStatus:"source_verified",identityConfidence:90,evidenceShipments:5,lead:qualifiedLead}),{selected:true,reason:"sales_threshold"});
   });
   it("orders actionable stages before research and uses scores within a stage",()=>{
     const ordered=sortSalesLeads([

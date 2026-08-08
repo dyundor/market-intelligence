@@ -63,17 +63,33 @@ export class LeadInitializer {
 
   async getEvidenceBuyers(limit = 25): Promise<TopBuyerEntry[]> {
     const result = await this.db.prepare(
-      `SELECT e.*,
-        COALESCE(SUM(CASE WHEN r.hs_codes LIKE '%8481.80%' OR lower(COALESCE(r.product_descriptions,'')) LIKE '%faucet%' OR lower(COALESCE(r.product_descriptions,'')) LIKE '%shower%' THEN COALESCE(r.shipment_count,0) ELSE 0 END),0) evidence_shipments,
-        COUNT(DISTINCT r.supplier_id) evidence_suppliers,
-        MAX(r.period_end) evidence_latest_date
+      `WITH evidence_rows AS (
+        SELECT r.importer_id,
+          SUM(CASE WHEN r.hs_codes LIKE '%8481.80%' OR lower(COALESCE(r.product_descriptions,'')) LIKE '%faucet%' OR lower(COALESCE(r.product_descriptions,'')) LIKE '%shower%' OR lower(COALESCE(r.product_descriptions,'')) LIKE '%bath%' OR lower(COALESCE(r.product_descriptions,'')) LIKE '%vanity%' THEN COALESCE(r.shipment_count,0) ELSE 0 END) evidence_shipments,
+          COUNT(DISTINCT r.supplier_id) evidence_suppliers,MAX(r.period_end) evidence_latest_date
+        FROM importyeti_web_relationships r GROUP BY r.importer_id
+        UNION ALL
+        SELECT s.importer_id,COUNT(DISTINCT s.id),COUNT(DISTINCT s.supplier_id),MAX(s.shipment_date)
+        FROM importyeti_web_shipments s
+        WHERE lower(COALESCE(s.product_description,'')) LIKE '%faucet%'
+          OR lower(COALESCE(s.product_description,'')) LIKE '%shower%'
+          OR lower(COALESCE(s.product_description,'')) LIKE '%bath%'
+          OR lower(COALESCE(s.product_description,'')) LIKE '%vanity%'
+        GROUP BY s.importer_id
+      ), evidence AS (
+        SELECT importer_id,MAX(evidence_shipments) evidence_shipments,
+          MAX(evidence_suppliers) evidence_suppliers,MAX(evidence_latest_date) evidence_latest_date
+        FROM evidence_rows GROUP BY importer_id
+      )
+       SELECT e.*,x.evidence_shipments,x.evidence_suppliers,x.evidence_latest_date
        FROM importyeti_web_entities e
-       JOIN importyeti_web_relationships r ON r.importer_id=e.id
+       JOIN evidence x ON x.importer_id=e.id
+       LEFT JOIN buyer_watchlist w ON w.company_id=e.id
        WHERE e.entity_type='importer' AND e.id NOT LIKE 'seed-%'
-       GROUP BY e.id
-       HAVING evidence_shipments>0
-       ORDER BY CASE e.identity_status WHEN 'source_verified' THEN 0 ELSE 1 END,
-         COALESCE(e.identity_confidence,0) DESC,evidence_shipments DESC,e.name
+         AND x.evidence_shipments>0
+       ORDER BY CASE WHEN w.id IS NOT NULL THEN 0 ELSE 1 END,
+         CASE e.identity_status WHEN 'source_verified' THEN 0 ELSE 1 END,
+         COALESCE(e.identity_confidence,0) DESC,x.evidence_shipments DESC,e.name
        LIMIT ?`,
     ).bind(limit).all();
     return (result.results||[]).map((entity,index)=>({buyerId:String(entity.id),rank:index+1,metric:"relationship_shipment_count",metricValue:Number(entity.evidence_shipments||0),entity}));
@@ -115,7 +131,19 @@ export class LeadInitializer {
       .bind(id)
       .all();
 
-    const rels = relResult.results || [];
+    let rels = relResult.results || [];
+    if (!rels.length) {
+      const shipmentResult = await this.db.prepare(
+        `SELECT sh.supplier_id,COUNT(DISTINCT sh.id) shipment_count,
+          GROUP_CONCAT(DISTINCT sh.product_description) product_descriptions,
+          s.name supplier_name,s.country supplier_country
+         FROM importyeti_web_shipments sh
+         LEFT JOIN importyeti_web_entities s ON s.id=sh.supplier_id
+         WHERE sh.importer_id=? GROUP BY sh.supplier_id,s.name,s.country
+         ORDER BY shipment_count DESC`,
+      ).bind(id).all();
+      rels = shipmentResult.results || [];
+    }
     const supplierNames: string[] = [];
     const productDescriptions: string[] = [];
 
@@ -177,8 +205,8 @@ export class LeadInitializer {
           ?,?,?,?)
          ON CONFLICT(company_id) DO UPDATE SET
           lead_status=CASE WHEN buyer_watchlist.lead_status IN ('contact_ready','contacted','follow_up','qualified','opportunity','disqualified') THEN buyer_watchlist.lead_status ELSE excluded.lead_status END,
-          outreach_strategy=excluded.outreach_strategy,
-          recommended_products=excluded.recommended_products,
+          outreach_strategy=CASE WHEN buyer_watchlist.notes LIKE 'Public contact enrichment:%' AND buyer_watchlist.outreach_strategy IS NOT NULL THEN buyer_watchlist.outreach_strategy ELSE excluded.outreach_strategy END,
+          recommended_products=CASE WHEN buyer_watchlist.notes LIKE 'Public contact enrichment:%' AND buyer_watchlist.recommended_products IS NOT NULL THEN buyer_watchlist.recommended_products ELSE excluded.recommended_products END,
           confidence=excluded.confidence,
           commercial_fit_score=excluded.commercial_fit_score,
           outreach_score=excluded.outreach_score,
