@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const product = request.nextUrl.searchParams.get("product") || "龙头及阀类";
   const market = request.nextUrl.searchParams.get("market") || "美国";
   const buyerId = request.nextUrl.searchParams.get("buyerId") || "";
-  const buyerIds = (request.nextUrl.searchParams.get("buyerIds") || "").split(",").filter(Boolean).slice(0, 10);
+  const buyerIds = (request.nextUrl.searchParams.get("buyerIds") || "").split(",").filter(Boolean).slice(0, 20);
 
   const shipments = new ShipmentRepository(env.DB);
   const scores = new ScoreRepository(env.DB);
