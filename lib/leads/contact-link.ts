@@ -22,3 +22,10 @@ export function contactHref(contactType: string, contactValue: string): string |
 
   return null;
 }
+
+export function emailDraftHref(email: string, subject: string, body: string): string | null {
+  const base = contactHref("email", email);
+  if (!base) return null;
+  const params = new URLSearchParams({ subject, body });
+  return `${base}?${params.toString()}`;
+}

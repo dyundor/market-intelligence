@@ -15,7 +15,7 @@ import { contactRouteNote, draftChannelForContact, selectBestVerifiedContact } f
 import { addBusinessDays, nextAvailableReviewDate, scheduleReviewDate } from "../lib/leads/sales-task.ts";
 import { LeadRepository } from "../lib/repositories/lead-repository.ts";
 import { draftSentActionId, shouldSyncDraftSent } from "../lib/leads/draft-lifecycle.ts";
-import { contactHref } from "../lib/leads/contact-link.ts";
+import { contactHref, emailDraftHref } from "../lib/leads/contact-link.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -202,6 +202,14 @@ describe("Contact execution links", () => {
     assert.equal(contactHref("email", "not-an-email"), null);
     assert.equal(contactHref("website_contact_page", "javascript:alert(1)"), null);
     assert.equal(contactHref("phone", "12"), null);
+  });
+
+  it("prefills a draft without bypassing the email client", () => {
+    const href = emailDraftHref("sales@example.com", "OEM faucet program", "Hello,\nCan we talk?");
+    assert.ok(href?.startsWith("mailto:sales@example.com?"));
+    assert.ok(href?.includes("subject=OEM+faucet+program"));
+    assert.ok(href?.includes("body=Hello%2C%0ACan+we+talk%3F"));
+    assert.equal(emailDraftHref("invalid", "Subject", "Body"), null);
   });
 });
 
