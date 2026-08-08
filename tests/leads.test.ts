@@ -9,6 +9,7 @@ import { computePipelineMetrics, defaultFollowUpForOutcome, leadStatusForOutcome
 import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/public-contact-enrichment.ts";
 import { contactResearchId, summarizeContactResearch, validateContactResearch } from "../lib/leads/contact-research.ts";
 import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
+import { computeOpportunityMetrics, validateExpectedCloseDate, validateOpportunityProbability, validateOpportunityValue } from "../lib/leads/opportunity-pipeline.ts";
 import { evaluateOutreachReadiness } from "../lib/leads/outreach-readiness.ts";
 import { shouldInitializeSalesLead, sortSalesLeads } from "../lib/leads/pipeline-selection.ts";
 import { contactRouteNote, draftChannelForContact, selectBestVerifiedContact } from "../lib/leads/outreach-package.ts";
@@ -289,6 +290,25 @@ describe("Sales feedback loop", () => {
   });
 });
 
+describe("Opportunity pipeline", () => {
+  it("computes total and probability-weighted pipeline without disqualified leads", () => {
+    assert.deepEqual(computeOpportunityMetrics([
+      {leadStatus:"opportunity",opportunityValueUsd:100000,opportunityProbability:40},
+      {leadStatus:"qualified",opportunityValueUsd:50000,opportunityProbability:20},
+      {leadStatus:"disqualified",opportunityValueUsd:900000,opportunityProbability:100},
+      {leadStatus:"contact_ready",opportunityValueUsd:null,opportunityProbability:null},
+    ]),{opportunityCount:2,pipelineValueUsd:150000,weightedPipelineValueUsd:50000});
+  });
+  it("validates safe CRM values and real calendar dates", () => {
+    assert.equal(validateOpportunityValue(0),true);
+    assert.equal(validateOpportunityValue(-1),false);
+    assert.equal(validateOpportunityProbability(100),true);
+    assert.equal(validateOpportunityProbability(101),false);
+    assert.equal(validateExpectedCloseDate("2026-08-31"),true);
+    assert.equal(validateExpectedCloseDate("2026-02-30"),false);
+  });
+});
+
 describe("Public contact enrichment", () => {
   const evidence = {companyName:"Waxman Consumer Products Group",website:"https://www.waxman.com/",websiteSourceUrl:"https://www.waxman.com/",contacts:[{type:"email" as const,value:"customerservice@waxmancpg.com",label:"Customer Service",sourceUrl:"https://waxman.com/terms-of-use.html",verificationStatus:"verified" as const}]};
   it("matches normalized company names only when the match is unique", () => {
@@ -389,7 +409,7 @@ describe("Contact research queue", () => {
 
 describe("Sales-ready lead export", () => {
   it("creates a UTF-8 CSV with verified-contact evidence fields", () => {
-    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"qualified",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,draftChannel:"email",draftStatus:"sent",draftSubject:"Aqua × Yundor",draftBody:"Hello,\n\nProduct fit.",evidenceSummary:"12 shipment records",personalizationNotes:"Review before sending",lastOutcome:"interested",lastOutcomeNotes:"Asked for MOQ",qualificationFeedback:"confirmed_fit",feedbackReason:"Needs basin faucet line",nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
+    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"qualified",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,opportunityValueUsd:75000,opportunityProbability:40,expectedCloseDate:"2026-10-31",weightedValueUsd:30000,draftChannel:"email",draftStatus:"sent",draftSubject:"Aqua × Yundor",draftBody:"Hello,\n\nProduct fit.",evidenceSummary:"12 shipment records",personalizationNotes:"Review before sending",lastOutcome:"interested",lastOutcomeNotes:"Asked for MOQ",qualificationFeedback:"confirmed_fit",feedbackReason:"Needs basin faucet line",nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
     assert.ok(csv.startsWith("\ufeff"));
     assert.match(csv,/"Aqua, Inc\."/);
     assert.match(csv,/buyer@aqua\.example/);
@@ -399,6 +419,8 @@ describe("Sales-ready lead export", () => {
     assert.match(csv,/Latest Outcome/);
     assert.match(csv,/interested/);
     assert.match(csv,/Needs basin faucet line/);
+    assert.match(csv,/Opportunity Value USD/);
+    assert.match(csv,/"30000"/);
     assert.match(csv,/Hello,\n\nProduct fit\./);
   });
   it("neutralizes spreadsheet formulas in exported values", () => {

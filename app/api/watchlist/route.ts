@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
+import { validateExpectedCloseDate, validateOpportunityProbability, validateOpportunityValue } from "../../../lib/leads/opportunity-pipeline.ts";
 
 const STATUSES = new Set(["new", "researching", "contacted", "quoted", "customer"]);
 const LEAD_STATUSES = new Set([
@@ -12,7 +13,8 @@ export async function GET(_request: NextRequest) {
   const rows = await env.DB.prepare(
     `SELECT w.id,w.company_id,w.status,w.notes,w.created_at,w.updated_at,
       w.lead_status,w.outreach_strategy,w.recommended_products,w.confidence,
-      w.commercial_fit_score,w.outreach_score,
+      w.commercial_fit_score,w.outreach_score,w.opportunity_value_usd,
+      w.opportunity_probability,w.expected_close_date,
       e.name company_name,e.country company_country,e.country_code company_country_code,e.entity_type,
       e.total_shipments,e.latest_shipment_date,e.website,e.city_name,e.admin1_name
       FROM buyer_watchlist w LEFT JOIN importyeti_web_entities e ON e.id=w.company_id
@@ -29,6 +31,9 @@ export async function GET(_request: NextRequest) {
     confidence: row.confidence ? String(row.confidence) : null,
     commercialFitScore: row.commercial_fit_score != null ? Number(row.commercial_fit_score) : null,
     outreachScore: row.outreach_score != null ? Number(row.outreach_score) : null,
+    opportunityValueUsd: row.opportunity_value_usd != null ? Number(row.opportunity_value_usd) : null,
+    opportunityProbability: row.opportunity_probability != null ? Number(row.opportunity_probability) : null,
+    expectedCloseDate: row.expected_close_date ? String(row.expected_close_date) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     company: row.company_name ? {
@@ -71,6 +76,9 @@ interface WatchlistPatch {
   confidence?: string;
   commercialFitScore?: number;
   outreachScore?: number;
+  opportunityValueUsd?: number;
+  opportunityProbability?: number;
+  expectedCloseDate?: string;
 }
 
 export async function PATCH(request: NextRequest) {
@@ -83,11 +91,16 @@ export async function PATCH(request: NextRequest) {
   if (!validStatus) return NextResponse.json({ error: "invalid status" }, { status: 400 });
   const validLeadStatus = body?.leadStatus === undefined || LEAD_STATUSES.has(body.leadStatus);
   if (!validLeadStatus) return NextResponse.json({ error: "invalid lead_status" }, { status: 400 });
+  if (body?.opportunityValueUsd !== undefined && !validateOpportunityValue(body.opportunityValueUsd)) return NextResponse.json({ error: "invalid opportunity_value_usd" }, { status: 400 });
+  if (body?.opportunityProbability !== undefined && !validateOpportunityProbability(body.opportunityProbability)) return NextResponse.json({ error: "invalid opportunity_probability" }, { status: 400 });
+  if (body?.expectedCloseDate !== undefined && !validateExpectedCloseDate(body.expectedCloseDate)) return NextResponse.json({ error: "invalid expected_close_date" }, { status: 400 });
 
   const hasUpdate = (body?.status !== undefined || body?.notes !== undefined ||
     body?.leadStatus !== undefined || body?.outreachStrategy !== undefined ||
     body?.recommendedProducts !== undefined || body?.confidence !== undefined ||
-    body?.commercialFitScore !== undefined || body?.outreachScore !== undefined);
+    body?.commercialFitScore !== undefined || body?.outreachScore !== undefined ||
+    body?.opportunityValueUsd !== undefined || body?.opportunityProbability !== undefined ||
+    body?.expectedCloseDate !== undefined);
   if (!hasUpdate) return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
   const now = new Date().toISOString();
@@ -102,6 +115,9 @@ export async function PATCH(request: NextRequest) {
   if (body?.confidence !== undefined) { set.push("confidence=?"); args.push(body.confidence); }
   if (body?.commercialFitScore !== undefined) { set.push("commercial_fit_score=?"); args.push(body.commercialFitScore); }
   if (body?.outreachScore !== undefined) { set.push("outreach_score=?"); args.push(body.outreachScore); }
+  if (body?.opportunityValueUsd !== undefined) { set.push("opportunity_value_usd=?"); args.push(body.opportunityValueUsd); }
+  if (body?.opportunityProbability !== undefined) { set.push("opportunity_probability=?"); args.push(body.opportunityProbability); }
+  if (body?.expectedCloseDate !== undefined) { set.push("expected_close_date=?"); args.push(body.expectedCloseDate); }
 
   set.push("updated_at=?");
   args.push(now, id);
@@ -140,6 +156,9 @@ function mapWatchlistRow(row: Record<string, unknown>) {
     confidence: row.confidence ? String(row.confidence) : null,
     commercialFitScore: row.commercial_fit_score != null ? Number(row.commercial_fit_score) : null,
     outreachScore: row.outreach_score != null ? Number(row.outreach_score) : null,
+    opportunityValueUsd: row.opportunity_value_usd != null ? Number(row.opportunity_value_usd) : null,
+    opportunityProbability: row.opportunity_probability != null ? Number(row.opportunity_probability) : null,
+    expectedCloseDate: row.expected_close_date ? String(row.expected_close_date) : null,
     createdAt: String(row.created_at || ""),
     updatedAt: String(row.updated_at || ""),
   };

@@ -11,6 +11,10 @@ export interface SalesExportRow {
   recommendedProducts: string;
   commercialFitScore: number | null;
   outreachScore: number | null;
+  opportunityValueUsd: number | null;
+  opportunityProbability: number | null;
+  expectedCloseDate: string;
+  weightedValueUsd: number | null;
   draftChannel: string;
   draftStatus: string;
   draftSubject: string;
@@ -30,7 +34,9 @@ const HEADERS: Array<[keyof SalesExportRow, string]> = [
   ["contactType","Contact Type"],["contactValue","Verified Contact"],["contactLabel","Contact Label"],
   ["contactSourceUrl","Contact Evidence"],["outreachStrategy","Outreach Strategy"],
   ["recommendedProducts","Recommended Products"],["commercialFitScore","Commercial Fit Score"],
-  ["outreachScore","Outreach Score"],["draftChannel","Draft Channel"],["draftStatus","Draft Status"],
+  ["outreachScore","Outreach Score"],["opportunityValueUsd","Opportunity Value USD"],
+  ["opportunityProbability","Probability Percent"],["expectedCloseDate","Expected Close Date"],
+  ["weightedValueUsd","Weighted Value USD"],["draftChannel","Draft Channel"],["draftStatus","Draft Status"],
   ["draftSubject","Draft Subject"],["draftBody","Draft Body"],["evidenceSummary","Trade Evidence Summary"],
   ["personalizationNotes","Manual Review Notes"],["lastOutcome","Latest Outcome"],["lastOutcomeNotes","Outcome Notes"],
   ["qualificationFeedback","Qualification Feedback"],["feedbackReason","Feedback Reason"],
