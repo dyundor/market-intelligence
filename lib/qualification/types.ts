@@ -12,6 +12,9 @@ export type ProductMatch = "HIGH" | "MEDIUM" | "LOW";
 /** Buyer type classification — what kind of buyer this is */
 export type BuyerType = "Bathroom Specialist" | "Mixed Bathroom/Kitchen" | "General Plumbing" | "Unknown";
 
+/** Buyer size tier — scale of operations based on shipment volume */
+export type BuyerSizeTier = "Enterprise" | "Mid-market" | "Small";
+
 /** Supplier intelligence — relationship strength and risk signals */
 export interface SupplierIntelligence {
   supplierCount: number;
@@ -28,6 +31,7 @@ export interface QualificationResult {
   productMatchConfidence: number;
   productMatch: ProductMatch;
   buyerType: BuyerType;
+  buyerSizeTier: BuyerSizeTier;
   classificationReason: string;
   supplierIntelligence: SupplierIntelligence;
   positiveFactors: string[];
