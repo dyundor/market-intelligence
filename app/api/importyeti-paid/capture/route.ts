@@ -56,12 +56,12 @@ export async function POST(request: NextRequest) {
       status: report.status,
       query: report.query,
       actualCost,
+      creditReport: report.creditReport,
       report,
       rawPreview: {
         totalResults: raw.totalResults,
         page: raw.page,
         companyCount: raw.companies.length,
-        // Include first 3 companies for preview, the rest in report
         sampleNames: raw.companies.slice(0, 10).map(c => c.name),
       },
     });
