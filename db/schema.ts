@@ -436,3 +436,20 @@ export const apiUsageLog = sqliteTable(
     index("api_usage_log_query_hash_idx").on(table.queryHash),
   ],
 );
+
+export const buyerWatchlist = sqliteTable(
+  "buyer_watchlist",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    status: text("status").notNull().default("new"),
+    notes: text("notes").notNull().default(""),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    index("buyer_watchlist_company_idx").on(table.companyId),
+    index("buyer_watchlist_status_idx").on(table.status),
+    uniqueIndex("buyer_watchlist_company_uq").on(table.companyId),
+  ],
+);
