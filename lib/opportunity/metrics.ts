@@ -27,7 +27,11 @@ export function recencyScore(date: string | null, now = new Date()): number {
   if (Number.isNaN(parsed.getTime())) return 0;
   const days = (now.getTime() - parsed.getTime()) / 86_400_000;
   if (days < 0) return 100;
-  return clamp(100 * (1 - days / 180), 0, 100);
+  if (days <= 30) return 100;
+  if (days <= 90) return 80;
+  if (days <= 180) return 50;
+  if (days <= 365) return 25;
+  return 0;
 }
 
 export function buildScore(
