@@ -66,12 +66,21 @@ export interface ImportYetiSearchResult {
     countryCode?: string;
     website?: string;
     totalShipments?: number;
+    matchingShipments?: number;
     latestShipmentDate?: string;
     supplierCount?: number;
+    supplierNames?: string[];
     productDescriptions?: string[];
+    weightKg?: number;
+    relevanceScore?: number;
+    specialization?: number;
   }>;
   totalResults: number;
   page: number;
+  /** Real ImportYeti credit cost for this request */
+  requestCost?: number;
+  /** Real ImportYeti account credits remaining */
+  creditsRemaining?: number;
 }
 
 // ─────── HTTP helpers ───────
@@ -236,40 +245,46 @@ function normalizeSearchResult(
   data: Record<string, unknown>,
   query: string,
 ): ImportYetiSearchResult {
-  // Officially the response has a "companies" array.
-  // Also accept "results" or "data" as fallback — API responses vary.
   const companies = (
+    (Array.isArray(data.data) ? data.data : null) ||
     (Array.isArray(data.companies) ? data.companies : null) ||
     (Array.isArray(data.results) ? data.results : null) ||
-    (Array.isArray(data.data) ? data.data : null) ||
     []
   ) as Record<string, unknown>[];
 
-  if (companies.length === 0 && data.companies === undefined) {
-    // Don't error on empty — valid for niche queries
-  }
-
   return {
     companies: companies.map((c, i) => ({
-      id: String(c.id || c.company_id || `iy_${query}_${i}`),
-      name: String(c.name || ""),
+      // ImportYeti API uses company_name, company_link, etc.
+      id: String(c.company_link || c.id || `iy_${query}_${i}`),
+      name: String(c.company_name || c.name || ""),
       address: typeof c.address === "string" ? c.address : undefined,
       country: typeof c.country === "string" ? c.country : undefined,
       countryCode: typeof c.country_code === "string" ? c.country_code : undefined,
       website: typeof c.website === "string" ? c.website : undefined,
-      totalShipments: typeof c.total_shipments === "number" ? c.total_shipments
-        : typeof c.shipment_count === "number" ? c.shipment_count
+      totalShipments: typeof c.company_total_shipments === "number" ? c.company_total_shipments
+        : typeof c.total_shipments === "number" ? c.total_shipments
         : undefined,
-      latestShipmentDate: typeof c.latest_shipment_date === "string" ? c.latest_shipment_date : undefined,
-      supplierCount: typeof c.supplier_count === "number" ? c.supplier_count : undefined,
-      productDescriptions: Array.isArray(c.product_descriptions) ? c.product_descriptions as string[]
+      matchingShipments: typeof c.matching_shipments === "number" ? c.matching_shipments : undefined,
+      supplierCount: typeof c.total_suppliers === "number" ? c.total_suppliers
+        : typeof c.supplier_count === "number" ? c.supplier_count
+        : undefined,
+      supplierNames: Array.isArray(c.company_suppliers) ? c.company_suppliers as string[]
+        : Array.isArray(c.suppliers) ? c.suppliers as string[]
+        : undefined,
+      productDescriptions: Array.isArray(c.product_description) ? c.product_description as string[]
+        : Array.isArray(c.product_descriptions) ? c.product_descriptions as string[]
         : typeof c.products === "string" ? c.products.split(/[,;]/).map(s => s.trim())
         : undefined,
+      weightKg: typeof c.weight === "number" ? c.weight : undefined,
+      relevanceScore: typeof c.relevance_score === "number" ? c.relevance_score : undefined,
+      specialization: typeof c.specialization === "number" ? c.specialization : undefined,
     })),
-    totalResults: typeof data.total === "number" ? data.total
-      : typeof data.total_results === "number" ? data.total_results
+    totalResults: typeof data.total_results === "number" ? data.total_results
+      : typeof data.total === "number" ? data.total
       : companies.length,
     page: typeof data.page === "number" ? data.page : 1,
+    requestCost: typeof data.requestCost === "number" ? data.requestCost : undefined,
+    creditsRemaining: typeof data.creditsRemaining === "number" ? data.creditsRemaining : undefined,
   };
 }
 
