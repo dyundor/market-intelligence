@@ -23,3 +23,12 @@ export function scheduleReviewDate(index: number, startDate: string, perBusiness
   if (!Number.isInteger(perBusinessDay) || perBusinessDay < 1) throw new Error("perBusinessDay must be positive");
   return addBusinessDays(startDate, Math.floor(index / perBusinessDay) + 1);
 }
+
+export function nextAvailableReviewDate(startDate: string, scheduledByDate: Record<string, number>, capacity = 2): string {
+  if (!Number.isInteger(capacity) || capacity < 1) throw new Error("capacity must be positive");
+  for (let offset = 1; offset < 366; offset += 1) {
+    const candidate = addBusinessDays(startDate, offset);
+    if ((scheduledByDate[candidate] || 0) < capacity) return candidate;
+  }
+  throw new Error("no review capacity found within one year");
+}

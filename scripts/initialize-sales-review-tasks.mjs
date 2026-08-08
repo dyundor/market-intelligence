@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { scheduleReviewDate } from "../lib/leads/sales-task.ts";
+import { nextAvailableReviewDate } from "../lib/leads/sales-task.ts";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const apply = process.argv.includes("--apply");
@@ -29,11 +29,15 @@ const buyers = db.prepare(`SELECT w.company_id,e.name company_name,w.outreach_sc
   ORDER BY COALESCE(w.outreach_score,0) DESC,e.name`).all();
 const report = {mode: apply ? "apply" : "dry-run", database: dbFile, eligible: buyers.length, created: 0, tasks: []};
 const now = new Date().toISOString();
+const scheduledByDate = Object.fromEntries(db.prepare(`SELECT next_action_due due,COUNT(*) count
+  FROM lead_actions WHERE action_type='review_outreach' AND next_action_due IS NOT NULL
+  GROUP BY next_action_due`).all().map(row => [row.due, Number(row.count)]));
 
 db.exec("BEGIN IMMEDIATE");
 try {
-  buyers.forEach((buyer, index) => {
-    const due = scheduleReviewDate(index, startDate, 2);
+  buyers.forEach(buyer => {
+    const due = nextAvailableReviewDate(startDate, scheduledByDate, 2);
+    scheduledByDate[due] = (scheduledByDate[due] || 0) + 1;
     const nextAction = `Review the verified ${buyer.channel} outreach package and send manually through the approved contact route`;
     if (apply) db.prepare(`INSERT INTO lead_actions
       (id,company_id,action_type,direction,channel,summary,outcome,outcome_code,qualification_feedback,feedback_reason,next_action,next_action_due,performed_by,created_at)

@@ -1,0 +1,22 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Official corporate websites only; identity cross-checked against public shipment address and product relationship; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "K Hovnanian Distribution",
+      "website": "https://www.khov.com/",
+      "websiteSourceUrl": "https://www.khov.com/contact-us/",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://www.khov.com/contact-us/","label":"Subcontractor and Business Contact Form","sourceUrl":"https://www.khov.com/contact-us/","verificationStatus":"verified"}
+      ]
+    },
+    {
+      "companyName": "Legacy Housing Corp",
+      "website": "https://legacyhousing.com/",
+      "websiteSourceUrl": "https://legacyhousing.com/contact/",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://legacyhousing.com/contact/","label":"Corporate Contact Form","sourceUrl":"https://legacyhousing.com/contact/","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

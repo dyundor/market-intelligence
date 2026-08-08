@@ -12,7 +12,7 @@ import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
 import { evaluateOutreachReadiness } from "../lib/leads/outreach-readiness.ts";
 import { shouldInitializeSalesLead, sortSalesLeads } from "../lib/leads/pipeline-selection.ts";
 import { contactRouteNote, draftChannelForContact, selectBestVerifiedContact } from "../lib/leads/outreach-package.ts";
-import { addBusinessDays, scheduleReviewDate } from "../lib/leads/sales-task.ts";
+import { addBusinessDays, nextAvailableReviewDate, scheduleReviewDate } from "../lib/leads/sales-task.ts";
 import { LeadRepository } from "../lib/repositories/lead-repository.ts";
 import { draftSentActionId, shouldSyncDraftSent } from "../lib/leads/draft-lifecycle.ts";
 
@@ -201,6 +201,10 @@ describe("Sales review task scheduling", () => {
   it("schedules follow-up after three business days", () => {
     assert.equal(addBusinessDays("2026-08-07", 3), "2026-08-12");
   });
+  it("places new reviews after already-full business days", () => {
+    const load = {"2026-08-10":2,"2026-08-11":2,"2026-08-12":2,"2026-08-13":2};
+    assert.equal(nextAvailableReviewDate("2026-08-08", load), "2026-08-14");
+  });
   it("replaces the previous current task only after saving the new activity", async () => {
     const raw = new DatabaseSync(":memory:");
     raw.exec(`CREATE TABLE lead_actions (id TEXT PRIMARY KEY,company_id TEXT,action_type TEXT,direction TEXT,channel TEXT,summary TEXT,outcome TEXT,outcome_code TEXT,qualification_feedback TEXT,feedback_reason TEXT,next_action TEXT,next_action_due TEXT,performed_by TEXT,created_at TEXT)`);
@@ -274,6 +278,11 @@ describe("Public contact enrichment", () => {
     assert.deepEqual(payload.companies.map((company: {companyName: string}) => company.companyName), ["Giagni", "Arizona Shower Doors Llc", "Maax Bath"]);
     assert.ok(payload.companies.every((company: Parameters<typeof validatePublicEvidence>[0]) => validatePublicEvidence(company).length === 0));
   });
+  it("keeps the fifth corporate contact wave valid", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-lead-contacts-wave5-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.map((company: {companyName: string}) => company.companyName), ["K Hovnanian Distribution", "Legacy Housing Corp"]);
+    assert.ok(payload.companies.every((company: Parameters<typeof validatePublicEvidence>[0]) => validatePublicEvidence(company).length === 0));
+  });
 });
 
 describe("Contact research queue", () => {
@@ -302,6 +311,11 @@ describe("Contact research queue", () => {
     const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave4-2026-08-08.json", import.meta.url), "utf8"));
     assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
     assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:3, needsIdentityMatch:0, unresolved:0, coveragePercent:100});
+  });
+  it("keeps AK Trade unresolved in the fifth research wave", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave5-2026-08-08.json", import.meta.url), "utf8"));
+    assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
+    assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:2, needsIdentityMatch:0, unresolved:1, coveragePercent:67});
   });
 });
 

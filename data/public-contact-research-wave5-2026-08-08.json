@@ -1,0 +1,9 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Remaining product-relevant real leads; official company sources only; no paid provider and no guessed contact",
+  "companies": [
+    {"companyName":"K Hovnanian Distribution","status":"verified","reasonCode":"official_contact_found","reason":"Public shipment address for K. Hovnanian Distribution Services at 90 Matawan Road matches the official K. Hovnanian corporate address; the official form includes a subcontractor route.","nextAction":"Submit a concise bathroom fixtures supply introduction through the official subcontractor/business route.","evidenceUrls":["https://www.khov.com/contact-us/","https://www.khov.com/privacy-policy/"]},
+    {"companyName":"Legacy Housing Corp","status":"verified","reasonCode":"official_contact_found","reason":"Exact Legacy Housing corporate identity and manufactured-home business match the importer purchasing shower trays; official corporate contact form verified.","nextAction":"Use the corporate form to route a manufactured-housing bathroom fixtures supply proposal to purchasing.","evidenceUrls":["https://legacyhousing.com/","https://legacyhousing.com/contact/"]},
+    {"companyName":"AK Trade Home Options","status":"unresolved","reasonCode":"no_official_site","reason":"Trade evidence confirms a Canadian shower-product buyer, but no current company-controlled official website or business contact was verified.","nextAction":"Obtain consignee street address or legal registration evidence before linking a contact.","evidenceUrls":[]}
+  ]
+}
