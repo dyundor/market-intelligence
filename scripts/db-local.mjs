@@ -13,25 +13,33 @@
  *   node scripts/db-local.mjs tables         # list local tables
  */
 import { DatabaseSync } from "node:sqlite";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const stateDir = join(root, ".wrangler", "state", "v3", "d1", "miniflare-D1DatabaseObject");
 
+// Miniflare names the live D1 file after the configured database id/binding.
+// Stale or placeholder files (e.g. the all-zero placeholder database id) can
+// coexist in the same directory, so pick the file with real content: the most
+// recently modified one that is not empty.
 function openDatabase() {
   if (!existsSync(stateDir)) {
     console.error(`Local D1 state not found at ${stateDir}`);
     console.error("Start `npm run dev` once so the Cloudflare plugin creates the DB binding.");
     process.exit(1);
   }
-  const files = readdirSync(stateDir).filter(file => file.endsWith(".sqlite") && file !== "metadata.sqlite");
+  const files = readdirSync(stateDir)
+    .filter(file => file.endsWith(".sqlite") && file !== "metadata.sqlite")
+    .map(file => join(stateDir, file))
+    .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
   if (!files.length) {
     console.error(`No local D1 database file found in ${stateDir}`);
     process.exit(1);
   }
-  return new DatabaseSync(join(stateDir, files[0]));
+  const live = files.find(file => statSync(file).size > 0) || files[0];
+  return new DatabaseSync(live);
 }
 
 function runSql(db, sql) {
