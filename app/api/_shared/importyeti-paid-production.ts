@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { cachedApiRequest,readCachedApiValue } from "./paid-cache";
 import { IMPORTYETI_PROVIDER,type PaidGatewayStatus } from "./importyeti-credit-policy";
 import { ImportYetiPaidGateway,type UsageEvent,type UsageRequest,type UsageStore } from "./importyeti-paid-gateway";
+import { createCompanySearchOperation } from "./importyeti-production-provider";
 
 let schemaReady:Promise<void>|null = null;
 async function initializeUsageSchema() {
@@ -35,5 +36,11 @@ function num(value:number|null|undefined) { return value===null||value===undefin
 function mapRow(row:Record<string,unknown>):UsageRequest { const n=(v:unknown)=>v===null||v===undefined?null:Number(v); return {id:String(row.id),provider:String(row.provider),endpoint:String(row.endpoint),queryHash:String(row.query_hash),queryDescription:String(row.query_description),estimatedCost:Number(row.estimated_cost),approvedCost:n(row.approved_cost),actualCost:n(row.actual_cost),totalBudget:Number(row.total_budget),reserveBudget:Number(row.reserve_budget),remainingBudgetBefore:n(row.remaining_budget_before),remainingBudgetAfter:n(row.remaining_budget_after),percentOfTotalBudget:n(row.percent_of_total_budget),percentOfRemainingBudget:n(row.percent_of_remaining_budget),status:String(row.status) as PaidGatewayStatus,failureReason:row.failure_reason===null?null:String(row.failure_reason),approvedAt:row.approved_at===null?null:String(row.approved_at),executedAt:row.executed_at===null?null:String(row.executed_at),createdAt:String(row.created_at),updatedAt:String(row.updated_at)}; }
 
 export function createProductionImportYetiGateway() {
-  return new ImportYetiPaidGateway(new D1UsageStore(),{}, {read:readCachedApiValue,request:cachedApiRequest});
+  const operations: Record<string, typeof import("./importyeti-paid-gateway.ts")["PaidOperation"]> = {
+    importyeti_company_search: createCompanySearchOperation({
+      IMPORTYETI_API_KEY: (env as Record<string, string>).IMPORTYETI_API_KEY,
+      IMPORTYETI_API_URL: (env as Record<string, string>).IMPORTYETI_API_URL,
+    }),
+  };
+  return new ImportYetiPaidGateway(new D1UsageStore(), operations, {read:readCachedApiValue,request:cachedApiRequest});
 }
