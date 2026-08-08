@@ -1,11 +1,11 @@
 import type { LeadStatus } from "../qualification/types.ts";
 import { addBusinessDays } from "./sales-task.ts";
 
-export type OutcomeCode = "no_response" | "replied" | "interested" | "meeting_booked" | "quote_requested" | "not_fit" | "bounced" | "won" | "lost";
+export type OutcomeCode = "no_response" | "replied" | "interested" | "meeting_booked" | "quote_requested" | "quote_sent" | "not_fit" | "bounced" | "won" | "lost";
 export type QualificationFeedback = "confirmed_fit" | "needs_review" | "disqualified";
 
 export function leadStatusForOutcome(outcome: OutcomeCode): LeadStatus {
-  if (outcome === "won" || outcome === "quote_requested") return "opportunity";
+  if (outcome === "won" || outcome === "quote_requested" || outcome === "quote_sent") return "opportunity";
   if (outcome === "meeting_booked" || outcome === "interested") return "qualified";
   if (outcome === "replied" || outcome === "no_response") return "follow_up";
   if (outcome === "bounced") return "researching";
@@ -21,6 +21,7 @@ export function defaultFollowUpForOutcome(outcome: OutcomeCode, today: string): 
     interested: {nextAction:"Qualify buyer needs and propose the next step", businessDays:1},
     meeting_booked: {nextAction:"Prepare buyer meeting brief", businessDays:1},
     quote_requested: {nextAction:"Prepare and send quotation", businessDays:1},
+    quote_sent: {nextAction:"Follow up on quotation and resolve buyer questions", businessDays:3},
   };
   const rule = defaults[outcome];
   return rule ? {nextAction:rule.nextAction,nextActionDue:addBusinessDays(today,rule.businessDays)} : null;
@@ -45,6 +46,6 @@ export function computePipelineMetrics(rows: PipelineMetricInput[], today: strin
     if (row.nextActionDue === today) dueToday += 1;
   }
   const contacted = (leadCounts.contacted || 0) + (leadCounts.follow_up || 0) + (leadCounts.qualified || 0) + (leadCounts.opportunity || 0);
-  const positive = (outcomeCounts.interested || 0) + (outcomeCounts.meeting_booked || 0) + (outcomeCounts.quote_requested || 0) + (outcomeCounts.won || 0);
+  const positive = (outcomeCounts.interested || 0) + (outcomeCounts.meeting_booked || 0) + (outcomeCounts.quote_requested || 0) + (outcomeCounts.quote_sent || 0) + (outcomeCounts.won || 0);
   return {totalLeads: rows.length, leadCounts, outcomeCounts, overdue, dueToday, contacted, positive, positiveRate: contacted ? Math.round(positive / contacted * 100) : 0};
 }

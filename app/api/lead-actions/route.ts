@@ -3,7 +3,7 @@ import { env } from "cloudflare:workers";
 import { LeadRepository } from "../../../lib/repositories/lead-repository.ts";
 import { defaultFollowUpForOutcome, leadStatusForOutcome, type OutcomeCode } from "../../../lib/leads/feedback.ts";
 
-const OUTCOMES = new Set(["no_response", "replied", "interested", "meeting_booked", "quote_requested", "not_fit", "bounced", "won", "lost"]);
+const OUTCOMES = new Set(["no_response", "replied", "interested", "meeting_booked", "quote_requested", "quote_sent", "not_fit", "bounced", "won", "lost"]);
 const FIT_FEEDBACK = new Set(["confirmed_fit", "needs_review", "disqualified"]);
 
 export async function GET(request: NextRequest) {

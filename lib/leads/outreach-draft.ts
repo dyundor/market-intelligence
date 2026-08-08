@@ -24,7 +24,7 @@ export interface GeneratedOutreachDraft {
   personalizationNotes: string;
 }
 
-export type FollowUpOutcome = "no_response" | "replied" | "interested" | "meeting_booked" | "quote_requested";
+export type FollowUpOutcome = "no_response" | "replied" | "interested" | "meeting_booked" | "quote_requested" | "quote_sent";
 
 function greeting(contactName?: string | null): string {
   return contactName?.trim() ? `Hi ${contactName.trim()},` : "Hello,";
@@ -83,6 +83,7 @@ export function generateFollowUpDraft(input: OutreachDraftInput & {outcomeCode: 
     interested: `Thank you for your interest. We can prepare a focused product-fit proposal for ${products}, including suitable specifications, finish options, certification support, indicative MOQ, and development timing.`,
     meeting_booked: `Thank you for arranging time with us. For a productive discussion, we propose covering your priority ${products} requirements, target market and certifications, expected volume, finish direction, and development timeline.`,
     quote_requested: quoteRequestMessage(input, products),
+    quote_sent: `I wanted to follow up on the quotation we shared for ${products}. Please let me know if you would like us to clarify any specification, certification scope, pricing assumption, MOQ, lead time, or commercial term so we can align the proposal with ${company}'s requirements.`,
   };
   const outcomeContext = input.outcomeNotes?.trim() ? ` Reviewer context from the latest result: ${input.outcomeNotes.trim()}` : "";
   return {

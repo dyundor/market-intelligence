@@ -200,6 +200,13 @@ describe("Outreach draft", () => {
     assert.match(ready.body,/Please confirm that this scope is correct/);
     assert.doesNotMatch(ready.body,/could you please confirm required certifications/);
   });
+
+  it("creates a quotation follow-up after the quote has been sent",()=>{
+    const draft=generateFollowUpDraft({companyName:"North Bath",recommendedProducts:"Shower Systems",outcomeCode:"quote_sent",outcomeNotes:"Quote Q-104 sent on August 8"});
+    assert.match(draft.body,/follow up on the quotation/);
+    assert.match(draft.body,/pricing assumption, MOQ, lead time/);
+    assert.match(draft.personalizationNotes,/Quote Q-104 sent/);
+  });
 });
 
 describe("Verified outreach package", () => {
@@ -291,6 +298,7 @@ describe("Sales feedback loop", () => {
   it("moves positive outcomes forward and bounced contacts back to research", () => {
     assert.equal(leadStatusForOutcome("interested"), "qualified");
     assert.equal(leadStatusForOutcome("quote_requested"), "opportunity");
+    assert.equal(leadStatusForOutcome("quote_sent"), "opportunity");
     assert.equal(leadStatusForOutcome("bounced"), "researching");
     assert.equal(leadStatusForOutcome("not_fit"), "disqualified");
   });
@@ -318,6 +326,10 @@ describe("Sales feedback loop", () => {
     });
     assert.equal(defaultFollowUpForOutcome("won", "2026-08-07"), null);
     assert.equal(defaultFollowUpForOutcome("lost", "2026-08-07"), null);
+    assert.deepEqual(defaultFollowUpForOutcome("quote_sent", "2026-08-07"), {
+      nextAction:"Follow up on quotation and resolve buyer questions",
+      nextActionDue:"2026-08-12",
+    });
   });
 });
 

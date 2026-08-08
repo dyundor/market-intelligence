@@ -7,7 +7,7 @@ import { draftSentActionId, shouldSyncDraftSent } from "../../../lib/leads/draft
 import { addBusinessDays } from "../../../lib/leads/sales-task.ts";
 
 const STATUSES = new Set(["draft", "approved", "sent", "archived"]);
-const FOLLOW_UP_OUTCOMES = new Set(["no_response", "replied", "interested", "meeting_booked", "quote_requested"]);
+const FOLLOW_UP_OUTCOMES = new Set(["no_response", "replied", "interested", "meeting_booked", "quote_requested", "quote_sent"]);
 
 export async function GET(request: NextRequest) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
