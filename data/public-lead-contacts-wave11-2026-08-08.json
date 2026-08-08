@@ -1,0 +1,25 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Dakota Plumbing Products identity, product range, and corporate sales route matched to exact Fort Lauderdale importer evidence and current free public trade records; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Dakota Plumbing Products",
+      "website": "https://dakotasinks.com/",
+      "websiteSourceUrl": "https://dakotasinks.com/home/contact-us/",
+      "identityEvidence": {
+        "legalName": "Dakota Plumbing Products, LLC",
+        "sourceUrl": "https://www.dakotasinks.com/wp-content/uploads/2023/02/2023-Dakota-Catalog-SM.pdf",
+        "note": "The company catalog on Dakota's official domain identifies Dakota Plumbing Products, LLC; its official contact page and current consignee records share the 3226 SW 30th Ave, Fort Lauderdale address."
+      },
+      "businessFit": {
+        "outreachStrategy": "OEM/ODM Pitch",
+        "recommendedProducts": "Certified Bathroom Faucets + Shower Systems + Drains",
+        "reason": "Dakota maintains a broad branded bath range and current imports. Lead with independently verifiable certification files, testing traceability, finish consistency, and controlled OEM/ODM development because public litigation history makes compliance assurance commercially material."
+      },
+      "contacts": [
+        {"type":"email","value":"sales@dakotasinks.com","label":"Dakota Sales","sourceUrl":"https://dakotasinks.com/home/contact-us/","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-954-987-3430","label":"Dakota Headquarters","sourceUrl":"https://dakotasinks.com/home/contact-us/","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

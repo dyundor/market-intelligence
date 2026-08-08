@@ -384,6 +384,13 @@ describe("Public contact enrichment", () => {
     assert.equal(payload.companies[0].contacts[0].value,"support@dreamline.com");
     assert.match(payload.companies[0].businessFit.recommendedProducts,/Shower Systems/);
   });
+  it("keeps Dakota's legal identity, sales route, and compliance-led fit explicit", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-lead-contacts-wave11-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validatePublicEvidence),[]);
+    assert.equal(payload.companies[0].identityEvidence.legalName,"Dakota Plumbing Products, LLC");
+    assert.equal(payload.companies[0].contacts[0].value,"sales@dakotasinks.com");
+    assert.match(payload.companies[0].businessFit.reason,/certification/i);
+  });
 });
 
 describe("Contact research queue", () => {
@@ -485,6 +492,13 @@ describe("Contact research queue", () => {
     assert.equal(payload.companies[0].status,"disqualified");
     assert.equal(payload.companies[0].reasonCode,"competitor_or_supplier");
     assert.match(payload.companies[0].reason,/Guangdong and Mexico/);
+  });
+  it("verifies Dakota while retaining certification risk in qualification", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave15-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validateContactResearch),[]);
+    assert.equal(payload.companies[0].status,"verified");
+    assert.match(payload.companies[0].reason,/at least three relevant 2026 import events/);
+    assert.match(payload.companies[0].nextAction,/certification/);
   });
 });
 

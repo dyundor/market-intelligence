@@ -1,0 +1,19 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Dakota Plumbing Products current buyer identity cross-checked with official product/contact pages, trademark identity, and free public trade evidence; certification risk retained for sales qualification",
+  "companies": [
+    {
+      "companyName": "Dakota Plumbing Products",
+      "status": "verified",
+      "reasonCode": "official_contact_found",
+      "reason": "Dakota's official site lists bathroom faucets, tub and shower sets, shower bases, drains, bathtubs, and a sales email at the same Fort Lauderdale address found in current consignee records. Free public sources show at least three relevant 2026 import events, including two Ningbo Waltmal bathtub and shower-tray shipments and a separate stainless-sink shipment naming Dakota as notify party.",
+      "nextAction": "Prepare a reviewed OEM/ODM introduction to the official sales route emphasizing verifiable North American certification, test-document traceability, finish control, and shower-system development; require qualification before quoting.",
+      "evidenceUrls": [
+        "https://dakotasinks.com/home/contact-us/",
+        "https://www.dakotasinks.com/home/products/",
+        "https://www.importinfo.com/ningbo-waltmal-import-and-export-co",
+        "https://dockets.justia.com/docket/florida/flsdce/0%3A2024cv60920/668500"
+      ]
+    }
+  ]
+}
