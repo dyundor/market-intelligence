@@ -479,6 +479,13 @@ describe("Contact research queue", () => {
     assert.match(payload.companies[0].reason,/1,658 bills of lading/);
     assert.ok(payload.companies[0].evidenceUrls.some((url:string)=>url.includes("importinfo.com/bath-authority")));
   });
+  it("excludes Vetta as a directly competing OEM and ODM manufacturer", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave14-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validateContactResearch),[]);
+    assert.equal(payload.companies[0].status,"disqualified");
+    assert.equal(payload.companies[0].reasonCode,"competitor_or_supplier");
+    assert.match(payload.companies[0].reason,/Guangdong and Mexico/);
+  });
 });
 
 describe("Sales-ready lead export", () => {

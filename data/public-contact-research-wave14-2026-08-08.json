@@ -1,0 +1,18 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Vetta Kitchen and Bath Manufacturing classified from official company positioning and active Florida registry evidence; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Vetta Kitchen And Bath Manufacturin",
+      "status": "disqualified",
+      "reasonCode": "competitor_or_supplier",
+      "reason": "VETTA publicly positions itself as an OEM, ODM, and private-label kitchen-and-bath manufacturer with manufacturing in Guangdong and Mexico. The active Florida entity was renamed Vetta Kitchen and Bath Manufacturing, Inc. in December 2025. This is a direct manufacturing peer rather than a target buyer for Yundor.",
+      "nextAction": "Exclude from buyer outreach and retain only as competitor and supply-chain context.",
+      "evidenceUrls": [
+        "https://www.vetta.com/",
+        "https://www.linkedin.com/company/meijie-faucet-company",
+        "https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultDetail?aggregateId=domp-p12000081254-92534706-d647-4557-acff-b4524ae8beb2&directionType=CurrentList&inquirytype=EntityName&listNameOrder=MJFGLOBAL+P070001060640&searchNameOrder=MJFGROUP+P120000812540&searchTerm=MJF+GLASS+"
+      ]
+    }
+  ]
+}
