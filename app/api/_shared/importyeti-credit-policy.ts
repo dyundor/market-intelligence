@@ -5,6 +5,7 @@ export const IMPORTYETI_RESERVE_CREDITS = 25;
 export type PaidGatewayStatus =
   | "cache_hit"
   | "free_source"
+  | "credit_required"
   | "awaiting_approval"
   | "approved"
   | "executing"

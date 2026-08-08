@@ -98,6 +98,19 @@ export class ImportYetiPaidGateway {
     const estimatedCost = checkedCost(operation.estimate(normalized.parameters));
     const {actualSpent,approvedReservations} = await this.store.costs();
     const budget = budgetSnapshot(actualSpent,approvedReservations);
+
+    if (budget.available <= 0) {
+      return {
+        status: "credit_required",
+        reason: [
+          "ImportYeti credits are required before running paid collection.",
+          `Estimated cost: ${estimatedCost} credits`,
+          `Available: ${budget.available} credits (${IMPORTYETI_TOTAL_CREDITS} total, ${IMPORTYETI_RESERVE_CREDITS} reserved)`,
+          "Recommended action: Add credits first",
+        ].join("\n"),
+      };
+    }
+
     const percentages = costPercentages(estimatedCost,budget.remainingBeforeReserve);
     const now = new Date().toISOString();
     const blocked = estimatedCost > budget.available;
