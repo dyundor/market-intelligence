@@ -555,6 +555,19 @@ describe("Contact research queue", () => {
     assert.match(sql,/ON CONFLICT\(id\) DO UPDATE/);
     assert.doesNotMatch(sql,/importyeti-paid|subscription-key|api\.importyeti/);
   });
+
+  it("keeps the Danco buyer pack tied to current free manifests and verified official routes",()=>{
+    const sql=readFileSync(new URL("../data/public-buyer-danco-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/https:\/\/www\.importinfo\.com\/danco-import/);
+    assert.match(sql,/https:\/\/www\.danco\.com\/support\/contact-us\//);
+    assert.match(sql,/CHSL550992076HCM/);
+    assert.match(sql,/Certified Shower Heads \+ Mobile Home Faucets \+ Faucet\/Drain Components/);
+    assert.match(sql,/\+1-800-523-5135/);
+    assert.match(sql,/website_contact_page/);
+    assert.match(sql,/Danco × Yundor — OEM bathroom repair and shower product supply/);
+    assert.match(sql,/free_public_trade_web/);
+    assert.doesNotMatch(sql,/importyeti_api|subscription-key|paid_api/);
+  });
 });
 
 describe("Sales-ready lead export", () => {
