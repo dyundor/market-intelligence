@@ -73,6 +73,26 @@ export const DEFAULT_WEIGHTS: PriorityWeights = {
 
 export const PRIORITY_THRESHOLDS = { a: 65, b: 35 };
 
+/** Lead status — 7-stage sales pipeline */
+export type LeadStatus = "new" | "researching" | "contact_ready" | "contacted" | "follow_up" | "qualified" | "opportunity";
+
+/** Outreach strategy — recommended approach for this buyer */
+export type OutreachStrategy = "OEM/ODM Pitch" | "Private Label Pitch" | "Distribution Partnership" | "Research Only";
+
+/** Confidence level for lead evidence */
+export type ConfidenceLevel = "HIGH" | "MEDIUM" | "LOW";
+
+/** Lead record — maps qualification output to sales readiness */
+export interface LeadRecord {
+  companyId: string;
+  leadStatus: LeadStatus;
+  outreachStrategy: OutreachStrategy;
+  recommendedProducts: string;
+  confidence: ConfidenceLevel;
+  commercialFitScore: number;
+  outreachScore: number;
+}
+
 export const POSITIVE_REASONS: Record<string, string> = {
   frequent_importer: "High shipment volume — established trading relationship",
   recent_imports: "Recent imports within 180 days — active buyer",

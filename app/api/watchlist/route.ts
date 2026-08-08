@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
 
 const STATUSES = new Set(["new", "researching", "contacted", "quoted", "customer"]);
+const LEAD_STATUSES = new Set([
+  "new", "researching", "contact_ready", "contacted",
+  "follow_up", "qualified", "opportunity",
+]);
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   const rows = await env.DB.prepare(
     `SELECT w.id,w.company_id,w.status,w.notes,w.created_at,w.updated_at,
+      w.lead_status,w.outreach_strategy,w.recommended_products,w.confidence,
+      w.commercial_fit_score,w.outreach_score,
       e.name company_name,e.country company_country,e.country_code company_country_code,e.entity_type,
       e.total_shipments,e.latest_shipment_date,e.website,e.city_name,e.admin1_name
       FROM buyer_watchlist w LEFT JOIN importyeti_web_entities e ON e.id=w.company_id
@@ -17,6 +23,12 @@ export async function GET(request: NextRequest) {
     companyId: String(row.company_id),
     status: String(row.status),
     notes: String(row.notes || ""),
+    leadStatus: row.lead_status ? String(row.lead_status) : null,
+    outreachStrategy: row.outreach_strategy ? String(row.outreach_strategy) : null,
+    recommendedProducts: row.recommended_products ? String(row.recommended_products) : null,
+    confidence: row.confidence ? String(row.confidence) : null,
+    commercialFitScore: row.commercial_fit_score != null ? Number(row.commercial_fit_score) : null,
+    outreachScore: row.outreach_score != null ? Number(row.outreach_score) : null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
     company: row.company_name ? {
@@ -46,43 +58,61 @@ export async function POST(request: NextRequest) {
   const saved = await env.DB.prepare("SELECT * FROM buyer_watchlist WHERE company_id = ?").bind(companyId).all();
   const row = (saved.results || [])[0];
   if (!row) return NextResponse.json({ error: "failed to save" }, { status: 500 });
-  return NextResponse.json({
-    id: String(row.id),
-    companyId: String(row.company_id),
-    status: String(row.status),
-    notes: String(row.notes || ""),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
-  }, { status: 201 });
+  return NextResponse.json(mapWatchlistRow(row), { status: 201 });
+}
+
+interface WatchlistPatch {
+  id?: string;
+  status?: string;
+  notes?: string;
+  leadStatus?: string;
+  outreachStrategy?: string;
+  recommendedProducts?: string;
+  confidence?: string;
+  commercialFitScore?: number;
+  outreachScore?: number;
 }
 
 export async function PATCH(request: NextRequest) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
-  const body = await request.json().catch(() => null) as { id?: string; status?: string; notes?: string } | null;
+  const body = await request.json().catch(() => null) as WatchlistPatch | null;
   const id = body?.id || request.nextUrl.searchParams.get("id") || "";
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  const status = body?.status;
-  if (status !== undefined && !STATUSES.has(status)) return NextResponse.json({ error: "invalid status" }, { status: 400 });
-  if (status === undefined && body?.notes === undefined) return NextResponse.json({ error: "nothing to update" }, { status: 400 });
+
+  const validStatus = body?.status === undefined || STATUSES.has(body.status);
+  if (!validStatus) return NextResponse.json({ error: "invalid status" }, { status: 400 });
+  const validLeadStatus = body?.leadStatus === undefined || LEAD_STATUSES.has(body.leadStatus);
+  if (!validLeadStatus) return NextResponse.json({ error: "invalid lead_status" }, { status: 400 });
+
+  const hasUpdate = (body?.status !== undefined || body?.notes !== undefined ||
+    body?.leadStatus !== undefined || body?.outreachStrategy !== undefined ||
+    body?.recommendedProducts !== undefined || body?.confidence !== undefined ||
+    body?.commercialFitScore !== undefined || body?.outreachScore !== undefined);
+  if (!hasUpdate) return NextResponse.json({ error: "nothing to update" }, { status: 400 });
+
   const now = new Date().toISOString();
   const set: string[] = [];
   const args: unknown[] = [];
-  if (status !== undefined) { set.push("status=?"); args.push(status); }
+
+  if (body?.status !== undefined) { set.push("status=?"); args.push(body.status); }
   if (body?.notes !== undefined) { set.push("notes=?"); args.push(body.notes); }
+  if (body?.leadStatus !== undefined) { set.push("lead_status=?"); args.push(body.leadStatus); }
+  if (body?.outreachStrategy !== undefined) { set.push("outreach_strategy=?"); args.push(body.outreachStrategy); }
+  if (body?.recommendedProducts !== undefined) { set.push("recommended_products=?"); args.push(body.recommendedProducts); }
+  if (body?.confidence !== undefined) { set.push("confidence=?"); args.push(body.confidence); }
+  if (body?.commercialFitScore !== undefined) { set.push("commercial_fit_score=?"); args.push(body.commercialFitScore); }
+  if (body?.outreachScore !== undefined) { set.push("outreach_score=?"); args.push(body.outreachScore); }
+
   set.push("updated_at=?");
   args.push(now, id);
-  const result = await env.DB.prepare(`UPDATE buyer_watchlist SET ${set.join(", ")} WHERE id=?`).bind(...args).run();
+
+  const result = await env.DB.prepare(
+    `UPDATE buyer_watchlist SET ${set.join(", ")} WHERE id=?`,
+  ).bind(...args).run();
   if (!result.meta?.changes) return NextResponse.json({ error: "not found" }, { status: 404 });
+
   const row = await env.DB.prepare("SELECT * FROM buyer_watchlist WHERE id = ?").bind(id).all();
-  const saved = (row.results || [])[0];
-  return NextResponse.json({
-    id: String(saved.id),
-    companyId: String(saved.company_id),
-    status: String(saved.status),
-    notes: String(saved.notes || ""),
-    createdAt: String(saved.created_at),
-    updatedAt: String(saved.updated_at),
-  });
+  return NextResponse.json(mapWatchlistRow((row.results || [])[0] || {}));
 }
 
 export async function DELETE(request: NextRequest) {
@@ -91,4 +121,21 @@ export async function DELETE(request: NextRequest) {
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
   await env.DB.prepare("DELETE FROM buyer_watchlist WHERE id = ?").bind(id).run();
   return NextResponse.json({ ok: true });
+}
+
+function mapWatchlistRow(row: Record<string, unknown>) {
+  return {
+    id: String(row.id || ""),
+    companyId: String(row.company_id || ""),
+    status: String(row.status || "new"),
+    notes: String(row.notes || ""),
+    leadStatus: row.lead_status ? String(row.lead_status) : null,
+    outreachStrategy: row.outreach_strategy ? String(row.outreach_strategy) : null,
+    recommendedProducts: row.recommended_products ? String(row.recommended_products) : null,
+    confidence: row.confidence ? String(row.confidence) : null,
+    commercialFitScore: row.commercial_fit_score != null ? Number(row.commercial_fit_score) : null,
+    outreachScore: row.outreach_score != null ? Number(row.outreach_score) : null,
+    createdAt: String(row.created_at || ""),
+    updatedAt: String(row.updated_at || ""),
+  };
 }

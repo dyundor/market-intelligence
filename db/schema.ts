@@ -444,6 +444,12 @@ export const buyerWatchlist = sqliteTable(
     companyId: text("company_id").notNull(),
     status: text("status").notNull().default("new"),
     notes: text("notes").notNull().default(""),
+    leadStatus: text("lead_status").default("new"),
+    outreachStrategy: text("outreach_strategy"),
+    recommendedProducts: text("recommended_products"),
+    confidence: text("confidence"),
+    commercialFitScore: integer("commercial_fit_score"),
+    outreachScore: integer("outreach_score"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },
@@ -451,5 +457,52 @@ export const buyerWatchlist = sqliteTable(
     index("buyer_watchlist_company_idx").on(table.companyId),
     index("buyer_watchlist_status_idx").on(table.status),
     uniqueIndex("buyer_watchlist_company_uq").on(table.companyId),
+  ],
+);
+
+export const leadContacts = sqliteTable(
+  "lead_contacts",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    contactType: text("contact_type").notNull().default("email"),
+    contactValue: text("contact_value").notNull(),
+    label: text("label"),
+    sourceUrl: text("source_url").notNull(),
+    sourceType: text("source_type").notNull().default("manual"),
+    verifiedAt: text("verified_at"),
+    verificationStatus: text("verification_status").notNull().default("unverified"),
+    notes: text("notes").notNull().default(""),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    index("lead_contacts_company_idx").on(table.companyId),
+    uniqueIndex("lead_contacts_company_type_value_uq").on(
+      table.companyId,
+      table.contactType,
+      table.contactValue,
+    ),
+  ],
+);
+
+export const leadActions = sqliteTable(
+  "lead_actions",
+  {
+    id: text("id").primaryKey(),
+    companyId: text("company_id").notNull(),
+    actionType: text("action_type").notNull(),
+    direction: text("direction").notNull().default("outbound"),
+    channel: text("channel"),
+    summary: text("summary").notNull(),
+    outcome: text("outcome"),
+    nextAction: text("next_action"),
+    nextActionDue: text("next_action_due"),
+    performedBy: text("performed_by").default("manual"),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => [
+    index("lead_actions_company_idx").on(table.companyId),
+    index("lead_actions_type_idx").on(table.actionType),
   ],
 );
