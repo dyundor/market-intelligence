@@ -6,6 +6,7 @@ import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
 import { computePipelineMetrics, leadStatusForOutcome } from "../lib/leads/feedback.ts";
 import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/public-contact-enrichment.ts";
 import { contactResearchId, summarizeContactResearch, validateContactResearch } from "../lib/leads/contact-research.ts";
+import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -204,5 +205,18 @@ describe("Contact research queue", () => {
   });
   it("reports actionable research coverage", () => {
     assert.deepEqual(summarizeContactResearch([{status:"verified"},{status:"needs_identity_match"},{status:"unresolved"}]),{total:3,verified:1,needsIdentityMatch:1,unresolved:1,coveragePercent:33});
+  });
+});
+
+describe("Sales-ready lead export", () => {
+  it("creates a UTF-8 CSV with verified-contact evidence fields", () => {
+    const csv=buildSalesExportCsv([{companyName:"Aqua, Inc.",country:"US",website:"https://aqua.example",leadStatus:"contact_ready",contactType:"email",contactValue:"buyer@aqua.example",contactLabel:"Purchasing",contactSourceUrl:"https://aqua.example/contact",outreachStrategy:"OEM/ODM Pitch",recommendedProducts:"Faucets",commercialFitScore:88,outreachScore:91,nextAction:"Send introduction",nextActionDue:"2026-08-10"}]);
+    assert.ok(csv.startsWith("\ufeff"));
+    assert.match(csv,/"Aqua, Inc\."/);
+    assert.match(csv,/buyer@aqua\.example/);
+    assert.match(csv,/Contact Evidence/);
+  });
+  it("neutralizes spreadsheet formulas in exported values", () => {
+    assert.equal(csvCell("=HYPERLINK(\"bad\")"),"\"'=HYPERLINK(\"\"bad\"\")\"");
   });
 });
