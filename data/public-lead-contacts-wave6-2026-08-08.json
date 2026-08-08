@@ -1,0 +1,15 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Official Florida corporate registry and current company-controlled website; address and officers cross-checked against public trade identity; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Your Source Products",
+      "website": "https://www.chadwellsupply.com/",
+      "websiteSourceUrl": "https://www.chadwellsupply.com/locations/",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://www.chadwellsupply.com/contactus","label":"Chadwell Supply Corporate Contact Form","sourceUrl":"https://www.chadwellsupply.com/contactus","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-888-341-2423","label":"Chadwell Supply Corporate Office","sourceUrl":"https://www.chadwellsupply.com/locations/","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

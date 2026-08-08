@@ -1,0 +1,18 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Remaining product-relevant real leads; official government registry and current company-controlled sources only; no paid provider and no guessed contact",
+  "companies": [
+    {
+      "companyName": "Your Source Products",
+      "status": "verified",
+      "reasonCode": "official_contact_found",
+      "reason": "Florida Division of Corporations confirms active Your Source Products, Inc. at 5115 Joanne Kearney Blvd under James and David Chadwell. Chadwell Supply's current official site identifies that address as its Tampa headquarters and the trade-record address at 4907 Joanne Kearney Blvd as its Tampa warehouse.",
+      "nextAction": "Route a multifamily bathroom faucet and shower-system supply proposal through the official Chadwell Supply corporate contact form.",
+      "evidenceUrls": [
+        "https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultDetail?aggregateId=domp-p08000010490-ec8c4cf9-8990-410a-b7b5-1890595cbc83&directionType=CurrentList&inquirytype=EntityName&listNameOrder=YSPSUPPLY+P080000104901&searchNameOrder=YSPSUPPLY+P080000104901&searchTerm=YSP+SUPPLY%2C+INC.",
+        "https://www.chadwellsupply.com/locations/",
+        "https://www.chadwellsupply.com/contactus"
+      ]
+    }
+  ]
+}

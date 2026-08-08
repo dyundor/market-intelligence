@@ -319,6 +319,11 @@ describe("Public contact enrichment", () => {
     assert.deepEqual(payload.companies.map((company: {companyName: string}) => company.companyName), ["K Hovnanian Distribution", "Legacy Housing Corp"]);
     assert.ok(payload.companies.every((company: Parameters<typeof validatePublicEvidence>[0]) => validatePublicEvidence(company).length === 0));
   });
+  it("keeps the sixth corporate identity contact wave valid", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-lead-contacts-wave6-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.map((company: {companyName: string}) => company.companyName), ["Your Source Products"]);
+    assert.ok(payload.companies.every((company: Parameters<typeof validatePublicEvidence>[0]) => validatePublicEvidence(company).length === 0));
+  });
 });
 
 describe("Contact research queue", () => {
@@ -352,6 +357,14 @@ describe("Contact research queue", () => {
     const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave5-2026-08-08.json", import.meta.url), "utf8"));
     assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
     assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:2, needsIdentityMatch:0, unresolved:1, coveragePercent:67});
+  });
+  it("verifies Your Source Products from official registry and operating-address evidence", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave6-2026-08-08.json", import.meta.url), "utf8"));
+    const company = payload.companies[0];
+    assert.deepEqual(validateContactResearch(company), []);
+    assert.equal(company.companyName, "Your Source Products");
+    assert.equal(company.status, "verified");
+    assert.ok(company.evidenceUrls.some((url: string) => url.includes("sunbiz.org")));
   });
 });
 
