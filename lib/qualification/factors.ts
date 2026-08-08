@@ -51,6 +51,12 @@ function gatherRiskFactors(row: Record<string, unknown>): string[] {
   if (identityConfidence > 0 && identityConfidence < 70)
     out.push(RISK_REASONS.low_identity);
 
+  if (!totalShipments)
+    out.push(RISK_REASONS.no_shipment_data);
+
+  if (totalShipments >= 50 && supplierCount === 1)
+    out.push(RISK_REASONS.missing_suppliers);
+
   return out;
 }
 

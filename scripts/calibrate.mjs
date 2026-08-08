@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Qualification calibration script for Sprint 11 Market Calibration.
+ * Qualification calibration script for Sprint 12 Data Quality Improvement.
  *
  * Queries the local D1 database for all importers, computes qualification
  * scores for faucet and shower categories, and generates a calibration report.
@@ -66,8 +66,9 @@ const DEFAULT_WEIGHTS = {
   supplierDiversity: 15,
   containerVolume: 15,
   freightValue: 10,
-  identityConfidence: 10,
+  identityConfidence: 5,
   productRelevance: 10,
+  dataCoverage: 5,
 };
 
 const PRIORITY_THRESHOLDS = { a: 55, b: 25 };
@@ -80,6 +81,7 @@ function computePriorityScore(row, context) {
   const lsd = row.latest_shipment_date;
   const products = row.products || "";
   const identityConfidence = Number(row.identity_confidence) || 0;
+  const searchQuery = row.search_query || "";
   const w = DEFAULT_WEIGHTS;
 
   const values = [];
@@ -98,10 +100,29 @@ function computePriorityScore(row, context) {
       k => lowerProducts.includes(k.toLowerCase()),
     ).length;
     relevanceValue = clamp(keywordMatches * 25, 30, 100);
+
+    if (context.excludeKeywords?.length) {
+      const excludeHits = context.excludeKeywords.filter(
+        k => lowerProducts.includes(k.toLowerCase()),
+      ).length;
+      if (excludeHits > 0) {
+        relevanceValue = clamp(relevanceValue - excludeHits * 20, 10, 100);
+      }
+    }
   } else {
     relevanceValue = totalShipments > 0 ? 70 : 40;
   }
   values.push({ id: "product_relevance", label: "Product relevance", value: relevanceValue, weight: w.productRelevance });
+
+  let dataCoverageValue = 10;
+  if (totalShipments > 0) dataCoverageValue = 100;
+  else if (searchQuery && (
+    searchQuery.includes("faucet") || searchQuery.includes("shower") ||
+    searchQuery.includes("龙头") || searchQuery.includes("花洒") ||
+    searchQuery.includes("bath") || searchQuery.includes("tap")
+  )) dataCoverageValue = 50;
+  else if (identityConfidence >= 80) dataCoverageValue = 30;
+  values.push({ id: "data_coverage", label: "Data coverage", value: dataCoverageValue, weight: w.dataCoverage });
 
   const factors = values.map(v => ({
     ...v,
@@ -135,6 +156,9 @@ const RISK_REASONS = {
   no_containers: "No containerized shipments in selected period",
   missing_website: "No verified company website",
   low_identity: "Low entity identity confidence — possible duplicate",
+  no_shipment_data: "No shipment records — import activity unconfirmed",
+  product_mismatch: "Product descriptions contain excluded keywords — possible miscategorization",
+  missing_suppliers: "Suspiciously few suppliers for shipment volume — relationship data may be incomplete",
 };
 
 function gatherPositiveFactors(row, factors) {
@@ -182,6 +206,12 @@ function gatherRiskFactors(row) {
   if (identityConfidence > 0 && identityConfidence < 70)
     out.push(RISK_REASONS.low_identity);
 
+  if (!totalShipments)
+    out.push(RISK_REASONS.no_shipment_data);
+
+  if (totalShipments >= 50 && supplierCount === 1)
+    out.push(RISK_REASONS.missing_suppliers);
+
   return out;
 }
 
@@ -203,11 +233,13 @@ function qualifyBuyer(row, context) {
 const PRODUCTS = {
   faucet: {
     name: "Bathroom Faucets",
-    keywords: ["faucet", "tap", "taps", "bathroom faucet", "basin faucet", "mixer faucet", "sink faucet", "kitchen faucet", "water faucet"],
+    keywords: ["faucet", "tap", "basin faucet", "bathroom faucet", "lavatory faucet", "vanity faucet", "widespread faucet", "wall mount faucet", "bathroom mixer", "basin mixer", "single lever basin", "sink faucet", "water faucet", "faucets"],
+    exclude: ["kitchen faucet", "kitchen mixer", "kitchen sink", "pull down faucet", "pull out faucet", "bar faucet", "laundry faucet", "garden tap", "outdoor faucet", "steel sink", "stainless steel sink"],
   },
   shower: {
     name: "Shower Systems",
-    keywords: ["shower", "shower system", "shower set", "rain shower", "shower head", "shower column", "shower kit"],
+    keywords: ["shower", "shower system", "shower set", "rain shower", "shower head", "hand shower", "shower column", "shower mixer", "shower valve", "thermostatic shower", "shower kit", "shower panel", "showers"],
+    exclude: ["sauna", "steam room", "steam shower", "shower door", "shower enclosure", "shower curtain"],
   },
 };
 
@@ -215,7 +247,7 @@ const PRODUCTS = {
 const db = openDatabase();
 
 console.log("=".repeat(80));
-console.log("QUALIFICATION CALIBRATION REPORT — Sprint 11 Market Calibration");
+console.log("QUALIFICATION CALIBRATION REPORT — Sprint 12 Data Quality");
 console.log("=".repeat(80));
 console.log(`Generated: ${new Date().toISOString()}`);
 console.log();
@@ -244,7 +276,7 @@ console.log();
 // Score each importer for both product categories
 for (const prod of Object.values(PRODUCTS)) {
   const scored = importers.map(row => {
-    const q = qualifyBuyer(row, { productCategory: prod.name, productKeywords: prod.keywords });
+    const q = qualifyBuyer(row, { productCategory: prod.name, productKeywords: prod.keywords, excludeKeywords: prod.exclude });
     return { ...row, ...q };
   }).sort((a, b) => b.qualificationScore - a.qualificationScore);
 
@@ -432,9 +464,9 @@ console.log();
 // Test alternative weight configs
 const alternatives = {
   current: { ...DEFAULT_WEIGHTS },
-  "shipment-heavy": { shipmentVolume: 30, shipmentRecency: 25, supplierDiversity: 15, containerVolume: 10, freightValue: 5, identityConfidence: 5, productRelevance: 10 },
-  "identity-heavy": { shipmentVolume: 15, shipmentRecency: 15, supplierDiversity: 15, containerVolume: 10, freightValue: 10, identityConfidence: 25, productRelevance: 10 },
-  "recency-heavy": { shipmentVolume: 10, shipmentRecency: 35, supplierDiversity: 15, containerVolume: 10, freightValue: 10, identityConfidence: 10, productRelevance: 10 },
+  "shipment-heavy": { shipmentVolume: 30, shipmentRecency: 25, supplierDiversity: 15, containerVolume: 10, freightValue: 5, identityConfidence: 5, productRelevance: 5, dataCoverage: 5 },
+  "coverage-heavy": { shipmentVolume: 15, shipmentRecency: 15, supplierDiversity: 15, containerVolume: 10, freightValue: 10, identityConfidence: 5, productRelevance: 10, dataCoverage: 20 },
+  "recency-heavy": { shipmentVolume: 10, shipmentRecency: 35, supplierDiversity: 15, containerVolume: 10, freightValue: 10, identityConfidence: 5, productRelevance: 10, dataCoverage: 5 },
 };
 
 for (const [label, weights] of Object.entries(alternatives)) {
@@ -442,7 +474,7 @@ for (const [label, weights] of Object.entries(alternatives)) {
   Object.assign(DEFAULT_WEIGHTS, weights);
 
   const scored = importers.map(row => {
-    const q = qualifyBuyer(row, { productCategory: "faucet", productKeywords: PRODUCTS.faucet.keywords });
+    const q = qualifyBuyer(row, { productCategory: "faucet", productKeywords: PRODUCTS.faucet.keywords, excludeKeywords: PRODUCTS.faucet.exclude });
     return { name: row.name, ...q };
   }).sort((a, b) => b.qualificationScore - a.qualificationScore);
 

@@ -17,6 +17,7 @@ export interface QualificationResult {
 export interface QualificationContext {
   productCategory: string;
   productKeywords: string[];
+  excludeKeywords: string[];
 }
 
 export interface PriorityWeights {
@@ -27,6 +28,7 @@ export interface PriorityWeights {
   freightValue: number;
   productRelevance: number;
   identityConfidence: number;
+  dataCoverage: number;
 }
 
 export const DEFAULT_WEIGHTS: PriorityWeights = {
@@ -36,7 +38,8 @@ export const DEFAULT_WEIGHTS: PriorityWeights = {
   containerVolume: 15,
   freightValue: 10,
   productRelevance: 10,
-  identityConfidence: 10,
+  identityConfidence: 5,
+  dataCoverage: 5,
 };
 
 export const PRIORITY_THRESHOLDS = { a: 55, b: 25 };
@@ -58,4 +61,7 @@ export const RISK_REASONS: Record<string, string> = {
   no_containers: "No containerized shipments in selected period",
   missing_website: "No verified company website",
   low_identity: "Low entity identity confidence — possible duplicate",
+  no_shipment_data: "No shipment records — import activity unconfirmed",
+  product_mismatch: "Product descriptions contain excluded keywords — possible miscategorization",
+  missing_suppliers: "Suspiciously few suppliers for shipment volume — relationship data may be incomplete",
 };

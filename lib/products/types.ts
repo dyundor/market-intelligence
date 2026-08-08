@@ -7,6 +7,7 @@ export interface ProductCategory {
   defaultHsCode: string;
   keywords: string[];
   aliases: string[];
+  excludeKeywords: string[];
 }
 
 export interface ProductDictionary {

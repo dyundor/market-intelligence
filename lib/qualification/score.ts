@@ -18,6 +18,7 @@ export function computePriorityScore(
   const lsd = typeof row.latest_shipment_date === "string" ? row.latest_shipment_date : null;
   const products = typeof row.products === "string" ? row.products : "";
   const identityConfidence = Number(row.identity_confidence) || 0;
+  const searchQuery = typeof row.search_query === "string" ? row.search_query : "";
   const weights = DEFAULT_WEIGHTS;
 
   const w = weights;
@@ -72,6 +73,15 @@ export function computePriorityScore(
       k => lowerProducts.includes(k.toLowerCase()),
     ).length;
     relevanceValue = clamp(keywordMatches * 25, 30, 100);
+
+    if (context.excludeKeywords?.length) {
+      const excludeHits = context.excludeKeywords.filter(
+        k => lowerProducts.includes(k.toLowerCase()),
+      ).length;
+      if (excludeHits > 0) {
+        relevanceValue = clamp(relevanceValue - excludeHits * 20, 10, 100);
+      }
+    }
   } else {
     relevanceValue = totalShipments > 0 ? 70 : 40;
   }
@@ -80,6 +90,21 @@ export function computePriorityScore(
     label: "Product relevance",
     value: relevanceValue,
     weight: w.productRelevance,
+  });
+
+  let dataCoverageValue = 10;
+  if (totalShipments > 0) dataCoverageValue = 100;
+  else if (searchQuery && (
+    searchQuery.includes("faucet") || searchQuery.includes("shower") ||
+    searchQuery.includes("龙头") || searchQuery.includes("花洒") ||
+    searchQuery.includes("bath") || searchQuery.includes("tap")
+  )) dataCoverageValue = 50;
+  else if (identityConfidence >= 80) dataCoverageValue = 30;
+  values.push({
+    id: "data_coverage",
+    label: "Data coverage",
+    value: dataCoverageValue,
+    weight: w.dataCoverage,
   });
 
   const factors: Factor[] = values.map(v => ({

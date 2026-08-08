@@ -43,7 +43,7 @@ export function normalizeRanking(view: SupplierDiscovery, query: QueryRequest): 
   });
   const productCategory = resolveProduct(query.subject);
   const qualificationContext = productCategory
-    ? { productCategory: productCategory.id, productKeywords: [...productCategory.keywords, ...productCategory.aliases] }
+    ? { productCategory: productCategory.id, productKeywords: [...productCategory.keywords, ...productCategory.aliases], excludeKeywords: productCategory.excludeKeywords }
     : undefined;
   for (const buyer of ranking.ranked) {
     const q = qualifyBuyer(buyer, qualificationContext);
