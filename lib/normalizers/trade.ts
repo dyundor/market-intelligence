@@ -2,6 +2,8 @@ import type { NormalizedData, QueryRequest, SupplierDiscovery, TradeMetric } fro
 import type { ComtradeView } from "../providers/comtrade/provider.ts";
 import { rankBuyers } from "../ranking/engine.ts";
 import type { BuyerRanking } from "../ranking/types.ts";
+import { qualifyBuyer } from "../qualification/factors.ts";
+import { resolveProduct } from "../products/resolver.ts";
 
 export function normalizeTrade(view: ComtradeView): NormalizedData {
   const metric: TradeMetric = {
@@ -39,6 +41,17 @@ export function normalizeRanking(view: SupplierDiscovery, query: QueryRequest): 
     limit: query.ranking?.limit || 20,
     metric: query.ranking?.metric || "shipment_count",
   });
+  const productCategory = resolveProduct(query.subject);
+  const qualificationContext = productCategory
+    ? { productCategory: productCategory.id, productKeywords: [...productCategory.keywords, ...productCategory.aliases] }
+    : undefined;
+  for (const buyer of ranking.ranked) {
+    const q = qualifyBuyer(buyer, qualificationContext);
+    buyer.priority = q.priority;
+    buyer.priorityScore = q.priorityScore;
+    buyer.positiveFactors = q.positiveFactors;
+    buyer.riskFactors = q.riskFactors;
+  }
   return { kind: "ranking", ranking };
 }
 

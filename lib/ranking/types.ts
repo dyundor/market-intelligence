@@ -1,6 +1,13 @@
 export type RankingMetric = "shipment_count" | "import_frequency" | "supplier_count" | "weight" | "estimated_volume" | "last_import_date";
 
-export type RankedBuyer = Record<string, unknown> & { rank: number; metric_value: number };
+export type RankedBuyer = Record<string, unknown> & {
+  rank: number;
+  metric_value: number;
+  priority?: "A" | "B" | "C";
+  priorityScore?: number;
+  positiveFactors?: string[];
+  riskFactors?: string[];
+};
 
 export interface BuyerRanking {
   available: boolean;
