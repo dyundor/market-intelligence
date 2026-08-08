@@ -16,6 +16,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
 import { executeCaptureOnly } from "../../_shared/importyeti-capture-mode.ts";
+import { buildFullReport } from "../../_shared/importyeti-reports.ts";
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,6 +52,16 @@ export async function POST(request: NextRequest) {
 
     const { report, raw, actualCost } = result;
 
+    const fullReport = buildFullReport(
+      body.query.trim(),
+      report,
+      true,
+      report.creditReport.estimatedCost,
+      report.creditReport.creditsBefore,
+    );
+
+    console.log(fullReport.text);
+
     return NextResponse.json({
       mode: "capture_only",
       status: report.status,
@@ -58,6 +69,7 @@ export async function POST(request: NextRequest) {
       actualCost,
       creditReport: report.creditReport,
       report,
+      reportText: fullReport.text,
       rawPreview: {
         totalResults: raw.totalResults,
         page: raw.page,
@@ -71,6 +83,23 @@ export async function POST(request: NextRequest) {
     const isUrlError = message.includes("IMPORTYETI_API_URL");
     const isTimeout = message.includes("timed out");
 
+    const errorReport = {
+      query: "",
+      capturedAt: new Date().toISOString(),
+      creditReport: {
+        totalBudget: 100, reserveBudget: 25,
+        creditsBefore: 100, estimatedCost: 0, actualCost: 0,
+        creditsAfter: 100, remainingAvailable: 75, reserveRemaining: 25,
+        percentOfTotalUsed: 0,
+      },
+      records: { totalCompanies: 0, withShipmentData: 0, withoutShipmentData: 0, withWebsite: 0, withAddress: 0, withCountry: 0, uniqueNames: 0 },
+      fieldSummary: { criticalMissing: [], importantMissing: [], optionalMissing: [] },
+      fieldPresence: [], sampleCompanies: [], warnings: [], errors: [message],
+      status: "blocked" as const, readyForFullPipeline: false,
+    };
+
+    const fullReport = buildFullReport("", errorReport, false, 0, 100);
+
     return NextResponse.json(
       {
         mode: "capture_only",
@@ -78,6 +107,7 @@ export async function POST(request: NextRequest) {
         error: message,
         errorType: isKeyError ? "missing_key" : isUrlError ? "missing_url" : isTimeout ? "timeout" : "api_error",
         readyForFullPipeline: false,
+        reportText: fullReport.text,
       },
       { status: isKeyError || isUrlError ? 503 : 502 },
     );
