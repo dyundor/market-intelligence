@@ -10,6 +10,7 @@ import { contactResearchId, summarizeContactResearch, validateContactResearch } 
 import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
 import { evaluateOutreachReadiness } from "../lib/leads/outreach-readiness.ts";
 import { shouldInitializeSalesLead, sortSalesLeads } from "../lib/leads/pipeline-selection.ts";
+import { contactRouteNote, draftChannelForContact, selectBestVerifiedContact } from "../lib/leads/outreach-package.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -161,6 +162,27 @@ describe("Outreach draft", () => {
     const draft = generateOutreachDraft({companyName:"North Bath",contactName:"Morgan",outreachStrategy:"Private Label Pitch"});
     assert.match(draft.body,/Hi Morgan,/);
     assert.match(draft.body,/private-label bathroom collections/);
+  });
+});
+
+describe("Verified outreach package", () => {
+  const contacts = [
+    {contactType:"phone",contactValue:"+1-555-0100",label:"Office",sourceUrl:"https://buyer.example/contact",verificationStatus:"verified"},
+    {contactType:"website_contact_page",contactValue:"https://buyer.example/contact",label:"Contact Form",sourceUrl:"https://buyer.example/contact",verificationStatus:"verified"},
+    {contactType:"email",contactValue:"sales@buyer.example",label:"Sales",sourceUrl:"https://buyer.example/contact",verificationStatus:"unverified"},
+  ];
+  it("prefers a verified contact form over phone and ignores unverified email", () => {
+    const selected = selectBestVerifiedContact(contacts);
+    assert.equal(selected?.contactType, "website_contact_page");
+    assert.equal(selected && draftChannelForContact(selected), "website");
+  });
+  it("keeps the evidence URL and manual-review warning in the package", () => {
+    const selected = selectBestVerifiedContact(contacts)!;
+    assert.match(contactRouteNote(selected), /https:\/\/buyer\.example\/contact/);
+    assert.match(contactRouteNote(selected), /never sent automatically/);
+  });
+  it("rejects contacts without verified HTTPS evidence", () => {
+    assert.equal(selectBestVerifiedContact([{...contacts[0],sourceUrl:"http://buyer.example",verificationStatus:"verified"}]), null);
   });
 });
 

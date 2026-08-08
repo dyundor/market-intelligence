@@ -35,7 +35,7 @@ export interface LeadActionRow {
 export interface OutreachDraftRow {
   id: string;
   companyId: string;
-  channel: "email" | "linkedin";
+  channel: "email" | "website" | "linkedin" | "phone";
   subject: string;
   body: string;
   status: "draft" | "approved" | "sent" | "archived";
