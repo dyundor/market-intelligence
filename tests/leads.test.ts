@@ -185,8 +185,19 @@ describe("Outreach draft", () => {
     assert.match(noResponse.subject,/Following up/);
     assert.match(noResponse.body,/briefly follow up/);
     assert.match(quote.body,/required certifications/);
+    assert.match(quote.body,/target MOQ/);
     assert.match(quote.personalizationNotes,/Asked for matte black pricing/);
     assert.match(quote.personalizationNotes,/never sent automatically/);
+  });
+
+  it("asks only for missing quote inputs and confirms a complete scope", () => {
+    const missing=generateFollowUpDraft({companyName:"North Bath",recommendedProducts:"Shower Systems",outcomeCode:"quote_requested",targetMarket:"US",requiredCertifications:"cUPC",estimatedAnnualUnits:10000,targetMoq:null,quoteRequirements:"Matte black; retail carton"});
+    assert.match(missing.body,/target MOQ/);
+    assert.doesNotMatch(missing.body,/could you please confirm target market/);
+    const ready=generateFollowUpDraft({companyName:"North Bath",recommendedProducts:"Shower Systems",outcomeCode:"quote_requested",targetMarket:"United States",requiredCertifications:"cUPC",estimatedAnnualUnits:10000,targetMoq:500,quoteRequirements:"Matte black; retail carton"});
+    assert.match(ready.body,/estimated annual demand of 10000 units/);
+    assert.match(ready.body,/Please confirm that this scope is correct/);
+    assert.doesNotMatch(ready.body,/could you please confirm required certifications/);
   });
 });
 

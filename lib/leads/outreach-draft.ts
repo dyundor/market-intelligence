@@ -1,3 +1,5 @@
+import { quoteReadiness } from "./qualification-profile.ts";
+
 export interface OutreachDraftInput {
   companyName: string;
   contactName?: string | null;
@@ -8,6 +10,11 @@ export interface OutreachDraftInput {
   companyType?: string | null;
   researchReason?: string | null;
   researchNextAction?: string | null;
+  targetMarket?: string | null;
+  requiredCertifications?: string | null;
+  estimatedAnnualUnits?: number | null;
+  targetMoq?: number | null;
+  quoteRequirements?: string | null;
 }
 
 export interface GeneratedOutreachDraft {
@@ -27,6 +34,21 @@ function offerFor(strategy?: string | null): string {
   if (strategy === "Private Label Pitch") return "private-label bathroom collections with flexible branding, finishes, and packaging";
   if (strategy === "Distribution Partnership") return "a distribution-ready range of bathroom faucets and shower systems";
   return "OEM/ODM bathroom faucets and shower systems tailored to your product roadmap";
+}
+
+function quoteRequestMessage(input: OutreachDraftInput, products: string): string {
+  const readiness = quoteReadiness(input);
+  if (readiness.ready) {
+    return `Thank you for the quotation request. We have recorded the target market as ${input.targetMarket!.trim()}, required certifications as ${input.requiredCertifications!.trim()}, estimated annual demand of ${input.estimatedAnnualUnits} units, target MOQ of ${input.targetMoq}, and these product requirements: ${input.quoteRequirements!.trim()}. Please confirm that this scope is correct, and we will proceed with a focused quotation for ${products}.`;
+  }
+  const labels: Record<string,string> = {
+    target_market: "target market",
+    required_certifications: "required certifications",
+    estimated_annual_units: "estimated annual demand",
+    target_moq: "target MOQ",
+    quote_requirements: "target models or specifications, finishes, and packaging requirements",
+  };
+  return `Thank you for the quotation request. To finalize a focused quotation for ${products}, could you please confirm ${readiness.missing.map(field=>labels[field]).join(", ")}, along with your preferred delivery timing?`;
 }
 
 export function generateOutreachDraft(input: OutreachDraftInput): GeneratedOutreachDraft {
@@ -60,7 +82,7 @@ export function generateFollowUpDraft(input: OutreachDraftInput & {outcomeCode: 
     replied: `Thank you for your reply. To keep the next step useful, we can focus on the ${products} requirements most relevant to ${company}, including target specifications, finishes, certification needs, volume, and timeline.`,
     interested: `Thank you for your interest. We can prepare a focused product-fit proposal for ${products}, including suitable specifications, finish options, certification support, indicative MOQ, and development timing.`,
     meeting_booked: `Thank you for arranging time with us. For a productive discussion, we propose covering your priority ${products} requirements, target market and certifications, expected volume, finish direction, and development timeline.`,
-    quote_requested: `Thank you for the quotation request. Before finalizing pricing, could you confirm the target models or specifications, required certifications, finishes, estimated order quantity, packaging needs, and preferred delivery timing for ${products}?`,
+    quote_requested: quoteRequestMessage(input, products),
   };
   const outcomeContext = input.outcomeNotes?.trim() ? ` Reviewer context from the latest result: ${input.outcomeNotes.trim()}` : "";
   return {

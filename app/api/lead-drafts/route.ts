@@ -24,7 +24,9 @@ export async function POST(request: NextRequest) {
   if (purpose!=="initial"&&purpose!=="follow_up") return NextResponse.json({error:"invalid purpose"},{status:400});
   const sourceRows=await env.DB.prepare(`SELECT e.name company_name,e.entity_type,e.total_shipments,
       COALESCE(e.latest_shipment_date,(SELECT MAX(s.shipment_date) FROM importyeti_web_shipments s WHERE s.importer_id=e.id)) latest_shipment_date,
-      w.outreach_strategy,w.recommended_products,r.reason research_reason,r.next_action research_next_action,
+      w.outreach_strategy,w.recommended_products,w.target_market,w.required_certifications,
+      w.estimated_annual_units,w.target_moq,w.quote_requirements,
+      r.reason research_reason,r.next_action research_next_action,
       (SELECT a.outcome_code FROM lead_actions a WHERE a.company_id=e.id AND a.outcome_code IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) latest_outcome_code,
       (SELECT a.outcome FROM lead_actions a WHERE a.company_id=e.id AND a.outcome_code IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) latest_outcome_notes
     FROM importyeti_web_entities e
@@ -42,6 +44,11 @@ export async function POST(request: NextRequest) {
     companyType: source.entity_type ? String(source.entity_type) : null,
     researchReason: source.research_reason ? String(source.research_reason) : null,
     researchNextAction: source.research_next_action ? String(source.research_next_action) : null,
+    targetMarket: source.target_market ? String(source.target_market) : null,
+    requiredCertifications: source.required_certifications ? String(source.required_certifications) : null,
+    estimatedAnnualUnits: source.estimated_annual_units == null ? null : Number(source.estimated_annual_units),
+    targetMoq: source.target_moq == null ? null : Number(source.target_moq),
+    quoteRequirements: source.quote_requirements ? String(source.quote_requirements) : null,
   };
   const outcomeCode=source.latest_outcome_code?String(source.latest_outcome_code):null;
   if (purpose==="follow_up"&&!FOLLOW_UP_OUTCOMES.has(outcomeCode||"")) return NextResponse.json({error:"follow_up_not_applicable",outcomeCode},{status:409});
