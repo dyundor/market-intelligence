@@ -18,6 +18,7 @@ import { LeadRepository } from "../lib/repositories/lead-repository.ts";
 import { draftSentActionId, shouldSyncDraftSent } from "../lib/leads/draft-lifecycle.ts";
 import { contactHref, emailDraftHref } from "../lib/leads/contact-link.ts";
 import { quoteReadiness, validateQualificationQuantity, validateQualificationText } from "../lib/leads/qualification-profile.ts";
+import { buildQuoteHandoff } from "../lib/leads/quote-handoff.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -570,6 +571,21 @@ describe("Quote qualification profile", () => {
     assert.equal(validateQualificationQuantity(-1),false);
     assert.equal(validateQualificationQuantity(1.5),false);
     assert.equal(validateQualificationText("x".repeat(1001)),false);
+  });
+});
+
+describe("Quote handoff",()=>{
+  it("blocks an internal quote brief when qualification is incomplete",()=>{
+    assert.deepEqual(buildQuoteHandoff({companyName:"North Bath",targetMarket:"US"}),{ready:false,missing:["required_certifications","estimated_annual_units","target_moq","quote_requirements"]});
+  });
+  it("creates a complete internal costing brief and labels research risk",()=>{
+    const result=buildQuoteHandoff({companyName:"North Bath",recommendedProducts:"Shower systems",targetMarket:"US",requiredCertifications:"cUPC",estimatedAnnualUnits:10000,targetMoq:500,quoteRequirements:"Matte black; retail carton",latestOutcomeNotes:"Needs Q4 delivery",researchReason:"Verify certification history",researchNextAction:"Check current test reports"});
+    assert.equal(result.ready,true);
+    if(!result.ready)return;
+    assert.match(result.text,/Estimated annual demand: 10000 units/);
+    assert.match(result.text,/INTERNAL REVIEW — DO NOT SEND TO BUYER/);
+    assert.match(result.text,/Needs Q4 delivery/);
+    assert.match(result.text,/Incoterm/);
   });
 });
 
