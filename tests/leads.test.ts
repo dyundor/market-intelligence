@@ -169,6 +169,14 @@ describe("Outreach draft", () => {
     assert.match(draft.body,/Hi Morgan,/);
     assert.match(draft.body,/private-label bathroom collections/);
   });
+
+  it("uses recent activity in the body and keeps research risk in reviewer notes", () => {
+    const draft = generateOutreachDraft({companyName:"Dakota Plumbing Products",latestShipmentDate:"2026-06-09",researchReason:"Certification history requires review.",researchNextAction:"Verify test documents before quoting."});
+    assert.match(draft.body,/sourcing activity recorded as recently as 2026-06-09/);
+    assert.doesNotMatch(draft.body,/Certification history/);
+    assert.match(draft.personalizationNotes,/Certification history requires review/);
+    assert.match(draft.personalizationNotes,/Verify test documents before quoting/);
+  });
 });
 
 describe("Verified outreach package", () => {

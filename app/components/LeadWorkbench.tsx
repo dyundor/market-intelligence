@@ -97,7 +97,7 @@ export function LeadWorkbench({items,loading,locale,onUpdate,onRemove,onOpenComp
   async function generateDraft(){
     if(!selected)return;
     const verifiedContact=contacts.find(contact=>contact.verificationStatus==="verified"&&contact.label)?.label;
-    const response=await fetch("/api/lead-drafts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({companyId:selected.companyId,companyName:selected.company?.name||selected.companyId,companyType:selected.company?.entityType,totalShipments:selected.company?.totalShipments,latestShipmentDate:selected.company?.latestShipmentDate,outreachStrategy:selected.outreachStrategy,recommendedProducts:selected.recommendedProducts,contactName:verifiedContact})});
+    const response=await fetch("/api/lead-drafts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({companyId:selected.companyId,contactName:verifiedContact})});
     if(!response.ok){setMessage(zh?"外联草稿生成失败":"Draft could not be generated");return;}
     const draft=await response.json() as Draft;setDrafts(previous=>[draft,...previous]);setMessage(zh?"外联草稿已生成，请审核后再使用":"Draft generated — review before use");
   }

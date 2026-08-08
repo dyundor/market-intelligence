@@ -18,14 +18,25 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
-  if (!body?.companyId || !body?.companyName) return NextResponse.json({ error: "companyId and companyName required" }, { status: 400 });
+  if (!body?.companyId) return NextResponse.json({ error: "companyId required" }, { status: 400 });
+  const sourceRows=await env.DB.prepare(`SELECT e.name company_name,e.entity_type,e.total_shipments,
+      COALESCE(e.latest_shipment_date,(SELECT MAX(s.shipment_date) FROM importyeti_web_shipments s WHERE s.importer_id=e.id)) latest_shipment_date,
+      w.outreach_strategy,w.recommended_products,r.reason research_reason,r.next_action research_next_action
+    FROM importyeti_web_entities e
+    JOIN buyer_watchlist w ON w.company_id=e.id
+    LEFT JOIN lead_contact_research r ON r.company_id=e.id
+    WHERE e.id=? LIMIT 1`).bind(String(body.companyId)).all();
+  const source=(sourceRows.results||[])[0];
+  if (!source) return NextResponse.json({ error: "lead not found" }, { status: 404 });
   const generated = generateOutreachDraft({
-    companyName: String(body.companyName), contactName: body.contactName ? String(body.contactName) : null,
-    totalShipments: body.totalShipments == null ? null : Number(body.totalShipments),
-    latestShipmentDate: body.latestShipmentDate ? String(body.latestShipmentDate) : null,
-    outreachStrategy: body.outreachStrategy ? String(body.outreachStrategy) : null,
-    recommendedProducts: body.recommendedProducts ? String(body.recommendedProducts) : null,
-    companyType: body.companyType ? String(body.companyType) : null,
+    companyName: String(source.company_name), contactName: body.contactName ? String(body.contactName) : null,
+    totalShipments: source.total_shipments == null ? null : Number(source.total_shipments),
+    latestShipmentDate: source.latest_shipment_date ? String(source.latest_shipment_date) : null,
+    outreachStrategy: source.outreach_strategy ? String(source.outreach_strategy) : null,
+    recommendedProducts: source.recommended_products ? String(source.recommended_products) : null,
+    companyType: source.entity_type ? String(source.entity_type) : null,
+    researchReason: source.research_reason ? String(source.research_reason) : null,
+    researchNextAction: source.research_next_action ? String(source.research_next_action) : null,
   });
   const draft = await new LeadRepository(env.DB).createDraft({companyId:String(body.companyId),channel:"email",status:"draft",...generated});
   return NextResponse.json(draft, { status: 201 });
