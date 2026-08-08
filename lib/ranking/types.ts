@@ -6,6 +6,9 @@ export type RankedBuyer = Record<string, unknown> & {
   priority?: "A" | "B" | "C";
   qualificationScore?: number;
   productMatchConfidence?: number;
+  productMatch?: "HIGH" | "MEDIUM" | "LOW";
+  buyerType?: "Bathroom Specialist" | "Mixed Bathroom/Kitchen" | "General Plumbing" | "Unknown";
+  classificationReason?: string;
   positiveFactors?: string[];
   riskFactors?: string[];
 };

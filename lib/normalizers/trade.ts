@@ -50,6 +50,9 @@ export function normalizeRanking(view: SupplierDiscovery, query: QueryRequest): 
     buyer.priority = q.priority;
     buyer.qualificationScore = q.qualificationScore;
     buyer.productMatchConfidence = q.productMatchConfidence;
+    buyer.productMatch = q.productMatch;
+    buyer.buyerType = q.buyerType;
+    buyer.classificationReason = q.classificationReason;
     buyer.positiveFactors = q.positiveFactors;
     buyer.riskFactors = q.riskFactors;
   }

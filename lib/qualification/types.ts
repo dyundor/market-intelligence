@@ -6,10 +6,19 @@ export interface Factor {
   contribution: number;
 }
 
+/** Product match level — how well this buyer matches the target product category */
+export type ProductMatch = "HIGH" | "MEDIUM" | "LOW";
+
+/** Buyer type classification — what kind of buyer this is */
+export type BuyerType = "Bathroom Specialist" | "Mixed Bathroom/Kitchen" | "General Plumbing" | "Unknown";
+
 export interface QualificationResult {
   priority: "A" | "B" | "C";
   qualificationScore: number;
   productMatchConfidence: number;
+  productMatch: ProductMatch;
+  buyerType: BuyerType;
+  classificationReason: string;
   positiveFactors: string[];
   riskFactors: string[];
   factors: Factor[];

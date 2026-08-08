@@ -1,5 +1,6 @@
 import { POSITIVE_REASONS, RISK_REASONS, type QualificationContext, type QualificationResult } from "./types.ts";
 import { computePriorityScore, priorityFromScore } from "./score.ts";
+import { classifyBuyer } from "./classify.ts";
 
 function gatherPositiveFactors(
   row: Record<string, unknown>,
@@ -69,10 +70,21 @@ export function qualifyBuyer(
 
   const factorMap = new Map(factors.map(f => [f.id, f.value]));
 
+  const productsRaw = typeof row.productDescriptions === "object" && Array.isArray(row.productDescriptions)
+    ? row.productDescriptions as string[]
+    : typeof row.products === "string" ? [row.products]
+    : [];
+  const companyName = typeof row.name === "string" ? row.name : "";
+
+  const classification = classifyBuyer(productsRaw, companyName);
+
   return {
     priority,
     qualificationScore: score,
     productMatchConfidence,
+    productMatch: classification.productMatch,
+    buyerType: classification.buyerType,
+    classificationReason: classification.productMatchReason,
     positiveFactors: gatherPositiveFactors(row, factorMap),
     riskFactors: gatherRiskFactors(row),
     factors,
