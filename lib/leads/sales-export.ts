@@ -21,6 +21,8 @@ export interface SalesExportRow {
   draftBody: string;
   evidenceSummary: string;
   personalizationNotes: string;
+  researchReason: string;
+  researchNextAction: string;
   lastOutcome: string;
   lastOutcomeNotes: string;
   qualificationFeedback: string;
@@ -38,7 +40,8 @@ const HEADERS: Array<[keyof SalesExportRow, string]> = [
   ["opportunityProbability","Probability Percent"],["expectedCloseDate","Expected Close Date"],
   ["weightedValueUsd","Weighted Value USD"],["draftChannel","Draft Channel"],["draftStatus","Draft Status"],
   ["draftSubject","Draft Subject"],["draftBody","Draft Body"],["evidenceSummary","Trade Evidence Summary"],
-  ["personalizationNotes","Manual Review Notes"],["lastOutcome","Latest Outcome"],["lastOutcomeNotes","Outcome Notes"],
+  ["personalizationNotes","Manual Review Notes"],["researchReason","Buyer Research Rationale"],
+  ["researchNextAction","Research Recommended Action"],["lastOutcome","Latest Outcome"],["lastOutcomeNotes","Outcome Notes"],
   ["qualificationFeedback","Qualification Feedback"],["feedbackReason","Feedback Reason"],
   ["nextAction","Next Action"],["nextActionDue","Next Action Due"],
 ];
