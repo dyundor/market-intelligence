@@ -5,6 +5,7 @@ import { qualifyBuyer } from "../lib/qualification/factors.ts";
 import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
 import { computePipelineMetrics, leadStatusForOutcome } from "../lib/leads/feedback.ts";
 import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/public-contact-enrichment.ts";
+import { contactResearchId, summarizeContactResearch, validateContactResearch } from "../lib/leads/contact-research.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -189,5 +190,19 @@ describe("Public contact enrichment", () => {
   it("requires https source evidence and validates email syntax", () => {
     assert.deepEqual(validatePublicEvidence(evidence),[]);
     assert.ok(validatePublicEvidence({...evidence,contacts:[{...evidence.contacts[0],sourceUrl:"",value:"guessed-at-example"}]}).length>=2);
+  });
+});
+
+describe("Contact research queue", () => {
+  const unresolved = {companyName:"Best Mart",status:"needs_identity_match" as const,reasonCode:"ambiguous_company_name" as const,reason:"Multiple unrelated businesses match.",nextAction:"Confirm consignee address.",evidenceUrls:[]};
+  it("stores unresolved research without inventing evidence", () => {
+    assert.deepEqual(validateContactResearch(unresolved),[]);
+    assert.equal(contactResearchId("Best Mart, Inc."),"lcr-best-mart");
+  });
+  it("rejects inconsistent verified states and insecure evidence", () => {
+    assert.ok(validateContactResearch({...unresolved,status:"verified",evidenceUrls:["http://example.com"]}).length>=2);
+  });
+  it("reports actionable research coverage", () => {
+    assert.deepEqual(summarizeContactResearch([{status:"verified"},{status:"needs_identity_match"},{status:"unresolved"}]),{total:3,verified:1,needsIdentityMatch:1,unresolved:1,coveragePercent:33});
   });
 });

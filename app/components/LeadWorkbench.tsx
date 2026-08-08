@@ -15,6 +15,8 @@ type Contact = {id:string;contactType:string;contactValue:string;label:string|nu
 type Action = {id:string;actionType:string;channel:string|null;summary:string;outcome:string|null;outcomeCode:string|null;qualificationFeedback:string|null;feedbackReason:string|null;nextAction:string|null;nextActionDue:string|null;createdAt:string;leadStatus?:LeadStatus|null};
 type Draft = {id:string;channel:string;subject:string;body:string;status:"draft"|"approved"|"sent"|"archived";evidenceSummary:string;personalizationNotes:string;updatedAt:string};
 type Dashboard = {metrics:{totalLeads:number;overdue:number;dueToday:number;contacted:number;positive:number;positiveRate:number};tasks:Array<{companyId:string;companyName:string;nextAction:string|null;nextActionDue:string;timing:"overdue"|"today"|"upcoming"}>;today:string};
+type ContactResearch = {id:string;companyName:string;companyId:string|null;status:"verified"|"needs_identity_match"|"unresolved";reason:string;nextAction:string;researchedAt:string};
+type ContactResearchData = {items:ContactResearch[];summary:{total:number;verified:number;needsIdentityMatch:number;unresolved:number;coveragePercent:number}};
 
 const STATUS_OPTIONS:LeadStatus[]=["new","researching","contact_ready","contacted","follow_up","qualified","opportunity"];
 const STATUS_ZH:Record<LeadStatus,string>={new:"新线索",researching:"调研中",contact_ready:"可联系",contacted:"已联系",follow_up:"待跟进",qualified:"已确认",opportunity:"商机"};
@@ -28,6 +30,7 @@ export function LeadWorkbench({items,loading,locale,onUpdate,onRemove,onOpenComp
   const [actions,setActions]=useState<Action[]>([]);
   const [drafts,setDrafts]=useState<Draft[]>([]);
   const [dashboard,setDashboard]=useState<Dashboard|null>(null);
+  const [contactResearch,setContactResearch]=useState<ContactResearchData|null>(null);
   const [dashboardVersion,setDashboardVersion]=useState(0);
   const [loadedCompanyId,setLoadedCompanyId]=useState<string|null>(null);
   const [message,setMessage]=useState("");
@@ -49,6 +52,12 @@ export function LeadWorkbench({items,loading,locale,onUpdate,onRemove,onOpenComp
     fetch("/api/lead-dashboard",{signal:controller.signal}).then(response=>response.ok?response.json():Promise.reject()).then(data=>setDashboard(data)).catch(()=>{});
     return()=>controller.abort();
   },[items.length,dashboardVersion]);
+
+  useEffect(()=>{
+    const controller=new AbortController();
+    fetch("/api/contact-research",{signal:controller.signal}).then(response=>response.ok?response.json():Promise.reject()).then(data=>setContactResearch(data)).catch(()=>{});
+    return()=>controller.abort();
+  },[]);
 
   async function addContact(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
@@ -95,6 +104,7 @@ export function LeadWorkbench({items,loading,locale,onUpdate,onRemove,onOpenComp
   return <div className="lead-workbench" aria-busy={loading||detailLoading}>
     {dashboard?<><div className="lead-dashboard"><span><b>{dashboard.metrics.totalLeads}</b>{zh?"全部 Lead":"Total leads"}</span><span className={dashboard.metrics.overdue?"alert":""}><b>{dashboard.metrics.overdue}</b>{zh?"逾期跟进":"Overdue"}</span><span><b>{dashboard.metrics.dueToday}</b>{zh?"今日待办":"Due today"}</span><span><b>{dashboard.metrics.contacted}</b>{zh?"已触达":"Contacted"}</span><span><b>{dashboard.metrics.positiveRate}%</b>{zh?"积极反馈率":"Positive rate"}</span></div>{dashboard.tasks.length?<div className="lead-tasks"><strong>{zh?"跟进待办":"Follow-up queue"}</strong>{dashboard.tasks.slice(0,5).map(task=><button key={`${task.companyId}-${task.nextActionDue}`} className={task.timing} onClick={()=>setSelectedId(items.find(item=>item.companyId===task.companyId)?.id||null)}><span>{task.companyName}</span><b>{task.nextAction|| (zh?"待跟进":"Follow up")}</b><em>{task.nextActionDue}</em></button>)}</div>:null}</>:null}
     <div className="lead-pipeline">{STATUS_OPTIONS.map(status=><span key={status}><b>{items.filter(item=>(item.leadStatus||"new")===status).length}</b>{zh?STATUS_ZH[status]:status.replaceAll("_"," ")}</span>)}</div>
+    {contactResearch?<section className="contact-research-queue"><header><div><strong>{zh?"联系人研究覆盖":"Contact research coverage"}</strong><small>{zh?`Top Prospect 中 ${contactResearch.summary.verified}/${contactResearch.summary.total} 已核验`:`${contactResearch.summary.verified}/${contactResearch.summary.total} top prospects verified`}</small></div><b>{contactResearch.summary.coveragePercent}%</b></header><div className="contact-research-bar"><i style={{width:`${contactResearch.summary.coveragePercent}%`}} /></div>{contactResearch.items.some(item=>item.status!=="verified")?<details><summary>{zh?`${contactResearch.summary.needsIdentityMatch+contactResearch.summary.unresolved} 家待解析公司`:`${contactResearch.summary.needsIdentityMatch+contactResearch.summary.unresolved} companies need resolution`}</summary><div>{contactResearch.items.filter(item=>item.status!=="verified").map(item=><article key={item.id}><span className={item.status}>{item.status==="needs_identity_match"?(zh?"需核对身份":"Identity match"):(zh?"未解析":"Unresolved")}</span><strong>{item.companyName}</strong><p>{item.reason}</p><small>{zh?"下一步":"Next"}: {item.nextAction}</small>{item.companyId?<button onClick={()=>setSelectedId(items.find(lead=>lead.companyId===item.companyId)?.id||null)}>{zh?"打开 Lead":"Open lead"}</button>:null}</article>)}</div></details>:null}</section>:null}
     <div className="lead-layout">
       <div className="lead-list">{items.map((item,index)=><button key={item.id} className={selected?.id===item.id?"active":""} onClick={()=>setSelectedId(item.id)}><i>{String(index+1).padStart(2,"0")}</i><span><strong>{item.company?.name||item.companyId}</strong><small>{item.outreachStrategy|| (zh?"待制定开发策略":"Strategy pending")}</small></span><em>{item.outreachScore??"—"}</em></button>)}</div>
       {selected?<section className="lead-detail">

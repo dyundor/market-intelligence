@@ -15,7 +15,8 @@
     "db:migrate": "node scripts/db-local.mjs migrate",
     "db:seed": "node scripts/db-local.mjs seed",
     "db:setup": "node scripts/db-local.mjs migrate && node scripts/db-local.mjs seed",
-    "contacts:import": "node --experimental-strip-types scripts/import-public-lead-contacts.mjs"
+    "contacts:import": "node --experimental-strip-types scripts/import-public-lead-contacts.mjs",
+    "contacts:research": "node --experimental-strip-types scripts/import-contact-research.mjs"
   },
   "dependencies": {
     "@use-gesture/react": "10.3.1",

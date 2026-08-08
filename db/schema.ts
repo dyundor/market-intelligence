@@ -529,3 +529,25 @@ export const leadOutreachDrafts = sqliteTable(
     index("lead_outreach_drafts_status_idx").on(table.status),
   ],
 );
+
+export const leadContactResearch = sqliteTable(
+  "lead_contact_research",
+  {
+    id: text("id").primaryKey(),
+    companyName: text("company_name").notNull(),
+    normalizedCompanyName: text("normalized_company_name").notNull(),
+    companyId: text("company_id"),
+    status: text("status").notNull().default("unresolved"),
+    reasonCode: text("reason_code").notNull(),
+    reason: text("reason").notNull(),
+    nextAction: text("next_action").notNull(),
+    evidenceUrls: text("evidence_urls").notNull().default("[]"),
+    researchedAt: text("researched_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("lead_contact_research_name_uq").on(table.normalizedCompanyName),
+    index("lead_contact_research_status_idx").on(table.status, table.updatedAt),
+    index("lead_contact_research_company_idx").on(table.companyId),
+  ],
+);
