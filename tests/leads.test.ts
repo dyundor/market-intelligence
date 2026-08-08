@@ -4,6 +4,7 @@ import { generateLeadStrategy } from "../lib/leads/strategy.ts";
 import { qualifyBuyer } from "../lib/qualification/factors.ts";
 import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
 import { computePipelineMetrics, leadStatusForOutcome } from "../lib/leads/feedback.ts";
+import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/public-contact-enrichment.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -175,5 +176,18 @@ describe("Sales feedback loop", () => {
     assert.equal(metrics.dueToday,1);
     assert.equal(metrics.contacted,2);
     assert.equal(metrics.positiveRate,50);
+  });
+});
+
+describe("Public contact enrichment", () => {
+  const evidence = {companyName:"Waxman Consumer Products Group",website:"https://www.waxman.com/",websiteSourceUrl:"https://www.waxman.com/",contacts:[{type:"email" as const,value:"customerservice@waxmancpg.com",label:"Customer Service",sourceUrl:"https://waxman.com/terms-of-use.html",verificationStatus:"verified" as const}]};
+  it("matches normalized company names only when the match is unique", () => {
+    assert.equal(matchCompanyEvidence(evidence,[{id:"1",name:"Waxman Consumer Products Group, Inc."}]).status,"matched");
+    assert.equal(matchCompanyEvidence(evidence,[{id:"1",name:"Waxman Consumer Products Group"},{id:"2",name:"Waxman Consumer Products Group Inc"}]).status,"ambiguous");
+    assert.equal(matchCompanyEvidence(evidence,[{id:"3",name:"Different Company"}]).status,"unmatched");
+  });
+  it("requires https source evidence and validates email syntax", () => {
+    assert.deepEqual(validatePublicEvidence(evidence),[]);
+    assert.ok(validatePublicEvidence({...evidence,contacts:[{...evidence.contacts[0],sourceUrl:"",value:"guessed-at-example"}]}).length>=2);
   });
 });

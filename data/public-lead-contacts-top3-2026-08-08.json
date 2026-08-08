@@ -1,0 +1,35 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Public official company websites only; no paid contact provider; no guessed email addresses",
+  "companies": [
+    {
+      "companyName": "Waxman Consumer Products Group",
+      "website": "https://www.waxman.com/",
+      "websiteSourceUrl": "https://www.waxman.com/",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://www.waxman.com/contact-us.html","label":"Customer Service Contact Form","sourceUrl":"https://www.waxman.com/contact-us.html","verificationStatus":"verified"},
+        {"type":"email","value":"customerservice@waxmancpg.com","label":"Customer Service","sourceUrl":"https://waxman.com/terms-of-use.html","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-800-201-7298","label":"Company Telephone","sourceUrl":"https://www.waxman.com/documents/latest-documents/Waxman-WaterproofGreaseTube-7118500.pdf","verificationStatus":"verified"}
+      ]
+    },
+    {
+      "companyName": "Rgm Distribution",
+      "website": "https://www.rgmdistribution.com/",
+      "websiteSourceUrl": "https://www.rgmdistribution.com/help.asp",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://www.rgmdistribution.com/help.asp","label":"Contact and Wholesale Information","sourceUrl":"https://www.rgmdistribution.com/help.asp","verificationStatus":"verified"}
+      ]
+    },
+    {
+      "companyName": "Am Conservation Group",
+      "website": "https://amconservation.com/",
+      "websiteSourceUrl": "https://amconservation.com/about-us/",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://amconservation.com/contact-us/","label":"Company Contact Page","sourceUrl":"https://amconservation.com/contact-us/","verificationStatus":"verified"},
+        {"type":"website_contact_page","value":"https://amconservation.com/schedule-a-meeting/","label":"Sales Meeting Request","sourceUrl":"https://amconservation.com/schedule-a-meeting/","verificationStatus":"verified"},
+        {"type":"email","value":"customercare@amconservation.com","label":"Customer Care","sourceUrl":"https://amconservation.com/contact-us/","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-800-777-5655","label":"Company Telephone","sourceUrl":"https://amconservation.com/contact-us/","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}
