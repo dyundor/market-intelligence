@@ -19,6 +19,7 @@ import { draftSentActionId, shouldSyncDraftSent } from "../lib/leads/draft-lifec
 import { contactHref, emailDraftHref } from "../lib/leads/contact-link.ts";
 import { quoteReadiness, validateQualificationQuantity, validateQualificationText } from "../lib/leads/qualification-profile.ts";
 import { buildQuoteHandoff } from "../lib/leads/quote-handoff.ts";
+import { computeQuoteFunnel } from "../lib/leads/quote-funnel.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -598,6 +599,20 @@ describe("Quote handoff",()=>{
     assert.match(result.text,/INTERNAL REVIEW — DO NOT SEND TO BUYER/);
     assert.match(result.text,/Needs Q4 delivery/);
     assert.match(result.text,/Incoterm/);
+  });
+});
+
+describe("Quote conversion funnel",()=>{
+  it("counts distinct buyers across historical quote stages",()=>{
+    assert.deepEqual(computeQuoteFunnel([
+      {companyId:"a",outcomeCode:"quote_requested"},{companyId:"a",outcomeCode:"quote_requested"},
+      {companyId:"a",outcomeCode:"quote_sent"},{companyId:"a",outcomeCode:"won"},
+      {companyId:"b",outcomeCode:"quote_requested"},{companyId:"b",outcomeCode:"quote_sent"},
+      {companyId:"c",outcomeCode:"quote_requested"},{companyId:"d",outcomeCode:"quote_sent"},{companyId:"d",outcomeCode:"lost"},
+    ]),{quoteRequested:3,quoteSent:3,awaitingQuote:1,openQuotes:1,won:1,lost:1,requestToQuoteRate:67,quoteWinRate:33});
+  });
+  it("returns zero rates for an empty funnel",()=>{
+    assert.deepEqual(computeQuoteFunnel([]),{quoteRequested:0,quoteSent:0,awaitingQuote:0,openQuotes:0,won:0,lost:0,requestToQuoteRate:0,quoteWinRate:0});
   });
 });
 
