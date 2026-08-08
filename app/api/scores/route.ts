@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   const product = request.nextUrl.searchParams.get("product") || "龙头及阀类";
   const market = request.nextUrl.searchParams.get("market") || "美国";
   const buyerId = request.nextUrl.searchParams.get("buyerId") || "";
+  const buyerIds = (request.nextUrl.searchParams.get("buyerIds") || "").split(",").filter(Boolean).slice(0, 10);
 
   const shipments = new ShipmentRepository(env.DB);
   const scores = new ScoreRepository(env.DB);
@@ -22,20 +23,22 @@ export async function GET(request: NextRequest) {
   await scores.save("market", marketResult);
   await scores.save("product", productResult);
 
-  let buyerResult = null;
-  if (buyerId) {
-    const company = await new CompanyRepository(env.DB).findDetailById(buyerId);
-    if (company && company.entity_type === "importer") {
-      const buyerShipments = await shipments.findByImporter(buyerId);
-      buyerResult = buyerScoreFromShipments(buyerShipments, { entityId: buyerId });
-      await scores.save("buyer", buyerResult);
-    }
+  const buyers: Array<ReturnType<typeof buyerScoreFromShipments>> = [];
+  const singleBuyer = buyerId ? [buyerId] : [];
+  for (const id of [...new Set([...singleBuyer, ...buyerIds])]) {
+    const company = await new CompanyRepository(env.DB).findDetailById(id);
+    if (!company || company.entity_type !== "importer") continue;
+    const buyerShipments = await shipments.findByImporter(id);
+    const result = buyerScoreFromShipments(buyerShipments, { entityId: id });
+    await scores.save("buyer", result);
+    buyers.push(result);
   }
 
   return NextResponse.json({
     market: marketResult,
     product: productResult,
-    buyer: buyerResult,
+    buyer: buyers.find(item => item.entityId === buyerId) || null,
+    buyers,
     dataset: "importyeti_free_web",
     scope: "Computed on demand from stored company BOL data using the existing opportunity engine (no external calls).",
   });
