@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { env } from "cloudflare:workers";
 
-const STATUSES = new Set(["new", "contacted", "follow_up", "customer"]);
+const STATUSES = new Set(["new", "researching", "contacted", "quoted", "customer"]);
 
 export async function GET(request: NextRequest) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });

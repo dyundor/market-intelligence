@@ -249,3 +249,18 @@ html[lang]:not([lang="zh-CN"]) .importer-list>.section-step>div::after { content
 .quality-cell { padding:10px 11px; border:1px solid #e2e8e4; border-radius:9px; background:#fbfcfb; min-width:0; }.quality-cell small { display:block; color:#82908c; font-size:7px; }.quality-cell b { display:block; margin-top:4px; color:#1c493d; font-size:9px; word-break:break-all; }.quality-cell em { display:block; margin-top:3px; color:#9a8170; font-size:7px; font-style:normal; line-height:1.5; }
 .quality-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }.quality-chip { padding:4px 9px; border-radius:999px; font-size:7px; font-weight:600; border:1px solid; }.quality-chip.ok { background:#eaf6ef; border-color:#bcdcc8; color:#1f6b4a; }.quality-chip.missing { background:#fdf2ef; border-color:#ecc9be; color:#9a4433; }.quality-chip.pending { background:#fbf6ea; border-color:#e5d5a8; color:#8a6b1f; }
 @media (max-width:760px) { .opportunity-grid { grid-template-columns:1fr 1fr; }.quality-grid { grid-template-columns:1fr 1fr; } }
+.buyer-filter-bar { display:flex; align-items:center; gap:8px; margin:8px 0 4px; padding:9px 13px; border:1px solid #dfe7e2; border-radius:10px; background:#f9fbf9; flex-wrap:wrap; }
+.buyer-filter-bar>span { font-size:7px; font-weight:700; color:#557566; margin-right:4px; }
+.filter-check { display:flex; align-items:center; gap:3px; padding:3px 8px; border:1px solid #d9e3dd; border-radius:7px; background:white; font-size:8px; color:#4a6460; cursor:pointer; user-select:none; }
+.filter-check:hover { border-color:#a3c0b6; }
+.filter-check input { margin:0; accent-color:#2b6a5b; }
+.filter-check.filter-on { background:#eaf5f0; border-color:#96beb0; color:#1f5a47; }
+.filter-A b { color:#1f7a50; }
+.filter-B b { color:#7a6b1f; }
+.filter-C b { color:#9a5040; }
+.filter-check.filter-on small { color:#305c52; font-weight:600; }
+.priority-badge { display:inline-block; margin:0 5px 2px 0; padding:1px 6px; border-radius:6px; font-size:7px; font-weight:800; letter-spacing:.05em; }
+.priority-A { background:#d2f3e5; color:#15603e; }
+.priority-B { background:#f5efcd; color:#6e5d19; }
+.priority-C { background:#f5e4d6; color:#8a402d; }
+.importer-row .priority-badge { vertical-align:middle; margin-top:-1px; }
