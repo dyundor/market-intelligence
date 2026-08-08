@@ -1,0 +1,17 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Historical World and Main / H2 Brands importer identity; official acquirer and asset-sale sources; no paid provider and no guessed contact",
+  "companies": [
+    {
+      "companyName": "World And Main Cranbury",
+      "status": "disqualified",
+      "reasonCode": "inactive_or_defunct",
+      "reason": "World and Main became H2 Brands Group before H2 entered restructuring. Gordon Brothers and Nations Capital purchased substantially all H2 assets in May 2023, and Gordon Brothers later offered remaining H2 brands and inventory for sale in 2024. The former h2bgroup.com domain is no longer company-controlled, so the historical Cranbury importer is not a safe current outreach target.",
+      "nextAction": "Exclude the historical entity from outreach; retain AquaPlumb and H2 brand history for market and successor-ownership monitoring.",
+      "evidenceUrls": [
+        "https://www.gordonbrothers.com/press-release/gordon-brothers-nations-capital-complete-h2-brands-group-acquisition/",
+        "https://assets.gordonbrothers.com/auctions/info/id/114"
+      ]
+    }
+  ]
+}

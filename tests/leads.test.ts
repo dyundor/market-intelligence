@@ -376,6 +376,15 @@ describe("Contact research queue", () => {
     assert.equal(company.reasonCode, "competitor_or_supplier");
     assert.deepEqual(summarizeContactResearch(payload.companies), {total:1,verified:0,needsIdentityMatch:0,unresolved:0,disqualified:1,coveragePercent:100});
   });
+  it("disqualifies the defunct World and Main outreach identity", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave8-2026-08-08.json", import.meta.url), "utf8"));
+    const company = payload.companies[0];
+    assert.deepEqual(validateContactResearch(company), []);
+    assert.equal(company.companyName, "World And Main Cranbury");
+    assert.equal(company.status, "disqualified");
+    assert.equal(company.reasonCode, "inactive_or_defunct");
+    assert.ok(company.evidenceUrls.every((url: string) => url.includes("gordonbrothers")));
+  });
 });
 
 describe("Sales-ready lead export", () => {

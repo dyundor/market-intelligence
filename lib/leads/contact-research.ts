@@ -1,7 +1,7 @@
 import { normalizeCompanyName } from "../entities/company.ts";
 
 export type ContactResearchStatus = "verified" | "needs_identity_match" | "unresolved" | "disqualified";
-export type ContactResearchReason = "official_contact_found" | "no_official_site" | "ambiguous_company_name" | "identity_not_confirmed" | "competitor_or_supplier";
+export type ContactResearchReason = "official_contact_found" | "no_official_site" | "ambiguous_company_name" | "identity_not_confirmed" | "competitor_or_supplier" | "inactive_or_defunct";
 
 export interface ContactResearchEvidence {
   companyName: string;
@@ -18,9 +18,10 @@ export function validateContactResearch(item: ContactResearchEvidence): string[]
   if (!item.reason.trim()) errors.push("reason required");
   if (!item.nextAction.trim()) errors.push("nextAction required");
   if (item.status === "verified" && item.reasonCode !== "official_contact_found") errors.push("verified status requires official_contact_found");
-  if (item.status === "disqualified" && item.reasonCode !== "competitor_or_supplier") errors.push("disqualified status requires competitor_or_supplier");
+  if (item.status === "disqualified" && item.reasonCode !== "competitor_or_supplier" && item.reasonCode !== "inactive_or_defunct") errors.push("disqualified status requires competitor_or_supplier or inactive_or_defunct");
   if (item.status !== "verified" && item.reasonCode === "official_contact_found") errors.push("official_contact_found requires verified status");
   if (item.status !== "disqualified" && item.reasonCode === "competitor_or_supplier") errors.push("competitor_or_supplier requires disqualified status");
+  if (item.status !== "disqualified" && item.reasonCode === "inactive_or_defunct") errors.push("inactive_or_defunct requires disqualified status");
   for (const url of item.evidenceUrls) if (!url.startsWith("https://")) errors.push(`${url}: evidence URL must use https`);
   return errors;
 }
