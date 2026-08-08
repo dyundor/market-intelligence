@@ -12,8 +12,9 @@ import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
 import { evaluateOutreachReadiness } from "../lib/leads/outreach-readiness.ts";
 import { shouldInitializeSalesLead, sortSalesLeads } from "../lib/leads/pipeline-selection.ts";
 import { contactRouteNote, draftChannelForContact, selectBestVerifiedContact } from "../lib/leads/outreach-package.ts";
-import { scheduleReviewDate } from "../lib/leads/sales-task.ts";
+import { addBusinessDays, scheduleReviewDate } from "../lib/leads/sales-task.ts";
 import { LeadRepository } from "../lib/repositories/lead-repository.ts";
+import { draftSentActionId, shouldSyncDraftSent } from "../lib/leads/draft-lifecycle.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -197,6 +198,9 @@ describe("Sales review task scheduling", () => {
     assert.throws(() => scheduleReviewDate(-1, "2026-08-08"));
     assert.throws(() => scheduleReviewDate(0, "08/08/2026"));
   });
+  it("schedules follow-up after three business days", () => {
+    assert.equal(addBusinessDays("2026-08-07", 3), "2026-08-12");
+  });
   it("replaces the previous current task only after saving the new activity", async () => {
     const raw = new DatabaseSync(":memory:");
     raw.exec(`CREATE TABLE lead_actions (id TEXT PRIMARY KEY,company_id TEXT,action_type TEXT,direction TEXT,channel TEXT,summary TEXT,outcome TEXT,outcome_code TEXT,qualification_feedback TEXT,feedback_reason TEXT,next_action TEXT,next_action_due TEXT,performed_by TEXT,created_at TEXT)`);
@@ -209,6 +213,18 @@ describe("Sales review task scheduling", () => {
     assert.equal(rows.find(row=>row.id===first.id)?.next_action_due, null);
     assert.equal(rows.find(row=>row.id===second.id)?.next_action_due, "2026-08-14");
     raw.close();
+  });
+});
+
+describe("Outreach draft lifecycle", () => {
+  it("syncs only the first transition to sent", () => {
+    assert.equal(shouldSyncDraftSent("approved", "sent", false), true);
+    assert.equal(shouldSyncDraftSent("sent", "sent", false), false);
+    assert.equal(shouldSyncDraftSent("approved", "sent", true), false);
+    assert.equal(shouldSyncDraftSent("draft", "approved", false), false);
+  });
+  it("creates a stable action id per draft", () => {
+    assert.equal(draftSentActionId("draft-1"), "la-draft-1-sent");
   });
 });
 
