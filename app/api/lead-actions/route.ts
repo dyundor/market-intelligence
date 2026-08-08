@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
     nextActionDue: body.nextActionDue ? String(body.nextActionDue) : defaultFollowUp?.nextActionDue ?? null,
     performedBy: String(body.performedBy || "manual"),
   });
-  const leadStatus = outcomeCode ? leadStatusForOutcome(outcomeCode as OutcomeCode) : null;
+  const leadStatus = qualificationFeedback === "disqualified"
+    ? "disqualified"
+    : outcomeCode ? leadStatusForOutcome(outcomeCode as OutcomeCode) : null;
   if (leadStatus) {
     await env.DB.prepare(
       "UPDATE buyer_watchlist SET lead_status = ?, updated_at = ? WHERE company_id = ?",

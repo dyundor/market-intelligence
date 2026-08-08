@@ -44,7 +44,7 @@ describe("Lead Strategy", () => {
     const lead = generateLeadStrategy(qual, faucetRow);
 
     assert.ok(lead.companyId);
-    assert.ok(["new", "researching", "contact_ready", "contacted", "follow_up", "qualified", "opportunity"].includes(lead.leadStatus), "valid leadStatus");
+    assert.ok(["new", "researching", "contact_ready", "contacted", "follow_up", "qualified", "opportunity", "disqualified"].includes(lead.leadStatus), "valid leadStatus");
     assert.ok(["OEM/ODM Pitch", "Private Label Pitch", "Distribution Partnership", "Research Only"].includes(lead.outreachStrategy), "valid strategy");
     assert.ok(lead.recommendedProducts.length > 0);
     assert.ok(["HIGH", "MEDIUM", "LOW"].includes(lead.confidence), "valid confidence");
@@ -260,6 +260,7 @@ describe("Sales feedback loop", () => {
     assert.equal(leadStatusForOutcome("interested"), "qualified");
     assert.equal(leadStatusForOutcome("quote_requested"), "opportunity");
     assert.equal(leadStatusForOutcome("bounced"), "researching");
+    assert.equal(leadStatusForOutcome("not_fit"), "disqualified");
   });
 
   it("computes overdue tasks and positive response rate", () => {
@@ -336,27 +337,27 @@ describe("Contact research queue", () => {
     assert.ok(validateContactResearch({...unresolved,status:"verified",evidenceUrls:["http://example.com"]}).length>=2);
   });
   it("reports actionable research coverage", () => {
-    assert.deepEqual(summarizeContactResearch([{status:"verified"},{status:"needs_identity_match"},{status:"unresolved"}]),{total:3,verified:1,needsIdentityMatch:1,unresolved:1,coveragePercent:33});
+    assert.deepEqual(summarizeContactResearch([{status:"verified"},{status:"needs_identity_match"},{status:"unresolved"}]),{total:3,verified:1,needsIdentityMatch:1,unresolved:1,disqualified:0,coveragePercent:33});
   });
   it("preserves unresolved outcomes in the second research wave", () => {
     const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave2-2026-08-08.json", import.meta.url), "utf8"));
     assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
-    assert.deepEqual(summarizeContactResearch(payload.companies), {total:5, verified:2, needsIdentityMatch:2, unresolved:1, coveragePercent:40});
+    assert.deepEqual(summarizeContactResearch(payload.companies), {total:5, verified:2, needsIdentityMatch:2, unresolved:1, disqualified:0, coveragePercent:40});
   });
   it("keeps Cross International unresolved in the third research wave", () => {
     const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave3-2026-08-08.json", import.meta.url), "utf8"));
     assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
-    assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:2, needsIdentityMatch:1, unresolved:0, coveragePercent:67});
+    assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:2, needsIdentityMatch:1, unresolved:0, disqualified:0, coveragePercent:67});
   });
   it("marks every fourth-wave identity verified from official evidence", () => {
     const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave4-2026-08-08.json", import.meta.url), "utf8"));
     assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
-    assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:3, needsIdentityMatch:0, unresolved:0, coveragePercent:100});
+    assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:3, needsIdentityMatch:0, unresolved:0, disqualified:0, coveragePercent:100});
   });
   it("keeps AK Trade unresolved in the fifth research wave", () => {
     const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave5-2026-08-08.json", import.meta.url), "utf8"));
     assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
-    assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:2, needsIdentityMatch:0, unresolved:1, coveragePercent:67});
+    assert.deepEqual(summarizeContactResearch(payload.companies), {total:3, verified:2, needsIdentityMatch:0, unresolved:1, disqualified:0, coveragePercent:67});
   });
   it("verifies Your Source Products from official registry and operating-address evidence", () => {
     const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave6-2026-08-08.json", import.meta.url), "utf8"));
@@ -365,6 +366,15 @@ describe("Contact research queue", () => {
     assert.equal(company.companyName, "Your Source Products");
     assert.equal(company.status, "verified");
     assert.ok(company.evidenceUrls.some((url: string) => url.includes("sunbiz.org")));
+  });
+  it("disqualifies MJF after its official rename identifies a peer manufacturer", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave7-2026-08-08.json", import.meta.url), "utf8"));
+    const company = payload.companies[0];
+    assert.deepEqual(validateContactResearch(company), []);
+    assert.equal(company.companyName, "Mjf Group Inc");
+    assert.equal(company.status, "disqualified");
+    assert.equal(company.reasonCode, "competitor_or_supplier");
+    assert.deepEqual(summarizeContactResearch(payload.companies), {total:1,verified:0,needsIdentityMatch:0,unresolved:0,disqualified:1,coveragePercent:100});
   });
 });
 
@@ -391,6 +401,9 @@ describe("Outreach readiness gate", () => {
   it("explains every blocker without hiding unresolved research", () => {
     assert.deepEqual(evaluateOutreachReadiness({identityVerified:false,verifiedContactCount:0,contactResearchStatus:"needs_identity_match"}),{ready:false,blockers:["identity_unverified","verified_contact_missing","contact_research_unresolved"]});
   });
+  it("blocks a disqualified peer even if identity and contact evidence exist", () => {
+    assert.deepEqual(evaluateOutreachReadiness({identityVerified:true,verifiedContactCount:1,contactResearchStatus:"disqualified",leadStatus:"disqualified"}),{ready:false,blockers:["lead_disqualified"]});
+  });
 });
 
 describe("Real sales pipeline selection",()=>{
@@ -413,7 +426,8 @@ describe("Real sales pipeline selection",()=>{
       {leadStatus:"contact_ready",outreachScore:60,commercialFitScore:60,company:{name:"Ready"}},
       {leadStatus:"qualified",outreachScore:50,commercialFitScore:50,company:{name:"Qualified"}},
       {leadStatus:"contact_ready",outreachScore:80,commercialFitScore:60,company:{name:"Ready High"}},
+      {leadStatus:"disqualified",outreachScore:99,commercialFitScore:99,company:{name:"Peer Manufacturer"}},
     ]);
-    assert.deepEqual(ordered.map(item=>item.company.name),["Qualified","Ready High","Ready","Research"]);
+    assert.deepEqual(ordered.map(item=>item.company.name),["Qualified","Ready High","Ready","Research","Peer Manufacturer"]);
   });
 });

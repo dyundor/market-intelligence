@@ -176,7 +176,7 @@ export class LeadInitializer {
           ?,?,?,?,
           ?,?,?,?)
          ON CONFLICT(company_id) DO UPDATE SET
-          lead_status=CASE WHEN buyer_watchlist.lead_status IN ('contact_ready','contacted','follow_up','qualified','opportunity') THEN buyer_watchlist.lead_status ELSE excluded.lead_status END,
+          lead_status=CASE WHEN buyer_watchlist.lead_status IN ('contact_ready','contacted','follow_up','qualified','opportunity','disqualified') THEN buyer_watchlist.lead_status ELSE excluded.lead_status END,
           outreach_strategy=excluded.outreach_strategy,
           recommended_products=excluded.recommended_products,
           confidence=excluded.confidence,

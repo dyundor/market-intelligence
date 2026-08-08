@@ -4,7 +4,7 @@ import { env } from "cloudflare:workers";
 const STATUSES = new Set(["new", "researching", "contacted", "quoted", "customer"]);
 const LEAD_STATUSES = new Set([
   "new", "researching", "contact_ready", "contacted",
-  "follow_up", "qualified", "opportunity",
+  "follow_up", "qualified", "opportunity", "disqualified",
 ]);
 
 export async function GET(_request: NextRequest) {
@@ -110,6 +110,11 @@ export async function PATCH(request: NextRequest) {
     `UPDATE buyer_watchlist SET ${set.join(", ")} WHERE id=?`,
   ).bind(...args).run();
   if (!result.meta?.changes) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (body?.leadStatus === "disqualified") {
+    const saved = await env.DB.prepare("SELECT company_id FROM buyer_watchlist WHERE id=?").bind(id).all();
+    const companyId = (saved.results || [])[0]?.company_id;
+    if (companyId) await env.DB.prepare("UPDATE lead_actions SET next_action_due=NULL WHERE company_id=? AND next_action_due IS NOT NULL").bind(companyId).run();
+  }
 
   const row = await env.DB.prepare("SELECT * FROM buyer_watchlist WHERE id = ?").bind(id).all();
   return NextResponse.json(mapWatchlistRow((row.results || [])[0] || {}));

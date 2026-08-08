@@ -1,0 +1,17 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "High-volume unresolved bathroom importer identity; official Florida registry and current manufacturer-controlled source; no paid provider and no guessed contact",
+  "companies": [
+    {
+      "companyName": "Mjf Group Inc",
+      "status": "disqualified",
+      "reasonCode": "competitor_or_supplier",
+      "reason": "Florida Division of Corporations confirms MJF Group Inc. changed its legal name to VETTA Kitchen and Bath Manufacturing, Inc. on December 18, 2025. The current VETTA/Meijie site identifies the business as a faucet, shower, bath-accessory and sink manufacturer supplying North America, so it is a peer manufacturer rather than a priority Yundor buyer.",
+      "nextAction": "Exclude from buyer outreach and retain its trade activity only for competitor and supply-chain monitoring.",
+      "evidenceUrls": [
+        "https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultDetail?aggregateId=domp-p12000081254-92534706-d647-4557-acff-b4524ae8beb2&directionType=CurrentList&inquirytype=EntityName&listNameOrder=MJFGLOBAL+P070001060640&searchNameOrder=MJFGROUP+P120000812540&searchTerm=MJF+GLASS+",
+        "https://www.vetta.com/"
+      ]
+    }
+  ]
+}

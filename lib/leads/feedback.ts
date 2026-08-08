@@ -9,7 +9,8 @@ export function leadStatusForOutcome(outcome: OutcomeCode): LeadStatus {
   if (outcome === "meeting_booked" || outcome === "interested") return "qualified";
   if (outcome === "replied" || outcome === "no_response") return "follow_up";
   if (outcome === "bounced") return "researching";
-  if (outcome === "not_fit" || outcome === "lost") return "contacted";
+  if (outcome === "not_fit") return "disqualified";
+  if (outcome === "lost") return "contacted";
   return "contacted";
 }
 

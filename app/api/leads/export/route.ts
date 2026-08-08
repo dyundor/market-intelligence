@@ -20,7 +20,7 @@ export async function GET() {
      LEFT JOIN lead_outreach_drafts d ON d.id=(SELECT latest.id FROM lead_outreach_drafts latest
        WHERE latest.company_id=w.company_id AND latest.status<>'archived' ORDER BY latest.updated_at DESC LIMIT 1)
      LEFT JOIN lead_contact_research r ON r.company_id=w.company_id
-     WHERE w.lead_status NOT IN ('new','researching')
+     WHERE w.lead_status NOT IN ('new','researching','disqualified')
        AND e.identity_status='source_verified'
        AND (r.id IS NULL OR r.status='verified')
      ORDER BY COALESCE(w.outreach_score,0) DESC,e.name,c.contact_type,c.contact_value`,

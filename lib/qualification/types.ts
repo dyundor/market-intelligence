@@ -74,7 +74,7 @@ export const DEFAULT_WEIGHTS: PriorityWeights = {
 export const PRIORITY_THRESHOLDS = { a: 65, b: 35 };
 
 /** Lead status — 7-stage sales pipeline */
-export type LeadStatus = "new" | "researching" | "contact_ready" | "contacted" | "follow_up" | "qualified" | "opportunity";
+export type LeadStatus = "new" | "researching" | "contact_ready" | "contacted" | "follow_up" | "qualified" | "opportunity" | "disqualified";
 
 /** Outreach strategy — recommended approach for this buyer */
 export type OutreachStrategy = "OEM/ODM Pitch" | "Private Label Pitch" | "Distribution Partnership" | "Research Only";

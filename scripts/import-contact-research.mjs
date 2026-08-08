@@ -41,6 +41,10 @@ for (const item of payload.companies) {
         contactResearchId(item.companyName),item.companyName,normalized,companyId,item.status,item.reasonCode,item.reason,item.nextAction,JSON.stringify(item.evidenceUrls),payload.researchedAt,now,
       );
   report.written += 1;
+  if (item.status === "disqualified" && companyId) {
+    db.prepare("UPDATE buyer_watchlist SET lead_status='disqualified',updated_at=? WHERE company_id=?").run(now,companyId);
+    db.prepare("UPDATE lead_actions SET next_action_due=NULL WHERE company_id=? AND next_action_due IS NOT NULL").run(companyId);
+  }
 }
 
 console.log(JSON.stringify(report,null,2));
