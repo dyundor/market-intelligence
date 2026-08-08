@@ -1,0 +1,18 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Rafael J. Nido current buyer identity cross-checked with Puerto Rico industry listings and free public trade summaries; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Rafael J Nido Inc",
+      "status": "verified",
+      "reasonCode": "official_contact_found",
+      "reason": "Puerto Rico industry and vendor directories consistently identify Rafael J. Nido, Inc. at the same address and phone. Free trade summaries show 2,267 bills of lading and seven recent Guangdong Meijie associations, with faucet activity current through May 2026.",
+      "nextAction": "Prepare a reviewed Spanish-aware distribution introduction for the published corporate route and ask for the plumbing or bathroom-products purchasing owner.",
+      "evidenceUrls": [
+        "https://asociacion.hechoen.pr/directorio/rafael-j-nido-group/",
+        "https://www.govcb.com/government-vendors/profile-SAM00000000001537986-rafael-j-nido-Toa-Baja-PR.htm",
+        "https://www.importinfo.com/guangdong-meijie-faucet-company"
+      ]
+    }
+  ]
+}

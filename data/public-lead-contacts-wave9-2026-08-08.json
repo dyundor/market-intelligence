@@ -1,0 +1,25 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Rafael J. Nido Group identity and public company contact matched across Puerto Rico industry directories and current free public faucet trade evidence; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Rafael J Nido Inc",
+      "website": "https://rjnidopr.com/",
+      "websiteSourceUrl": "https://asociacion.hechoen.pr/directorio/rafael-j-nido-group/",
+      "identityEvidence": {
+        "legalName": "Rafael J. Nido, Inc.",
+        "sourceUrl": "https://asociacion.hechoen.pr/directorio/rafael-j-nido-group/",
+        "note": "Puerto Rico industry-association listing identifies Rafael J. Nido Group at the same San Juan postal address and phone as government vendor records; current faucet trade activity links the importer identity to bathroom-product sourcing."
+      },
+      "businessFit": {
+        "outreachStrategy": "Distribution Partnership",
+        "recommendedProducts": "Bathroom Faucets + Shower Systems + Puerto Rico Market Finishes",
+        "reason": "An established Puerto Rico construction and hardware distributor with current faucet sourcing is a practical regional distribution prospect for coordinated bathroom products."
+      },
+      "contacts": [
+        {"type":"email","value":"jortiz@nidogroup.net","label":"Rafael J. Nido Group Corporate","sourceUrl":"https://asociacion.hechoen.pr/directorio/rafael-j-nido-group/","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-787-251-1000","label":"Rafael J. Nido Group Corporate","sourceUrl":"https://asociacion.hechoen.pr/directorio/rafael-j-nido-group/","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

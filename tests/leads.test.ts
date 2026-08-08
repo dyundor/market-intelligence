@@ -370,6 +370,13 @@ describe("Public contact enrichment", () => {
     assert.equal(payload.companies[0].contacts[0].value,"mail@matco-norca.com");
     assert.match(payload.companies[0].businessFit.recommendedProducts,/Bathroom Faucets/);
   });
+  it("keeps Rafael J. Nido identity, corporate contact, and regional fit explicit", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-lead-contacts-wave9-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validatePublicEvidence),[]);
+    assert.equal(payload.companies[0].identityEvidence.legalName,"Rafael J. Nido, Inc.");
+    assert.equal(payload.companies[0].contacts[0].value,"jortiz@nidogroup.net");
+    assert.equal(payload.companies[0].businessFit.outreachStrategy,"Distribution Partnership");
+  });
 });
 
 describe("Contact research queue", () => {
@@ -450,6 +457,13 @@ describe("Contact research queue", () => {
     assert.equal(payload.companies[0].status,"verified");
     assert.match(payload.companies[0].reason,/8,826 bills of lading/);
     assert.ok(payload.companies[0].evidenceUrls.some((url:string)=>url.includes("importinfo.com/matco-norca")));
+  });
+  it("verifies Rafael J. Nido from Puerto Rico identity and current faucet evidence", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave12-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validateContactResearch),[]);
+    assert.equal(payload.companies[0].status,"verified");
+    assert.match(payload.companies[0].reason,/2,267 bills of lading/);
+    assert.ok(payload.companies[0].evidenceUrls.some((url:string)=>url.includes("importinfo.com/guangdong-meijie")));
   });
 });
 
