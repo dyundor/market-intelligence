@@ -1,0 +1,19 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Matco-Norca current identity and buyer activity cross-checked with official company sources and free public trade summaries; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Matco Norca Llc",
+      "status": "verified",
+      "reasonCode": "official_contact_found",
+      "reason": "Matco-Norca's official contact page and faucet catalog identify the same Brewster headquarters as current public importer records. Free trade summaries show 8,826 bills of lading through July 2026, including current sanitary ware and at least eight recent Guangdong Meijie faucet associations.",
+      "nextAction": "Prepare a reviewed OEM/ODM faucet and shower-system introduction for the official corporate route and ask for sourcing or product-development ownership.",
+      "evidenceUrls": [
+        "https://www.matco-norca.com/contact-us/",
+        "https://www.matco-norca.com/images/category_files/FaucetCatalog.pdf",
+        "https://www.importinfo.com/matco-norca-llc",
+        "https://www.importinfo.com/guangdong-meijie-faucet-company"
+      ]
+    }
+  ]
+}

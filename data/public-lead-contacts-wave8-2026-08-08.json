@@ -1,0 +1,25 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Matco-Norca official contact and faucet catalog matched to the exact Brewster importer address and current free public trade evidence; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Matco Norca Llc",
+      "website": "https://www.matco-norca.com/",
+      "websiteSourceUrl": "https://www.matco-norca.com/contact-us/",
+      "identityEvidence": {
+        "legalName": "Matco-Norca LLC",
+        "sourceUrl": "https://www.matco-norca.com/contact-us/",
+        "note": "Official 1944 Route 22, Brewster headquarters exactly matches the current public importer address; official faucet catalog and current trade records confirm plumbing-product sourcing."
+      },
+      "businessFit": {
+        "outreachStrategy": "OEM/ODM Pitch",
+        "recommendedProducts": "Bathroom Faucets + Shower Systems + Coordinated Finishes",
+        "reason": "Current importer activity, an official faucet range, and established global sourcing make differentiated OEM/ODM faucet and shower development commercially relevant."
+      },
+      "contacts": [
+        {"type":"email","value":"mail@matco-norca.com","label":"Matco-Norca Corporate","sourceUrl":"https://www.webportal.matco-norca.com/NibcoPartner/common/contactus_generic.jsp","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-800-431-2082","label":"Matco-Norca Corporate Headquarters","sourceUrl":"https://www.webportal.matco-norca.com/NibcoPartner/common/contactus_generic.jsp","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

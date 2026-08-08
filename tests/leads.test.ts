@@ -363,6 +363,13 @@ describe("Public contact enrichment", () => {
     assert.equal(payload.companies[0].businessFit.outreachStrategy,"OEM/ODM Pitch");
     assert.ok(payload.companies[0].identityEvidence.sourceUrl.startsWith("https://www.legionfurniture.com/"));
   });
+  it("keeps Matco-Norca identity, contact, and business fit evidence explicit", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-lead-contacts-wave8-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validatePublicEvidence),[]);
+    assert.equal(payload.companies[0].identityEvidence.legalName,"Matco-Norca LLC");
+    assert.equal(payload.companies[0].contacts[0].value,"mail@matco-norca.com");
+    assert.match(payload.companies[0].businessFit.recommendedProducts,/Bathroom Faucets/);
+  });
 });
 
 describe("Contact research queue", () => {
@@ -436,6 +443,13 @@ describe("Contact research queue", () => {
     assert.ok(payload.companies.every((company: {status:string})=>company.status==="disqualified"));
     assert.match(payload.companies[0].nextAction,/Homewerks Worldwide/);
     assert.ok(payload.companies[0].evidenceUrls.some((url:string)=>url.includes("prweb.com")));
+  });
+  it("verifies Matco-Norca from official identity and current free trade evidence", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave11-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.flatMap(validateContactResearch),[]);
+    assert.equal(payload.companies[0].status,"verified");
+    assert.match(payload.companies[0].reason,/8,826 bills of lading/);
+    assert.ok(payload.companies[0].evidenceUrls.some((url:string)=>url.includes("importinfo.com/matco-norca")));
   });
 });
 
