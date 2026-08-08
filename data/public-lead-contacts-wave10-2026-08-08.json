@@ -1,0 +1,25 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Bath Authority LLC matched to the DreamLine operating brand through official legal warranty, address, product, and contact evidence plus current free public trade summaries; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Bath Authority Llc",
+      "website": "https://dreamline.com/",
+      "websiteSourceUrl": "https://dreamline.com/warranty",
+      "identityEvidence": {
+        "legalName": "Bath Authority LLC",
+        "sourceUrl": "https://dreamline.com/warranty",
+        "note": "DreamLine's official warranty names Bath Authority LLC as the legal product company, while its official contact page lists the same 75 Hawk Road, Warminster address shown in current importer records."
+      },
+      "businessFit": {
+        "outreachStrategy": "OEM/ODM Pitch",
+        "recommendedProducts": "Shower Systems + Shower Faucets + Coordinated Bathroom Hardware",
+        "reason": "DreamLine is a high-frequency, current bathroom-products importer with an official shower-faucet range and broad dealer distribution, making focused OEM/ODM component and finish development commercially relevant."
+      },
+      "contacts": [
+        {"type":"email","value":"support@dreamline.com","label":"DreamLine Corporate Contact","sourceUrl":"https://dreamline.com/contact-us","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-215-957-1411","label":"DreamLine Corporate Contact","sourceUrl":"https://dreamline.com/contact-us","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

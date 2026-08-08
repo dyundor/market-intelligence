@@ -1,0 +1,19 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Bath Authority current buyer identity cross-checked against DreamLine official legal and contact pages plus free public trade summaries; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "Bath Authority Llc",
+      "status": "verified",
+      "reasonCode": "official_contact_found",
+      "reason": "DreamLine's official warranty identifies Bath Authority LLC and its official contact page matches the 75 Hawk Road importer address. Free trade summaries show 1,658 bills of lading through July 2026, including 77 in the past 90 days and current shower-door, base, backwall, bathtub, and bathroom-hardware activity.",
+      "nextAction": "Prepare a reviewed OEM/ODM introduction focused on shower systems, faucet components, finish coordination, and sourcing resilience; ask the corporate route for product development or sourcing ownership.",
+      "evidenceUrls": [
+        "https://dreamline.com/warranty",
+        "https://dreamline.com/contact-us",
+        "https://dreamline.com/become-a-dealer",
+        "https://www.importinfo.com/bath-authority-llc"
+      ]
+    }
+  ]
+}
