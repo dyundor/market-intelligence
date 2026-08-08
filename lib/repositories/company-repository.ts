@@ -41,11 +41,21 @@ export class CompanyRepository {
   async findDetailById(id: string): Promise<Record<string, unknown> | null> {
     const result = await this.db
       .prepare(
-        `SELECT id, entity_type, name, address, country, country_code, admin1_code, admin1_name, city_name, location_names, location_precision, website, website_status, website_source_url, website_verified_at, chinese_name, marketplace_urls, total_shipments, latest_shipment_date, avg_teu_per_shipment, avg_teu_per_month, estimated_shipping_spend_usd, shipping_spend_coverage_percent, contact_data_status, source_url, source_attribution, captured_at FROM importyeti_web_entities WHERE id = ?`,
+        `SELECT id, entity_type, name, address, country, country_code, admin1_code, admin1_name, city_name, location_names, location_precision, website, website_status, website_source_url, website_verified_at, chinese_name, marketplace_urls, total_shipments, latest_shipment_date, avg_teu_per_shipment, avg_teu_per_month, estimated_shipping_spend_usd, shipping_spend_coverage_percent, contact_data_status, source_url, source_attribution, captured_at, source_entity_key, first_seen_at, identity_status, identity_confidence, identity_notes FROM importyeti_web_entities WHERE id = ?`,
       )
       .bind(id)
       .all();
     return (result.results || [])[0] || null;
+  }
+
+  async listAliases(companyId: string): Promise<Array<Record<string, unknown>>> {
+    const result = await this.db
+      .prepare(
+        `SELECT alias_type, alias_value, confidence FROM company_identity_aliases WHERE company_id = ? ORDER BY confidence DESC, alias_type`,
+      )
+      .bind(companyId)
+      .all();
+    return result.results || [];
   }
 
   async listRelationships(id: string, entityType: "importer" | "supplier"): Promise<Array<Record<string, unknown>>> {
