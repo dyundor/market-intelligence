@@ -94,6 +94,7 @@ function computePriorityScore(row, context) {
   values.push({ id: "identity_confidence", label: "Identity confidence", value: ratioScale(identityConfidence, 100), weight: w.identityConfidence });
 
   let relevanceValue = 70;
+  let productMatchConfidence = 50;
   if (context?.productKeywords?.length) {
     const lowerProducts = products.toLowerCase();
     const keywordMatches = context.productKeywords.filter(
@@ -101,27 +102,41 @@ function computePriorityScore(row, context) {
     ).length;
     relevanceValue = clamp(keywordMatches * 25, 30, 100);
 
+    if (keywordMatches >= 3) productMatchConfidence = 95;
+    else if (keywordMatches === 2) productMatchConfidence = 80;
+    else if (keywordMatches === 1) productMatchConfidence = 60;
+    else if (products.length > 0) productMatchConfidence = 30;
+    else productMatchConfidence = 15;
+
     if (context.excludeKeywords?.length) {
       const excludeHits = context.excludeKeywords.filter(
         k => lowerProducts.includes(k.toLowerCase()),
       ).length;
       if (excludeHits > 0) {
         relevanceValue = clamp(relevanceValue - excludeHits * 20, 10, 100);
+        productMatchConfidence = clamp(productMatchConfidence - excludeHits * 20, 5, 100);
       }
     }
   } else {
     relevanceValue = totalShipments > 0 ? 70 : 40;
+    productMatchConfidence = totalShipments > 0 ? 50 : 25;
   }
   values.push({ id: "product_relevance", label: "Product relevance", value: relevanceValue, weight: w.productRelevance });
 
-  let dataCoverageValue = 10;
-  if (totalShipments > 0) dataCoverageValue = 100;
-  else if (searchQuery && (
+  const isBathroomQuery = searchQuery && (
     searchQuery.includes("faucet") || searchQuery.includes("shower") ||
     searchQuery.includes("龙头") || searchQuery.includes("花洒") ||
-    searchQuery.includes("bath") || searchQuery.includes("tap")
-  )) dataCoverageValue = 50;
-  else if (identityConfidence >= 80) dataCoverageValue = 30;
+    searchQuery.includes("bathroom") || searchQuery.includes("basin") ||
+    searchQuery.includes("lavatory") || searchQuery.includes("vanity") ||
+    searchQuery.includes("tap") || searchQuery.includes("mixer") ||
+    searchQuery.includes("淋浴")
+  );
+
+  let dataCoverageValue = 10;
+  if (totalShipments > 0 && isBathroomQuery) dataCoverageValue = 100;
+  else if (totalShipments > 0) dataCoverageValue = 80;
+  else if (isBathroomQuery) dataCoverageValue = 50;
+  else if (identityConfidence >= 80) dataCoverageValue = 20;
   values.push({ id: "data_coverage", label: "Data coverage", value: dataCoverageValue, weight: w.dataCoverage });
 
   const factors = values.map(v => ({
@@ -130,7 +145,7 @@ function computePriorityScore(row, context) {
   }));
 
   const score = Math.round(factors.reduce((sum, f) => sum + f.contribution, 0));
-  return { score: clamp(score, 0, 100), factors };
+  return { score: clamp(score, 0, 100), factors, productMatchConfidence };
 }
 
 function priorityFromScore(score) {
@@ -216,13 +231,14 @@ function gatherRiskFactors(row) {
 }
 
 function qualifyBuyer(row, context) {
-  const { score, factors } = computePriorityScore(row, context);
+  const { score, factors, productMatchConfidence } = computePriorityScore(row, context);
   const priority = priorityFromScore(score);
   const factorMap = new Map(factors.map(f => [f.id, f.value]));
 
   return {
     priority,
     qualificationScore: score,
+    productMatchConfidence,
     positiveFactors: gatherPositiveFactors(row, factorMap),
     riskFactors: gatherRiskFactors(row),
     factors,
@@ -288,16 +304,16 @@ for (const prod of Object.values(PRODUCTS)) {
 
   const header = [
     "#".padEnd(3),
-    "Company Name".padEnd(40),
+    "Company Name".padEnd(35),
     "Score".padEnd(6),
     "P".padEnd(2),
-    "Shipments".padEnd(10),
-    "Suppliers".padEnd(9),
-    "ID Conf".padEnd(7),
-    "Recency".padEnd(6),
-    "Pos Factors".padEnd(5),
-    "Risk Factors".padEnd(5),
-    "Search Query",
+    "Match%".padEnd(6),
+    "Class".padEnd(7),
+    "Ships".padEnd(7),
+    "Supp".padEnd(5),
+    "ID%".padEnd(5),
+    "LastSeen".padEnd(12),
+    "Query",
   ].join(" ");
   console.log(header);
   console.log("-".repeat(header.length));
@@ -305,19 +321,19 @@ for (const prod of Object.values(PRODUCTS)) {
   for (let i = 0; i < scored.length; i++) {
     const r = scored[i];
     const rank = (i + 1).toString().padEnd(3);
-    const name = (r.name || "?").slice(0, 38).padEnd(40);
+    const name = (r.name || "?").slice(0, 33).padEnd(35);
     const score = r.qualificationScore.toString().padEnd(6);
     const pri = r.priority.padEnd(2);
-    const ships = ((r.total_shipments || 0)).toString().padEnd(10);
-    const supps = r.supplier_count.toString().padEnd(9);
-    const idconf = ((r.identity_confidence || 0)).toString().padEnd(7);
+    const match = ((r.productMatchConfidence || 0)).toString().padEnd(6);
+    const klass = (r.total_shipments > 0 ? "CONF" : "CAND").padEnd(7);
+    const ships = ((r.total_shipments || 0)).toString().padEnd(7);
+    const supps = r.supplier_count.toString().padEnd(5);
+    const idconf = ((r.identity_confidence || 0)).toString().padEnd(5);
     const lsd = r.latest_shipment_date ? new Date(r.latest_shipment_date).toISOString().slice(0, 10) : "—";
-    const recency = lsd.padEnd(6);
-    const pos = r.positiveFactors.length.toString().padEnd(5);
-    const risk = r.riskFactors.length.toString().padEnd(5);
+    const recency = lsd.padEnd(12);
     const query = (r.search_query || "").slice(0, 30);
 
-    console.log(`${rank}${name}${score}${pri}${ships}${supps}${idconf}${recency}${pos}${risk}${query}`);
+    console.log(`${rank}${name}${score}${pri}${match}${klass}${ships}${supps}${idconf}${recency}${query}`);
 
     // Print factor details for top 15
     if (i < 15) {
@@ -339,6 +355,78 @@ for (const prod of Object.values(PRODUCTS)) {
   const avgScore = Math.round(scored.reduce((s, r) => s + r.qualificationScore, 0) / scored.length);
   console.log(`Average score: ${avgScore}`);
   console.log(`Median score: ${scored[Math.floor(scored.length / 2)].qualificationScore}`);
+}
+
+// ---------- BUYER COVERAGE REPORT ----------
+console.log(`\n\n${"=".repeat(80)}`);
+console.log("BUYER COVERAGE REPORT");
+console.log("=".repeat(80));
+
+// Classify each buyer
+const classified = importers.map(r => {
+  const isBathroomQuery = (r.search_query || "").includes("bathroom") ||
+    (r.search_query || "").includes("faucet") ||
+    (r.search_query || "").includes("shower") ||
+    (r.search_query || "").includes("龙头") ||
+    (r.search_query || "").includes("花洒") ||
+    (r.search_query || "").includes("淋浴");
+  const hasShipments = (r.total_shipments || 0) > 0;
+  let klass = "CANDIDATE";
+  if (hasShipments && isBathroomQuery) klass = "CONFIRMED";
+  else if (hasShipments) klass = "CONFIRMED_GENERIC";
+  else if (isBathroomQuery) klass = "CANDIDATE_BATHROOM";
+  else klass = "CANDIDATE_GENERIC";
+  return { ...r, klass, isBathroomQuery, hasShipments };
+});
+
+const coverageBreakdown = {};
+for (const c of classified) {
+  coverageBreakdown[c.klass] = (coverageBreakdown[c.klass] || 0) + 1;
+}
+
+console.log("\n--- Buyer classification ---");
+const classLabels = {
+  CONFIRMED: "Confirmed bathroom buyer: has shipment data + bathroom query",
+  CONFIRMED_GENERIC: "Confirmed generic buyer: has shipments but generic query",
+  CANDIDATE_BATHROOM: "Candidate bathroom: bathroom query but no shipment data yet",
+  CANDIDATE_GENERIC: "Candidate generic: generic query, no shipment data",
+};
+for (const [klass, count] of Object.entries(coverageBreakdown).sort()) {
+  const pct = Math.round(count / classified.length * 100);
+  console.log(`  ${klass}: ${count} (${pct}%) — ${classLabels[klass] || ""}`);
+}
+
+console.log("\n--- Confirmed bathroom buyers ---");
+const confirmed = classified.filter(c => c.klass === "CONFIRMED");
+if (confirmed.length) {
+  for (const c of confirmed) {
+    console.log(`  ${c.name}: ${c.total_shipments} BOLs, ${c.supplier_count} suppliers, query: ${c.search_query}`);
+  }
+} else {
+  console.log("  None.");
+}
+
+console.log("\n--- Bathroom candidates (query match, no data yet) ---");
+const bathroomCandidates = classified.filter(c => c.klass === "CANDIDATE_BATHROOM");
+if (bathroomCandidates.length) {
+  for (const c of bathroomCandidates) {
+    console.log(`  ${c.name}: query: ${c.search_query}, identity: ${c.identity_confidence}%`);
+  }
+} else {
+  console.log("  None.");
+}
+
+console.log("\n--- Coverage by search query ---");
+const queryStats = {};
+for (const c of classified) {
+  const q = c.search_query || "unknown";
+  if (!queryStats[q]) queryStats[q] = { total: 0, withData: 0 };
+  queryStats[q].total++;
+  if (c.hasShipments) queryStats[q].withData++;
+}
+for (const [q, stats] of Object.entries(queryStats).sort((a, b) => b[1].total - a[1].total)) {
+  const pct = stats.total > 0 ? Math.round(stats.withData / stats.total * 100) : 0;
+  console.log(`  "${q}": ${stats.withData}/${stats.total} with data (${pct}%)`);
 }
 
 // ---------- RANKING QUALITY CHECKS ----------

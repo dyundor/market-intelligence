@@ -64,7 +64,7 @@ export function qualifyBuyer(
   row: Record<string, unknown>,
   context?: QualificationContext,
 ): QualificationResult {
-  const { score, factors } = computePriorityScore(row, context);
+  const { score, factors, productMatchConfidence } = computePriorityScore(row, context);
   const priority = priorityFromScore(score);
 
   const factorMap = new Map(factors.map(f => [f.id, f.value]));
@@ -72,6 +72,7 @@ export function qualifyBuyer(
   return {
     priority,
     qualificationScore: score,
+    productMatchConfidence,
     positiveFactors: gatherPositiveFactors(row, factorMap),
     riskFactors: gatherRiskFactors(row),
     factors,

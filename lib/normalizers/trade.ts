@@ -49,6 +49,7 @@ export function normalizeRanking(view: SupplierDiscovery, query: QueryRequest): 
     const q = qualifyBuyer(buyer, qualificationContext);
     buyer.priority = q.priority;
     buyer.qualificationScore = q.qualificationScore;
+    buyer.productMatchConfidence = q.productMatchConfidence;
     buyer.positiveFactors = q.positiveFactors;
     buyer.riskFactors = q.riskFactors;
   }

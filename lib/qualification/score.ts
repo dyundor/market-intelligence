@@ -10,7 +10,7 @@ import {
 export function computePriorityScore(
   row: Record<string, unknown>,
   context?: QualificationContext,
-): { score: number; factors: Factor[] } {
+): { score: number; factors: Factor[]; productMatchConfidence: number } {
   const totalShipments = Number(row.total_shipments) || 0;
   const supplierCount = Number(row.supplier_count) || 0;
   const containers = Number(row.selected_month_containers) || 0;
@@ -67,6 +67,7 @@ export function computePriorityScore(
   });
 
   let relevanceValue = 70;
+  let productMatchConfidence = 50;
   if (context?.productKeywords?.length) {
     const lowerProducts = products.toLowerCase();
     const keywordMatches = context.productKeywords.filter(
@@ -74,16 +75,24 @@ export function computePriorityScore(
     ).length;
     relevanceValue = clamp(keywordMatches * 25, 30, 100);
 
+    if (keywordMatches >= 3) productMatchConfidence = 95;
+    else if (keywordMatches === 2) productMatchConfidence = 80;
+    else if (keywordMatches === 1) productMatchConfidence = 60;
+    else if (products.length > 0) productMatchConfidence = 30;
+    else productMatchConfidence = 15;
+
     if (context.excludeKeywords?.length) {
       const excludeHits = context.excludeKeywords.filter(
         k => lowerProducts.includes(k.toLowerCase()),
       ).length;
       if (excludeHits > 0) {
         relevanceValue = clamp(relevanceValue - excludeHits * 20, 10, 100);
+        productMatchConfidence = clamp(productMatchConfidence - excludeHits * 20, 5, 100);
       }
     }
   } else {
     relevanceValue = totalShipments > 0 ? 70 : 40;
+    productMatchConfidence = totalShipments > 0 ? 50 : 25;
   }
   values.push({
     id: "product_relevance",
@@ -92,14 +101,20 @@ export function computePriorityScore(
     weight: w.productRelevance,
   });
 
-  let dataCoverageValue = 10;
-  if (totalShipments > 0) dataCoverageValue = 100;
-  else if (searchQuery && (
+  const isBathroomQuery = searchQuery && (
     searchQuery.includes("faucet") || searchQuery.includes("shower") ||
     searchQuery.includes("龙头") || searchQuery.includes("花洒") ||
-    searchQuery.includes("bath") || searchQuery.includes("tap")
-  )) dataCoverageValue = 50;
-  else if (identityConfidence >= 80) dataCoverageValue = 30;
+    searchQuery.includes("bathroom") || searchQuery.includes("basin") ||
+    searchQuery.includes("lavatory") || searchQuery.includes("vanity") ||
+    searchQuery.includes("tap") || searchQuery.includes("mixer") ||
+    searchQuery.includes("淋浴")
+  );
+
+  let dataCoverageValue = 10;
+  if (totalShipments > 0 && isBathroomQuery) dataCoverageValue = 100;
+  else if (totalShipments > 0) dataCoverageValue = 80;
+  else if (isBathroomQuery) dataCoverageValue = 50;
+  else if (identityConfidence >= 80) dataCoverageValue = 20;
   values.push({
     id: "data_coverage",
     label: "Data coverage",
@@ -113,7 +128,7 @@ export function computePriorityScore(
   }));
 
   const score = Math.round(factors.reduce((sum, f) => sum + f.contribution, 0));
-  return { score: clamp(score, 0, 100), factors };
+  return { score: clamp(score, 0, 100), factors, productMatchConfidence };
 }
 
 export function priorityFromScore(score: number): "A" | "B" | "C" {

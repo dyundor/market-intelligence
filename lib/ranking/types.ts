@@ -5,6 +5,7 @@ export type RankedBuyer = Record<string, unknown> & {
   metric_value: number;
   priority?: "A" | "B" | "C";
   qualificationScore?: number;
+  productMatchConfidence?: number;
   positiveFactors?: string[];
   riskFactors?: string[];
 };

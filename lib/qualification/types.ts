@@ -9,6 +9,7 @@ export interface Factor {
 export interface QualificationResult {
   priority: "A" | "B" | "C";
   qualificationScore: number;
+  productMatchConfidence: number;
   positiveFactors: string[];
   riskFactors: string[];
   factors: Factor[];
