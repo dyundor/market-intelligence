@@ -1,0 +1,24 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Official company websites only; identity cross-checked against stored importer location; no paid provider and no guessed contacts",
+  "companies": [
+    {
+      "companyName": "B&K LLC",
+      "website": "https://bkproducts.com/",
+      "websiteSourceUrl": "https://bkproducts.com/contact/",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://bkproducts.com/contact/","label":"Company Contact Form","sourceUrl":"https://bkproducts.com/contact/","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-901-753-3200","label":"Front Desk","sourceUrl":"https://bkproducts.com/contact/","verificationStatus":"verified"},
+        {"type":"phone","value":"+1-800-782-2385","label":"Customer Service","sourceUrl":"https://bkproducts.com/contact/","verificationStatus":"verified"}
+      ]
+    },
+    {
+      "companyName": "Posey Supply",
+      "website": "https://www.poseysupply.com/",
+      "websiteSourceUrl": "https://www.poseysupply.com/aboutus",
+      "contacts": [
+        {"type":"website_contact_page","value":"https://www.poseysupply.com/contact-us","label":"Business Inquiry Contact Form","sourceUrl":"https://www.poseysupply.com/contact-us","verificationStatus":"verified"}
+      ]
+    }
+  ]
+}

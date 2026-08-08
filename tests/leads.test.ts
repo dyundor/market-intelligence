@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { generateLeadStrategy } from "../lib/leads/strategy.ts";
 import { qualifyBuyer } from "../lib/qualification/factors.ts";
 import { generateOutreachDraft } from "../lib/leads/outreach-draft.ts";
@@ -194,6 +195,11 @@ describe("Public contact enrichment", () => {
     assert.deepEqual(validatePublicEvidence(evidence),[]);
     assert.ok(validatePublicEvidence({...evidence,contacts:[{...evidence.contacts[0],sourceUrl:"",value:"guessed-at-example"}]}).length>=2);
   });
+  it("keeps the second official-source contact wave valid and uniquely named", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-lead-contacts-wave2-2026-08-08.json", import.meta.url), "utf8"));
+    assert.deepEqual(payload.companies.map((company: {companyName: string}) => company.companyName), ["B&K LLC", "Posey Supply"]);
+    assert.ok(payload.companies.every((company: Parameters<typeof validatePublicEvidence>[0]) => validatePublicEvidence(company).length === 0));
+  });
 });
 
 describe("Contact research queue", () => {
@@ -207,6 +213,11 @@ describe("Contact research queue", () => {
   });
   it("reports actionable research coverage", () => {
     assert.deepEqual(summarizeContactResearch([{status:"verified"},{status:"needs_identity_match"},{status:"unresolved"}]),{total:3,verified:1,needsIdentityMatch:1,unresolved:1,coveragePercent:33});
+  });
+  it("preserves unresolved outcomes in the second research wave", () => {
+    const payload = JSON.parse(readFileSync(new URL("../data/public-contact-research-wave2-2026-08-08.json", import.meta.url), "utf8"));
+    assert.ok(payload.companies.every((company: Parameters<typeof validateContactResearch>[0]) => validateContactResearch(company).length === 0));
+    assert.deepEqual(summarizeContactResearch(payload.companies), {total:5, verified:2, needsIdentityMatch:2, unresolved:1, coveragePercent:40});
   });
 });
 

@@ -1,0 +1,11 @@
+{
+  "researchedAt": "2026-08-08",
+  "scope": "Highest-evidence real sales leads; public official sources only; no paid provider and no guessed contact",
+  "companies": [
+    {"companyName":"B&K LLC","status":"verified","reasonCode":"official_contact_found","reason":"Stored Collierville importer location matches the official BK Products contact address; official B2B plumbing site and contacts verified.","nextAction":"Prepare an OEM/ODM introduction focused on faucets and shower systems.","evidenceUrls":["https://bkproducts.com/contact/","https://bkproducts.com/b-k-brand"]},
+    {"companyName":"Posey Supply","status":"verified","reasonCode":"official_contact_found","reason":"Stored Double Springs importer identity matches the official company site and business inquiry route.","nextAction":"Use the official business inquiry form for a distribution partnership introduction.","evidenceUrls":["https://www.poseysupply.com/aboutus","https://www.poseysupply.com/contact-us"]},
+    {"companyName":"Mjf Group Inc","status":"needs_identity_match","reasonCode":"identity_not_confirmed","reason":"Trade address is confirmed, but the supplier website previously stored for this importer is not an independently verified company site.","nextAction":"Find a current Florida corporate filing or official company-controlled domain before adding a contact.","evidenceUrls":[]},
+    {"companyName":"Your Source Products","status":"unresolved","reasonCode":"no_official_site","reason":"Corporate identity evidence exists, but no current company-controlled website or public business contact was verified.","nextAction":"Confirm a company-controlled domain or official filing contact before outreach.","evidenceUrls":[]},
+    {"companyName":"World And Main Cranbury","status":"needs_identity_match","reasonCode":"identity_not_confirmed","reason":"Historical World and Main contact material exists, but the business has changed identity and a current official contact route was not verified.","nextAction":"Resolve the current successor entity and active official domain before outreach.","evidenceUrls":[]}
+  ]
+}
