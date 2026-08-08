@@ -15,6 +15,7 @@ import { contactRouteNote, draftChannelForContact, selectBestVerifiedContact } f
 import { addBusinessDays, nextAvailableReviewDate, scheduleReviewDate } from "../lib/leads/sales-task.ts";
 import { LeadRepository } from "../lib/repositories/lead-repository.ts";
 import { draftSentActionId, shouldSyncDraftSent } from "../lib/leads/draft-lifecycle.ts";
+import { contactHref } from "../lib/leads/contact-link.ts";
 
 const faucetRow: Record<string, unknown> = {
   id: "test-buyer-1",
@@ -187,6 +188,20 @@ describe("Verified outreach package", () => {
   });
   it("rejects contacts without verified HTTPS evidence", () => {
     assert.equal(selectBestVerifiedContact([{...contacts[0],sourceUrl:"http://buyer.example",verificationStatus:"verified"}]), null);
+  });
+});
+
+describe("Contact execution links", () => {
+  it("creates actionable links for supported verified contact types", () => {
+    assert.equal(contactHref("email", "sales@example.com"), "mailto:sales@example.com");
+    assert.equal(contactHref("phone", "+1 (888) 560-5222"), "tel:+18885605222");
+    assert.equal(contactHref("website_contact_page", "https://example.com/contact"), "https://example.com/contact");
+  });
+
+  it("rejects malformed and unsafe contact values", () => {
+    assert.equal(contactHref("email", "not-an-email"), null);
+    assert.equal(contactHref("website_contact_page", "javascript:alert(1)"), null);
+    assert.equal(contactHref("phone", "12"), null);
   });
 });
 
