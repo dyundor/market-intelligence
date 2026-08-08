@@ -9,7 +9,7 @@ import { computePipelineMetrics, defaultFollowUpForOutcome, leadStatusForOutcome
 import { matchCompanyEvidence, validatePublicEvidence } from "../lib/leads/public-contact-enrichment.ts";
 import { contactResearchId, summarizeContactResearch, validateContactResearch } from "../lib/leads/contact-research.ts";
 import { buildSalesExportCsv, csvCell } from "../lib/leads/sales-export.ts";
-import { computeOpportunityMetrics, validateExpectedCloseDate, validateOpportunityProbability, validateOpportunityValue } from "../lib/leads/opportunity-pipeline.ts";
+import { buildSalesPriorityQueue, computeOpportunityMetrics, validateExpectedCloseDate, validateOpportunityProbability, validateOpportunityValue } from "../lib/leads/opportunity-pipeline.ts";
 import { evaluateOutreachReadiness } from "../lib/leads/outreach-readiness.ts";
 import { shouldInitializeSalesLead, sortSalesLeads } from "../lib/leads/pipeline-selection.ts";
 import { contactRouteNote, draftChannelForContact, selectBestVerifiedContact } from "../lib/leads/outreach-package.ts";
@@ -306,6 +306,16 @@ describe("Opportunity pipeline", () => {
     assert.equal(validateOpportunityProbability(101),false);
     assert.equal(validateExpectedCloseDate("2026-08-31"),true);
     assert.equal(validateExpectedCloseDate("2026-02-30"),false);
+  });
+  it("surfaces unscheduled opportunities before upcoming routine tasks", () => {
+    const tasks=buildSalesPriorityQueue([
+      {companyId:"routine",companyName:"Routine",leadStatus:"contact_ready",nextAction:"Follow up",nextActionDue:"2026-08-12"},
+      {companyId:"deal",companyName:"Priority Deal",leadStatus:"opportunity",opportunityValueUsd:200000,opportunityProbability:50,expectedCloseDate:"2026-09-30"},
+      {companyId:"done",companyName:"Won Deal",leadStatus:"opportunity",opportunityValueUsd:500000,opportunityProbability:100,outcomeCode:"won"},
+    ],"2026-08-08");
+    assert.deepEqual(tasks.map(task=>task.companyId),["deal","routine"]);
+    assert.equal(tasks[0].timing,"unscheduled");
+    assert.equal(tasks[0].weightedValueUsd,100000);
   });
 });
 
