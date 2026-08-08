@@ -332,7 +332,7 @@ export default function Home() {
       setDiscoveryState("ready");setSelectedImporterId(null);return;
     }
     const controller=new AbortController();setDiscoveryState("loading");
-    const query=new URLSearchParams({market,product,flow,months:selectedMonths.join(",")});
+    const query=new URLSearchParams({market,product,months:selectedMonths.join(",")});
     fetch(`/api/supplier-discovery?${query}`,{signal:controller.signal}).then(async response=>{if(!response.ok)throw new Error("unavailable");return response.json() as Promise<SupplierDiscovery>;}).then(data=>{setDiscovery(data);setDiscoveryState(data.available?"ready":"unavailable");}).catch(error=>{if(error.name!=="AbortError")setDiscoveryState("unavailable");});
     return()=>controller.abort();
   },[market,product,flow,selectedMonths]);

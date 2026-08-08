@@ -3,7 +3,7 @@ import { env } from "cloudflare:workers";
 import { createQueryEngine, FixedBudget } from "../_shared/query-engine-production";
 import { D1CacheAdapter } from "../_shared/query-engine-d1";
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const MARKET_ISO: Record<string, string> = {
   中国: "CN", 美国: "US", 加拿大: "CA", 阿联酋: "AE", 沙特阿拉伯: "SA", 卡塔尔: "QA", 科威特: "KW",

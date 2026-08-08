@@ -104,15 +104,19 @@ export class ComtradeProvider implements Provider {
     const base = key ? `https://comtradeapi.un.org/data/v1/get/C/${frequency}/HS` : `https://comtradeapi.un.org/public/v1/preview/C/${frequency}/HS`;
 
     const fetchRows = async (queryPeriods: string[], commodity = cmdCode, partnerCode = "0") => {
-      const chunks = Array.from({ length: Math.ceil(queryPeriods.length / 12) }, (_, index) => queryPeriods.slice(index * 12, index * 12 + 12));
       const records: Array<Record<string, unknown>> = [];
-      for (const chunk of chunks) {
-        // The public preview endpoint (no API key) accepts a single period per
-        // request; the subscribed endpoint allows up to 12.
-        const periods = key ? chunk : chunk.slice(0, 1);
+      // The public preview endpoint (no API key) accepts a single period per
+      // request and rate-limits to ~1 request/second; the subscribed endpoint
+      // allows up to 12 periods per request.
+      const requestGroups = key
+        ? Array.from({ length: Math.ceil(queryPeriods.length / 12) }, (_, index) => queryPeriods.slice(index * 12, index * 12 + 12))
+        : queryPeriods.map(period => [period]);
+      let first = true;
+      for (const periods of requestGroups) {
         const params = new URLSearchParams({ flowCode, reporterCode: String(reporterCode), period: periods.join(","), partnerCode, cmdCode: commodity, partner2Code: "0", customsCode: "C00", motCode: "0", maxRecords: "500" });
         if (key) params.set("subscription-key", key);
-        if (!key && records.length) await wait(1100);
+        if (!key && !first) await wait(1100);
+        first = false;
         const response = await this.fetchFn(`${base}?${params}`, { headers: { Accept: "application/json" } });
         if (response.status === 429 && !key) {
           await wait(1500);
