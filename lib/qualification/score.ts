@@ -27,7 +27,7 @@ export function computePriorityScore(
   values.push({
     id: "shipment_volume",
     label: "Shipment volume",
-    value: logScale(totalShipments, 100),
+    value: logScale(totalShipments, 500),
     weight: w.shipmentVolume,
   });
 
@@ -116,6 +116,25 @@ export function computePriorityScore(
     label: "Product relevance",
     value: relevanceValue,
     weight: w.productRelevance,
+  });
+
+  let concentrationValue = 50;
+  if (context?.productKeywords?.length) {
+    const lowerProducts = products.toLowerCase();
+    const keywordMatches = context.productKeywords.filter(
+      k => lowerProducts.includes(k.toLowerCase()),
+    ).length;
+    const excludeHits = (context.excludeKeywords || []).filter(
+      k => lowerProducts.includes(k.toLowerCase()),
+    ).length;
+    const hasKitchen = /kitchen/i.test(lowerProducts);
+    concentrationValue = clamp(keywordMatches * 25 - excludeHits * 20 - (hasKitchen ? 15 : 0), 10, 100);
+  }
+  values.push({
+    id: "product_concentration",
+    label: "Product concentration",
+    value: concentrationValue,
+    weight: w.productConcentration,
   });
 
   const isBathroomQuery = searchQuery && (

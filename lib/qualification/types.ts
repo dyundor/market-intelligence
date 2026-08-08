@@ -49,23 +49,25 @@ export interface PriorityWeights {
   containerVolume: number;
   freightValue: number;
   productRelevance: number;
+  productConcentration: number;
   identityConfidence: number;
   dataCoverage: number;
 }
 
 export const DEFAULT_WEIGHTS: PriorityWeights = {
-  shipmentVolume: 18,
-  shipmentRecency: 18,
-  supplierDiversity: 12,
-  supplierChina: 10,
-  containerVolume: 12,
-  freightValue: 10,
+  shipmentVolume: 30,
+  shipmentRecency: 20,
+  supplierDiversity: 5,
+  supplierChina: 5,
+  containerVolume: 5,
+  freightValue: 5,
   productRelevance: 10,
+  productConcentration: 10,
   identityConfidence: 5,
   dataCoverage: 5,
 };
 
-export const PRIORITY_THRESHOLDS = { a: 55, b: 25 };
+export const PRIORITY_THRESHOLDS = { a: 65, b: 35 };
 
 export const POSITIVE_REASONS: Record<string, string> = {
   frequent_importer: "High shipment volume — established trading relationship",
