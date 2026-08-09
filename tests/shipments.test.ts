@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import type { Shipment } from "../lib/entities/shipment.ts";
 import { shipmentFromRow, enrichShipmentRow } from "../lib/entities/shipment.ts";
 import { normalizeShipments, normalizeShipmentRanking } from "../lib/normalizers/shipments.ts";
@@ -9,6 +10,7 @@ import { CacheResolver } from "../lib/cache/resolver.ts";
 import { MemoryCache, FixedBudget } from "../app/api/_shared/query-engine-production.ts";
 import { shipmentDataCapability } from "../lib/providers/mock/capabilities.ts";
 import { ShipmentRankingProvider } from "../lib/providers/shipments/provider.ts";
+import { calculateHsEvidence, parseHsCodes } from "../lib/trade/hs-evidence.ts";
 
 class MockDb {
   calls: Array<{ sql: string; args: unknown[] }> = [];
@@ -38,6 +40,40 @@ const RAW_ROWS: Array<Record<string, unknown>> = [
   { id: "sh-2", house_bol: "HB-2", supplier_id: "sp-a", importer_id: "buy-1", importer_name: "A Plumbing", shipment_date: "2026-07-11", weight_kg: "5000", quantity: "40", container_count: "1", product_description: "RAIN SHOWER SYSTEM", estimated_freight_usd: "1200", source_channel: "importyeti_free_web", source_url: "https://example.org/sh-2" },
   { id: "sh-3", house_bol: "HB-3", supplier_id: "sp-b", importer_id: "buy-2", importer_name: "B Supply", shipment_date: "2026-07-12", weight_kg: "8000", quantity: "60", container_count: "1", product_description: "FAUCET MIXER", estimated_freight_usd: "2000", source_channel: "importyeti_free_web", source_url: "https://example.org/sh-3" },
 ];
+
+test("HS evidence normalizes display punctuation and excludes missing codes from the denominator", () => {
+  assert.deepEqual(parseHsCodes("8481.80, 8481.90"), ["848180", "848190"]);
+  assert.deepEqual(calculateHsEvidence([
+    { hs_codes: "8481.80" },
+    { hs_codes: "3922.10" },
+    { hs_codes: "" },
+    { hs_codes: null },
+  ], "848180"), {
+    totalRelationships: 4,
+    codedRelationships: 2,
+    matchedRelationships: 1,
+    missingRelationships: 2,
+    matchPercent: 50,
+  });
+});
+
+test("HS evidence reports unavailable instead of a false zero when every code is missing", () => {
+  assert.deepEqual(calculateHsEvidence([{ hs_codes: "" }, {}], "848180"), {
+    totalRelationships: 2,
+    codedRelationships: 0,
+    matchedRelationships: 0,
+    missingRelationships: 2,
+    matchPercent: null,
+  });
+});
+
+test("buyer detail uses coverage-aware HS evidence and removes the disabled legacy panel", () => {
+  const page = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /calculateHsEvidence\(rels,selectedProduct\.hsCode\)/);
+  assert.match(page, /hsEvidence\.codedRelationships/);
+  assert.doesNotMatch(page, /hs_codes\|\|""\)\.includes\(selectedProduct\.hsCode\)/);
+  assert.doesNotMatch(page, /companyDetail&&false|importer-monthly-detail/);
+});
 
 test("provider shipment rows normalize into canonical Shipment entities", () => {
   const shipments = normalizeShipments({ shipments: RAW_ROWS });
