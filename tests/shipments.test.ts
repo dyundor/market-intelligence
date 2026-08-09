@@ -118,10 +118,12 @@ test("hot product ranking consolidates noisy descriptions into sales products",(
     {id:"3",importer_id:"a",importer_name:"Buyer A",product_description:"Faucet",shipment_date:"2026-07-02",weight_kg:500},
   ]);
   const trays=ranked.find(product=>product.id==="shower_tray")!;
-  assert.equal(trays.shipments,2);assert.equal(trays.buyers,2);assert.equal(trays.recentShipments,2);assert.deepEqual(trays.topBuyers,["Buyer A","Buyer B"]);
+  assert.equal(trays.shipments,2);assert.equal(trays.buyers,2);assert.equal(trays.recentShipments,2);assert.deepEqual(trays.topBuyers,[{id:"a",name:"Buyer A",shipments:1},{id:"b",name:"Buyer B",shipments:1}]);
   assert.match(trays.productSearchUrl,/google\.com\/search/);
   assert.match(trays.imageSearchUrl,/tbm=isch/);
   assert.ok(trays.heatScore>ranked.find(product=>product.id==="bathroom_faucet")!.heatScore);
+  assert.equal(trays.representativeProduct?.brand,"DreamLine");
+  assert.match(ranked.find(product=>product.id==="bathtub")!.representativeProduct?.imageUrl||"",/^https:\/\//);
 });
 
 test("shipment entity creation derives month and year and tolerates missing fields", () => {
