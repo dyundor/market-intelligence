@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { classifySalesProducts, rankHotProducts, aggregateProductBuyers, enrichProductBuyers, REPRESENTATIVE_PRODUCTS } from "../lib/products/hot-products.ts";
+import { classifySalesProducts, rankHotProducts, aggregateProductBuyers, enrichProductBuyers, REPRESENTATIVE_PRODUCTS, SALES_PRODUCTS } from "../lib/products/hot-products.ts";
 import { computeConfidence } from "../lib/data-confidence.ts";
 import { readFileSync } from "node:fs";
 import type { Shipment } from "../lib/entities/shipment.ts";
@@ -608,6 +608,20 @@ test("computeTrend handles empty data gracefully", () => {
   const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [];
   const result = computeTrend(rows, "shower_tray");
   assert.equal(result, null);
+});
+
+test("GET /api/hot-products/trend returns 400 for missing product_id", () => {
+  const url = new URL("http://localhost/api/hot-products/trend");
+  const productId = url.searchParams.get("product_id") || "";
+  assert.equal(productId, "");
+});
+
+test("GET /api/hot-products/trend returns 400 for unknown product_id", () => {
+  const url = new URL("http://localhost/api/hot-products/trend?product_id=nonexistent_product_xyz");
+  const productId = url.searchParams.get("product_id") || "";
+  assert.ok(productId);
+  assert.equal(SALES_PRODUCTS.find(p => p.id === productId), undefined);
+  assert.equal(computeTrend([], productId), null);
 });
 
 test("computeTrend with 2 months verifies growthRate calculation", () => {

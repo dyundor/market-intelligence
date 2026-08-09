@@ -13,13 +13,18 @@ export async function GET(request: NextRequest) {
   const product = SALES_PRODUCTS.find(p => p.id === productId);
   if (!product) return NextResponse.json({ error: "Unknown product" }, { status: 400 });
 
-  const shResult = await env.DB.prepare(
-    `SELECT sh.id, sh.importer_id, COALESCE(sh.importer_name, e.name) importer_name,
-            sh.product_description, sh.shipment_date, sh.weight_kg
-     FROM importyeti_web_shipments sh
-     LEFT JOIN importyeti_web_entities e ON e.id = sh.importer_id
-     WHERE sh.product_description IS NOT NULL AND trim(sh.product_description) <> ''`
-  ).all();
+  let shResult;
+  try {
+    shResult = await env.DB.prepare(
+      `SELECT sh.id, sh.importer_id, COALESCE(sh.importer_name, e.name) importer_name,
+              sh.product_description, sh.shipment_date, sh.weight_kg
+       FROM importyeti_web_shipments sh
+       LEFT JOIN importyeti_web_entities e ON e.id = sh.importer_id
+       WHERE sh.product_description IS NOT NULL AND trim(sh.product_description) <> ''`
+    ).all();
+  } catch {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
   const rows = (shResult.results || []) as unknown as ProductShipmentEvidence[];
 
   const trend = computeTrend(rows, productId);
