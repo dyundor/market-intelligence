@@ -72,7 +72,7 @@ test("buyer detail uses coverage-aware HS evidence and removes the disabled lega
   assert.match(page, /calculateHsEvidence\(rels,selectedProduct\.hsCode\)/);
   assert.match(page, /hsEvidence\.codedRelationships/);
   assert.doesNotMatch(page, /hs_codes\|\|""\)\.includes\(selectedProduct\.hsCode\)/);
-  assert.doesNotMatch(page, /companyDetail&&false|importer-monthly-detail/);
+  assert.doesNotMatch(page, /companyDetail&&false|importer-monthly-detail|setCompanyDetailMonth|companyDetailMonth/);
 });
 
 test("buyer detail preserves real zeroes and recognizes supported website verification states", () => {

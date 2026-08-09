@@ -318,7 +318,7 @@ export default function Home() {
     if(!companyDetail)discoveryScrollPosition.current=window.scrollY;
     setCompanyDetailLoading(true);
     setCompanyDetailTab("relationships");setShipmentPage(null);setShipmentPageNumber(1);setShipmentMonth("");setSelectedShipment(null);
-    fetch(`/api/company-detail?id=${encodeURIComponent(id)}`).then(async response=>{if(!response.ok)throw new Error("unavailable");return response.json() as Promise<CompanyDetail>;}).then(data=>{setCompanyDetail(data);setCompanyDetailMonth(data.monthlyBreakdown?.[0]?.month||"");window.scrollTo({top:0,behavior:"smooth"});}).finally(()=>setCompanyDetailLoading(false));
+    fetch(`/api/company-detail?id=${encodeURIComponent(id)}`).then(async response=>{if(!response.ok)throw new Error("unavailable");return response.json() as Promise<CompanyDetail>;}).then(data=>{setCompanyDetail(data);window.scrollTo({top:0,behavior:"smooth"});}).finally(()=>setCompanyDetailLoading(false));
   };
   const closeCompanyDetail=()=>{const restoreTo=discoveryScrollPosition.current;setCompanyDetail(null);setShipmentPage(null);setSelectedShipment(null);requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo({top:restoreTo,behavior:"auto"})));};
   useEffect(() => {
