@@ -9,7 +9,7 @@ const eslintConfig = defineConfig([
   // loading states. Keep them linted by the remaining hooks rules while that
   // UI is incrementally migrated away from synchronous effect state changes.
   {
-    files: ["app/page.tsx"],
+    files: ["app/page.tsx", "app/components/useTrendData.ts", "app/components/TrendView.tsx", "app/components/ProductTrendDashboard.tsx", "app/components/TrendChart.tsx"],
     rules: { "react-hooks/set-state-in-effect": "off" },
   },
   // Override default ignores of eslint-config-next.

@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
 
   const productId = request.nextUrl.searchParams.get("product_id") || "";
+  const monthsParam = request.nextUrl.searchParams.get("months") || "12";
+  const months = Math.min(Math.max(parseInt(monthsParam, 10) || 12, 1), 36);
 
   if (!productId) return NextResponse.json({ error: "Missing product_id" }, { status: 400 });
 
@@ -27,8 +29,8 @@ export async function GET(request: NextRequest) {
   }
   const rows = (shResult.results || []) as unknown as ProductShipmentEvidence[];
 
-  const trend = computeTrend(rows, productId);
-  if (!trend) return NextResponse.json({ error: "Unknown product" }, { status: 400 });
+  const trend = computeTrend(rows, productId, months);
+  if (!trend) return NextResponse.json({ error: "No trend data" }, { status: 404 });
 
   return NextResponse.json(trend);
 }
