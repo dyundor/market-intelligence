@@ -616,6 +616,18 @@ describe("Contact research queue", () => {
     assert.doesNotMatch(sql,/@danco\.com|@westbrass\.com|\+1-\d/);
     assert.match(sql,/ON CONFLICT\(company_id,contact_type,contact_value\) DO UPDATE/);
   });
+  it("adds verified B&K decision routes while keeping DreamLine unresolved",()=>{
+    const sql=readFileSync(new URL("../data/public-decision-owner-wave2-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/https:\/\/www\.linkedin\.com\/in\/gustavo-garcia-de-alba-ontiveros-13846a13/);
+    assert.match(sql,/Gustavo Garcia de Alba Ontiveros — Director, Sourcing & Product Management/);
+    assert.match(sql,/https:\/\/www\.linkedin\.com\/in\/roshellehernandez-78b6b4252/);
+    assert.match(sql,/Roshelle Hernandez — Product Manager, Growth Categories/);
+    assert.match(sql,/Vadym M\. as DreamLine Director of Product Development/);
+    assert.match(sql,/current direct public profile or contact route remains unresolved/);
+    assert.doesNotMatch(sql,/@bkproducts\.|@dreamline\.|\+1-\d/);
+    assert.match(sql,/COALESCE\(lead_contacts\.label,excluded\.label\)/);
+    assert.match(sql,/length\(lead_contacts\.notes\)>=length\(excluded\.notes\)/);
+  });
   it("keeps sales export decision-owner ordering aligned with contact quality",()=>{
     const source=readFileSync(new URL("../app/api/leads/export/route.ts",import.meta.url),"utf8");
     for(const role of ["purchas","sourcing","product development","owner","president","chief executive","ceo"]) assert.match(source,new RegExp(`GLOB '\\*${role}\\*'`));
