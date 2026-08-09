@@ -668,6 +668,18 @@ describe("Contact research queue", () => {
     assert.match(sql,/planning_commission\/meeting\/24308/);
     assert.doesNotMatch(sql,/INSERT INTO lead_contacts|@poseysupply\.com|brad@/);
   });
+  it("adds K. Hovnanian's official national purchasing route without inventing a direct contact",()=>{
+    const sql=readFileSync(new URL("../data/public-owner-routing-wave2-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/Kyle Laska as K\. Hovnanian National Purchasing Manager/);
+    assert.match(sql,/https:\/\/www\.pcbc\.com\/pcbc2025\/Public\/Content\.aspx\?ID=2766/);
+    assert.match(sql,/https:\/\/www\.khov\.com\/contact-us\//);
+    assert.match(sql,/90 Matawan Road, Matawan, NJ 07747/);
+    assert.match(sql,/address=COALESCE\(address,'90 Matawan Road/);
+    assert.match(sql,/website=COALESCE\(website,'https:\/\/www\.khov\.com\/'\)/);
+    assert.match(sql,/current shower-tray and shower-door import program/);
+    assert.match(sql,/do not infer a personal email, phone or LinkedIn profile/);
+    assert.doesNotMatch(sql,/INSERT INTO lead_contacts|@khov\.com|linkedin\.com\/in\//);
+  });
   it("keeps sales export decision-owner ordering aligned with contact quality",()=>{
     const source=readFileSync(new URL("../app/api/leads/export/route.ts",import.meta.url),"utf8");
     for(const role of ["purchas","sourcing","product development","owner","president","chief executive","ceo"]) assert.match(source,new RegExp(`GLOB '\\*${role}\\*'`));
