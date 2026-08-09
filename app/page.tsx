@@ -237,17 +237,31 @@ function buildTreemap(items: Partner[], x = 0, y = 0, width = 100, height = 100)
 
 function HotProductList({locale,onBuyer,onProductClick}:{locale:Locale;onBuyer:(id:string)=>void;onProductClick?:(productId:string)=>void}){
   const [data,setData]=useState<HotProductPayload|null>(null);
+  const [expandedConfidence,setExpandedConfidence]=useState<string|null>(null);
   useEffect(()=>{const controller=new AbortController();fetch("/api/hot-products",{signal:controller.signal}).then(response=>response.ok?response.json():Promise.reject()).then(setData).catch(()=>{});return()=>controller.abort();},[]);
   if(!data?.products.length)return null;
+  const dataSourceLabel=(source:string)=>source==="stored_us_ocean_import_shipments"?(locale==="zh-CN"?"已存美国海运进口记录":"stored US ocean import records"):source;
   return <section className="hot-product-list">
     <div className="section-step"><span>HOT</span><div><strong>{locale==="zh-CN"?"热卖产品榜":"Hot-selling product list"}</strong><small>{locale==="zh-CN"?`基于 ${data.shipmentRecords} 条已存美国海运提单；按近期交易、买家覆盖和重量综合排序`:`Based on ${data.shipmentRecords} stored U.S. ocean-import records; ranked by recent activity, buyer coverage and weight`}</small></div></div>
-    <div>{data.products.slice(0,8).map((product,index)=><article key={product.id}>
-      <b>{String(index+1).padStart(2,"0")}</b>
-      <span className="hot-product-main">{product.representativeProduct?.imageUrl?<a className="hot-product-image" href={product.representativeProduct.productUrl} target="_blank" rel="noreferrer"><img src={product.representativeProduct.imageUrl} alt={product.representativeProduct.title}/></a>:<span className="hot-product-image placeholder">{product.name.slice(0,1)}</span>}<span><strong><button type="button" onClick={()=>onProductClick?.(product.id)}>{locale==="zh-CN"?product.name:product.nameEn}</button></strong><small className="hot-product-buyers">{product.topBuyers.slice(0,3).map(buyer=><button key={buyer.id} onClick={()=>onBuyer(buyer.id)}>{buyer.name} ({buyer.shipments})</button>)}</small>{product.representativeProduct?<a className="representative-product" href={product.representativeProduct.productUrl} target="_blank" rel="noreferrer"><b>{locale==="zh-CN"?"代表产品":"Representative"}</b> {product.representativeProduct.brand} · {product.representativeProduct.title} ↗</a>:null}<nav><a href={product.productSearchUrl} target="_blank" rel="noreferrer">{locale==="zh-CN"?"更多产品 ↗":"More products ↗"}</a><a href={product.imageSearchUrl} target="_blank" rel="noreferrer">{locale==="zh-CN"?"更多图片 ↗":"More images ↗"}</a></nav></span></span>
-      <em><strong>{product.heatScore}</strong><small>{locale==="zh-CN"?"相对热度":"relative heat"}</small></em>
-      <span><strong>{product.recentShipments}</strong><small>{locale==="zh-CN"?"近12月提单":"12m BOLs"}</small></span><span><strong>{product.buyers}</strong><small>{locale==="zh-CN"?"买家":"buyers"}</small></span><span><strong>{product.latestShipmentDate||"—"}</strong><small>{locale==="zh-CN"?"最近交易":"latest"}</small></span>
-      <em className="confidence-badge"><strong>{product.confidence?.sampleSize?.toLocaleString()}</strong><small>{locale==="zh-CN"?"条提单 · ":"BOLs · "}{product.confidence?.identifiedRatio!=null?Math.round(product.confidence.identifiedRatio*100):"—"}% {locale==="zh-CN"?"已分类":"classified"}</small></em>
-    </article>)}</div>
+    <div>{data.products.slice(0,8).map((product,index)=><React.Fragment key={product.id}>
+      <article>
+        <b>{String(index+1).padStart(2,"0")}</b>
+        <span className="hot-product-main">{product.representativeProduct?.imageUrl?<a className="hot-product-image" href={product.representativeProduct.productUrl} target="_blank" rel="noreferrer"><img src={product.representativeProduct.imageUrl} alt={product.representativeProduct.title}/></a>:<span className="hot-product-image placeholder">{product.name.slice(0,1)}</span>}<span><strong><button type="button" onClick={()=>onProductClick?.(product.id)}>{locale==="zh-CN"?product.name:product.nameEn}</button></strong><small className="hot-product-buyers">{product.topBuyers.slice(0,3).map(buyer=><button key={buyer.id} onClick={()=>onBuyer(buyer.id)}>{buyer.name} ({buyer.shipments})</button>)}</small>{product.representativeProduct?<a className="representative-product" href={product.representativeProduct.productUrl} target="_blank" rel="noreferrer"><b>{locale==="zh-CN"?"代表产品":"Representative"}</b> {product.representativeProduct.brand} · {product.representativeProduct.title} ↗</a>:null}<nav><a href={product.productSearchUrl} target="_blank" rel="noreferrer">{locale==="zh-CN"?"更多产品 ↗":"More products ↗"}</a><a href={product.imageSearchUrl} target="_blank" rel="noreferrer">{locale==="zh-CN"?"更多图片 ↗":"More images ↗"}</a></nav></span></span>
+        <em><strong>{product.heatScore}</strong><small>{locale==="zh-CN"?"相对热度":"relative heat"}</small></em>
+        <span><strong>{product.recentShipments}</strong><small>{locale==="zh-CN"?"近12月提单":"12m BOLs"}</small></span>
+        <span><strong>{product.buyers}</strong><small>{locale==="zh-CN"?"买家":"buyers"}</small></span>
+        <span><strong>{product.latestShipmentDate||"—"}</strong><small>{locale==="zh-CN"?"最近交易":"latest"}</small></span>
+        <button className={`confidence-badge${(!product.confidence||product.confidence.sampleSize<30)?' confidence-low':''}`} onClick={()=>setExpandedConfidence(v=>v===product.id?null:product.id)} aria-expanded={expandedConfidence===product.id}>{expandedConfidence===product.id?<strong>▲</strong>:<><strong>{product.confidence?.score!=null?product.confidence.score:"—"}/100</strong><small>{locale==="zh-CN"?"置信度":"Confidence"}</small></>}</button>
+      </article>
+      {expandedConfidence===product.id&&<div className="confidence-row">
+        <span className="confidence-score"><strong>{locale==="zh-CN"?"置信度评分":"Confidence score"}: {product.confidence?.score!=null?product.confidence.score:"—"}/100</strong></span>
+        <span>{locale==="zh-CN"?`基于 ${product.confidence?.sampleSize?.toLocaleString()||"0"} 条货运记录`:`Based on ${product.confidence?.sampleSize?.toLocaleString()||"0"} shipment records`}</span>
+        <span>{locale==="zh-CN"?`数据来源: ${dataSourceLabel(product.confidence?.dataSource||"")}`:`Source: ${dataSourceLabel(product.confidence?.dataSource||"")}`}</span>
+        <span>{locale==="zh-CN"?`最后更新: ${product.confidence?.lastUpdated||"—"}`:`Last updated: ${product.confidence?.lastUpdated||"—"}`}</span>
+        {product.confidence&&product.confidence.sampleSize<30&&<span className="limited-sample">{locale==="zh-CN"?"样本量有限":"Limited sample"}</span>}
+        <span className="confidence-explanation">{product.confidence?.explanation||""}</span>
+      </div>}
+    </React.Fragment>)}</div>
     <p>{locale==="zh-CN"?"混装提单可能同时计入多个产品；搜索链接用于产品调研，原始提单仍是销量证据。":"Mixed-product BOLs may support multiple products; search links support research while raw shipment records remain the sales evidence."}</p>
   </section>;
 }
