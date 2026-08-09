@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { classifySalesProducts, rankHotProducts, aggregateProductBuyers, enrichProductBuyers } from "../lib/products/hot-products.ts";
+import { classifySalesProducts, rankHotProducts, aggregateProductBuyers, enrichProductBuyers, REPRESENTATIVE_PRODUCTS } from "../lib/products/hot-products.ts";
 import { readFileSync } from "node:fs";
 import type { Shipment } from "../lib/entities/shipment.ts";
 import { shipmentFromRow, enrichShipmentRow } from "../lib/entities/shipment.ts";
@@ -124,6 +124,15 @@ test("hot product ranking consolidates noisy descriptions into sales products",(
   assert.ok(trays.heatScore>ranked.find(product=>product.id==="bathroom_faucet")!.heatScore);
   assert.equal(trays.representativeProduct?.brand,"DreamLine");
   assert.match(ranked.find(product=>product.id==="bathtub")!.representativeProduct?.imageUrl||"",/^https:\/\//);
+});
+
+test("REPRESENTATIVE_PRODUCTS has exactly 9 entries and every entry has a title and brand", () => {
+  const entries = Object.entries(REPRESENTATIVE_PRODUCTS);
+  assert.equal(entries.length, 9);
+  for (const [id, product] of entries) {
+    assert.ok(product.title, `REPRESENTATIVE_PRODUCTS["${id}"].title must not be empty`);
+    assert.ok(product.brand, `REPRESENTATIVE_PRODUCTS["${id}"].brand must not be empty`);
+  }
 });
 
 test("shipment entity creation derives month and year and tolerates missing fields", () => {
