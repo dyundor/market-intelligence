@@ -25,7 +25,7 @@ export async function GET() {
      JOIN lead_contacts c ON c.id=(SELECT best.id FROM lead_contacts best
        WHERE best.company_id=w.company_id AND best.verification_status='verified'
        ORDER BY CASE
-           WHEN lower(COALESCE(best.label,'')) GLOB '*purchas*' OR lower(COALESCE(best.label,'')) GLOB '*procurement*' OR lower(COALESCE(best.label,'')) GLOB '*sourcing*' OR lower(COALESCE(best.label,'')) GLOB '*buyer*' OR lower(COALESCE(best.label,'')) GLOB '*product development*' THEN 0
+           WHEN lower(COALESCE(best.label,'')) GLOB '*purchas*' OR lower(COALESCE(best.label,'')) GLOB '*procurement*' OR lower(COALESCE(best.label,'')) GLOB '*sourcing*' OR lower(COALESCE(best.label,'')) GLOB '*buyer*' OR lower(COALESCE(best.label,'')) GLOB '*product development*' OR lower(COALESCE(best.label,'')) GLOB '*owner*' OR lower(COALESCE(best.label,'')) GLOB '*president*' OR lower(COALESCE(best.label,'')) GLOB '*chief executive*' OR lower(COALESCE(best.label,'')) GLOB '*ceo*' THEN 0
            WHEN lower(COALESCE(best.label,'')) GLOB '*sales*' OR lower(COALESCE(best.label,'')) GLOB '*order*' OR lower(COALESCE(best.label,'')) GLOB '*business*' OR lower(COALESCE(best.label,'')) GLOB '*subcontractor*' OR lower(COALESCE(best.label,'')) GLOB '*corporate*' THEN 1
            ELSE 2 END,
          CASE best.contact_type WHEN 'email' THEN 0 WHEN 'website_contact_page' THEN 1 WHEN 'linkedin' THEN 2 WHEN 'phone' THEN 3 ELSE 9 END,

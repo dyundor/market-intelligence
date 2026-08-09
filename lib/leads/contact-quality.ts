@@ -7,7 +7,7 @@ export interface ContactRouteInput {
   verificationStatus?: string | null;
 }
 
-const DECISION_OWNER = /\b(purchas(?:e|ing)?|procurement|sourcing|buyer|product development|supply chain|vendor|category manager)\b/i;
+const DECISION_OWNER = /\b(purchas(?:e|ing)?|procurement|sourcing|buyer|product development|supply chain|vendor|category manager|owner|president|chief executive|ceo)\b/i;
 const BUSINESS_ROUTE = /\b(sales?|orders?|business|subcontractor|wholesale|dealer|corporate|meeting|commercial)\b/i;
 
 export function contactRouteQuality(contact: ContactRouteInput): ContactRouteQuality {

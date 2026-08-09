@@ -272,6 +272,9 @@ describe("Contact route quality",()=>{
     assert.equal(contactRouteQuality({contactType:"phone",contactValue:"+1-555-0100",label:"Front Desk"}),"fallback");
     assert.match(contactRouteGuidance("general_route"),/routing to purchasing/);
   });
+  it("treats a verified small-company owner as a decision route",()=>{
+    assert.equal(contactRouteQuality({contactType:"linkedin",contactValue:"https://linkedin.com/in/owner",label:"Owner / Executive Decision Route"}),"decision_maker");
+  });
 });
 
 describe("Decision-owner contact gap queue",()=>{
@@ -603,6 +606,19 @@ describe("Contact research queue", () => {
     assert.match(sql,/Danco × Yundor — OEM bathroom repair and shower product supply/);
     assert.match(sql,/free_public_trade_web/);
     assert.doesNotMatch(sql,/importyeti_api|subscription-key|paid_api/);
+  });
+  it("keeps public decision-owner research traceable without inferred email or phone",()=>{
+    const sql=readFileSync(new URL("../data/public-decision-owner-wave1-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/https:\/\/www\.linkedin\.com\/in\/eric-watkins-product/);
+    assert.match(sql,/https:\/\/www\.linkedin\.com\/in\/lindseygmorgan/);
+    assert.match(sql,/https:\/\/www\.linkedin\.com\/in\/max-homami-6a7b232/);
+    assert.match(sql,/Do not infer email addresses|no email inferred/);
+    assert.doesNotMatch(sql,/@danco\.com|@westbrass\.com|\+1-\d/);
+    assert.match(sql,/ON CONFLICT\(company_id,contact_type,contact_value\) DO UPDATE/);
+  });
+  it("keeps sales export decision-owner ordering aligned with contact quality",()=>{
+    const source=readFileSync(new URL("../app/api/leads/export/route.ts",import.meta.url),"utf8");
+    for(const role of ["purchas","sourcing","product development","owner","president","chief executive","ceo"]) assert.match(source,new RegExp(`GLOB '\\*${role}\\*'`));
   });
 });
 
