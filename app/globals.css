@@ -293,6 +293,25 @@ html[lang]:not([lang="zh-CN"]) .importer-list>.section-step>div::after { content
 .qual-factors em { display:inline-block; padding:1px 5px; border-radius:4px; font-size:7px; font-style:normal; font-weight:600; white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis; }
 .qual-positive { background:#d2f3e5; color:#15603e; }
 .qual-risk { background:#fce8e4; color:#9a402d; }
+.trend-link{display:inline-block;padding:2px 5px;border:0;border-radius:4px;background:#dcece5;color:#276a59;font-size:7px;cursor:pointer;text-decoration:none}.trend-link:hover{background:#c6ddd2}
+.trend-panel{margin:2px 0 8px;padding:14px 16px;border:1px solid #dbe7e1;border-radius:11px;background:#f7fbf9}
+.trend-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.trend-header strong{font-size:11px;color:#1b4439}.trend-header button{border:0;background:transparent;font-size:20px;color:#7d8986;cursor:pointer;line-height:1}
+.trend-section{margin-bottom:14px}.trend-section h3{margin:0 0 8px;font-size:9px;color:#526762}
+.trend-chart{display:flex;flex-direction:column;gap:5px}
+.trend-row{display:grid;grid-template-columns:68px 1fr;align-items:center;gap:8px}
+.trend-label{font-size:7px;color:#788582;text-align:right}
+.trend-bar{height:16px;border-radius:4px;background:#e7efe9;overflow:hidden}
+.trend-shipment-bar{display:flex;align-items:center;justify-content:flex-end;height:100%;min-width:24px;border-radius:4px;background:linear-gradient(90deg,#4e9b85,#116b5b);transition:width .35s ease}
+.trend-shipment-bar small{padding-right:6px;color:white;font-size:7px;font-weight:600;white-space:nowrap}
+.trend-buyer-bar{display:flex;align-items:center;justify-content:flex-end;height:100%;min-width:24px;border-radius:4px;background:linear-gradient(90deg,#5aa376,#1b7a4a);transition:width .35s ease}
+.trend-buyer-bar small{padding-right:6px;color:white;font-size:7px;font-weight:600;white-space:nowrap}
+.trend-confidence{padding:12px;border:1px solid #e2e9e5;border-radius:9px;background:#f4f7f5}.trend-confidence h3{margin:0 0 9px;font-size:9px;color:#526762}
+.trend-confidence-body{display:flex;flex-direction:column;gap:8px}
+.trend-confidence-score{display:inline-block;width:max-content;padding:5px 12px;border-radius:7px;background:#eaf3ef;color:#1b6e59;font:700 20px Georgia,serif}
+.trend-confidence-warning{padding:8px 10px;margin:0;border:1px solid #ecceaa;border-radius:6px;background:#fff8ed;color:#bd672f;font-size:8px;font-weight:600}
+.trend-meta{display:flex;flex-wrap:wrap;gap:6px 14px}.trend-meta span{color:#687873;font-size:8px}
+.trend-loading{display:flex;align-items:center;justify-content:center;min-height:80px}.trend-empty{color:#8b9693;font-size:9px;text-align:center;padding:24px 0}
+
 .contact-quality { display:block; margin-top:3px; color:#71817c; font-size:6px; font-weight:700; text-transform:uppercase; }
 .contact-quality.decision_maker { color:#16734d; }
 .contact-quality.business_route { color:#276d91; }
