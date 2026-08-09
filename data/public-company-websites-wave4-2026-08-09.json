@@ -1,0 +1,25 @@
+{
+  "researchedAt":"2026-08-09T00:00:00.000Z",
+  "searchStrategy":"Follow Google directory results through rename, successor, asset-transfer, and current-domain safety checks before publishing a website.",
+  "companies":[],
+  "noActiveSites":[
+    {
+      "companyId":"importer:world-and-main-cranbury",
+      "companyName":"World And Main Cranbury",
+      "outcome":"no_active_company_site",
+      "reviewSourceUrl":"https://www.dkhardware.com/world-and-main-cranbury-llc-ZM31677P1.html",
+      "identitySignals":["exact_name","address","country","product","corporate_relationship","authoritative_cross_reference"],
+      "evidenceUrls":[
+        "https://www.dkhardware.com/world-and-main-cranbury-llc-ZM31677P1.html",
+        "https://www.linkedin.com/company/world-and-main",
+        "https://patents.google.com/patent/US20210302068A1/en",
+        "https://cases.stretto.com/public/x241/12143/PLEADINGS/1214307282380000000227.pdf"
+      ],
+      "rejectedCandidates":[
+        {"url":"https://www.worldandmain.com/","reason":"Historical World and Main domain; the Cranbury company renamed to H2 Brands Group and the old site is not a safe current company website."},
+        {"url":"https://www.h2bgroup.com/","reason":"Historical successor domain; 2023 asset assignments show the operating assets changed hands and no current company-controlled site was verified."},
+        {"url":"https://retail.h2bgroup.com/","reason":"Former B2B subdomain currently redirects to unrelated gambling content and must never be presented as a company website."}
+      ]
+    }
+  ]
+}
