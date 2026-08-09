@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { classifySalesProducts, rankHotProducts } from "../lib/products/hot-products.ts";
 import { readFileSync } from "node:fs";
 import type { Shipment } from "../lib/entities/shipment.ts";
 import { shipmentFromRow, enrichShipmentRow } from "../lib/entities/shipment.ts";
@@ -105,6 +106,22 @@ test("provider shipment rows normalize into canonical Shipment entities", () => 
   assert.equal(passthrough.length, shipments.length);
   assert.equal(passthrough[0], shipments[0]);
   assert.deepEqual(passthrough, shipments);
+});
+
+test("hot product ranking consolidates noisy descriptions into sales products",()=>{
+  assert.deepEqual(classifySalesProducts("Bathtubshower Traypacking"),["shower_tray","bathtub"]);
+  assert.deepEqual(classifySalesProducts("Faucet Accessories"),["faucet_parts"]);
+  assert.deepEqual(classifySalesProducts("Kitchen faucets"),[]);
+  const ranked=rankHotProducts([
+    {id:"1",importer_id:"a",importer_name:"Buyer A",product_description:"Shower Tray",shipment_date:"2026-07-01",weight_kg:1000},
+    {id:"2",importer_id:"b",importer_name:"Buyer B",product_description:"Bathtub Shower Tray Drainer",shipment_date:"2026-06-01",weight_kg:2000},
+    {id:"3",importer_id:"a",importer_name:"Buyer A",product_description:"Faucet",shipment_date:"2026-07-02",weight_kg:500},
+  ]);
+  const trays=ranked.find(product=>product.id==="shower_tray")!;
+  assert.equal(trays.shipments,2);assert.equal(trays.buyers,2);assert.equal(trays.recentShipments,2);assert.deepEqual(trays.topBuyers,["Buyer A","Buyer B"]);
+  assert.match(trays.productSearchUrl,/google\.com\/search/);
+  assert.match(trays.imageSearchUrl,/tbm=isch/);
+  assert.ok(trays.heatScore>ranked.find(product=>product.id==="bathroom_faucet")!.heatScore);
 });
 
 test("shipment entity creation derives month and year and tolerates missing fields", () => {
