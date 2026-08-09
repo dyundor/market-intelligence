@@ -37,7 +37,7 @@ function hostname(value: string): string | null {
 
 export function websiteEvidenceHost(value: string): string | null { return hostname(value); }
 
-function nameTokens(value:string):string[]{return value.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(token=>!['co','company','corp','corporation','inc','llc','ltd','limited','and'].includes(token));}
+function nameTokens(value:string):string[]{return value.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).map(token=>token.length>5?token.replace(/(inc|llc|ltd)$/,''):token).filter(token=>token&&!['co','company','corp','corporation','inc','llc','ltd','limited','and'].includes(token));}
 
 export function scoreWebsiteCandidate(companyName:string,candidateName:string,signals:WebsiteIdentitySignal[]):number{
   const source=nameTokens(companyName),candidate=nameTokens(candidateName);

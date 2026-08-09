@@ -1,0 +1,30 @@
+{
+  "researchedAt":"2026-08-09T00:00:00.000Z",
+  "searchStrategy":"Ongoing buyer-first Google candidate research with fused/truncated legal-name normalization and independent official or registry evidence.",
+  "companies":[
+    {
+      "companyId":"importer:home-depot-usa","companyName":"Home Depot Usainc","candidateName":"Home Depot USA Inc",
+      "website":"https://www.homedepot.com/","websiteStatus":"verified_company_site","websiteSourceUrl":"https://corporate.homedepot.com/page/about-us",
+      "identitySignals":["exact_name","country","product","authoritative_cross_reference"],
+      "evidenceUrls":["https://corporate.homedepot.com/page/about-us","https://www.nascla.org/membership-directory/corporate/3304176"]
+    },
+    {
+      "companyId":"importer:rona","companyName":"Rona Inc","candidateName":"RONA inc.",
+      "website":"https://www.ronainc.ca/","websiteStatus":"verified_company_site","websiteSourceUrl":"https://www.ronainc.ca/en/contact",
+      "identitySignals":["exact_name","country","product","authoritative_cross_reference"],
+      "evidenceUrls":["https://www.ronainc.ca/en/contact","https://ca.linkedin.com/company/rona"]
+    },
+    {
+      "companyId":"importer:briggs-plumbing-products","companyName":"Briggs Plumbing Products Llc","candidateName":"Briggs Plumbing Products, LLC",
+      "website":"https://www.briggsplumbing.com/","websiteStatus":"verified_company_site","websiteSourceUrl":"https://www.briggsplumbing.com/about-briggs",
+      "identitySignals":["exact_name","country","product","authoritative_cross_reference"],
+      "evidenceUrls":["https://www.briggsplumbing.com/about-briggs","https://www.bbb.org/us/sc/goose-creek/profile/plumbing-fixtures/briggs-plumbing-products-llc-0663-24000150"]
+    },
+    {
+      "companyId":"importer:rinseworks","companyName":"Rinseworks Inc","candidateName":"RinseWorks, Inc.",
+      "website":"https://rinseworks.com/","websiteStatus":"verified_company_site","websiteSourceUrl":"https://rinseworks.com/about-us/",
+      "identitySignals":["exact_name","country","product","authoritative_cross_reference"],
+      "evidenceUrls":["https://rinseworks.com/about-us/","https://search.sunbiz.org/Inquiry/corporationsearch/SearchResults?inquiryType=EntityName&searchTerm=RINSEWORKS%2C+INC."]
+    }
+  ]
+}
