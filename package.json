@@ -18,6 +18,7 @@
     "contacts:import": "node --experimental-strip-types scripts/import-public-lead-contacts.mjs",
     "contacts:research": "node --experimental-strip-types scripts/import-contact-research.mjs",
     "websites:import": "node --experimental-strip-types scripts/import-public-company-websites.mjs",
+    "websites:queue": "node --experimental-strip-types scripts/website-research-queue.mjs",
     "capture:promote": "node scripts/promote-importyeti-capture.mjs",
     "sales:initialize": "node --experimental-strip-types scripts/initialize-real-sales-pipeline.mjs",
     "sales:drafts": "node --experimental-strip-types scripts/initialize-outreach-packages.mjs",

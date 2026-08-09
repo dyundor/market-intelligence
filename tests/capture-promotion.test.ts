@@ -62,6 +62,27 @@ describe("Reviewed capture promotion",()=>{
     verifiedDb.close();
   });
 
+  it("records reviewed inactive websites without publishing dead links",()=>{
+    const report=JSON.parse(execFileSync(process.execPath,["--experimental-strip-types","scripts/import-public-company-websites.mjs",`--db=${dbPath}`,"data/public-company-websites-wave2-2026-08-09.json","--apply"],{cwd:root,encoding:"utf8"}));
+    assert.equal(report.reviewed,4);
+    assert.equal(report.written,4);
+    const verifiedDb=new DatabaseSync(dbPath);
+    const russian=verifiedDb.prepare("SELECT website,website_status,website_source_url,raw_evidence FROM importyeti_web_entities WHERE id='importer:russian-sauna'").get();
+    assert.equal(russian.website,null);
+    assert.equal(russian.website_status,"reviewed_no_active_site");
+    assert.match(russian.raw_evidence,/no_active_company_site/);
+    assert.match(russian.raw_evidence,/luxaris\.com/);
+    verifiedDb.close();
+  });
+
+  it("prioritizes missing importer websites in the research queue",()=>{
+    const output=execFileSync(process.execPath,["--experimental-strip-types","scripts/website-research-queue.mjs",`--db=${dbPath}`,"--limit=5"],{cwd:root,encoding:"utf8"});
+    const report=JSON.parse(output);
+    assert.equal(report.count,5);
+    assert.ok(report.companies.every((company:{entity_type:string})=>company.entity_type==="importer"));
+    assert.ok(report.companies.every((company:{searchQueries:string[]})=>company.searchQueries.length>=2));
+  });
+
   it("initializes qualified real buyers without regressing an existing contact-ready lead",()=>{
     const db=new DatabaseSync(dbPath);
     db.prepare("INSERT INTO buyer_watchlist (id,company_id,status,notes,lead_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?)").run("test-am","importer:am-conservation-group","researching","verified public contact","contact_ready","2026-08-08","2026-08-08");

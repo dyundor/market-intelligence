@@ -1,0 +1,46 @@
+{
+  "researchedAt": "2026-08-09T00:00:00.000Z",
+  "searchStrategy": "Buyer-first backlog; exact name plus address, country and products; official pages cross-checked against an independent authoritative source.",
+  "companies": [
+    {
+      "companyId": "supplier:zhongshan-domustar-shower",
+      "companyName": "Zhongshan Domustar Shower",
+      "website": "https://www.domustar.com/",
+      "websiteStatus": "verified_company_site",
+      "websiteSourceUrl": "https://www.domustar.com/",
+      "identitySignals": ["exact_name", "address", "country", "product", "authoritative_cross_reference"],
+      "evidenceUrls": ["https://www.domustar.com/", "https://guangdong.chinatax.gov.cn/gdsw/zssw_yhssyshj2024_zcwj_ndbg/2021-03/31/6d80142546714e569a7c675f66c76b84/files/Tax%20Business%20Environment%20of%20Zhongshan%202020-20210402093644219.pdf"]
+    },
+    {
+      "companyId": "supplier:giacomini",
+      "companyName": "Giacomini",
+      "website": "https://www.giacomini.com/",
+      "websiteStatus": "verified_company_site",
+      "websiteSourceUrl": "https://it.giacomini.com/chi-siamo/il-gruppo-giacomini",
+      "identitySignals": ["exact_name", "country", "product", "authoritative_cross_reference"],
+      "evidenceUrls": ["https://it.giacomini.com/chi-siamo/il-gruppo-giacomini", "https://www.linkedin.com/company/giacomini-spa"]
+    }
+  ],
+  "noActiveSites": [
+    {
+      "companyId": "importer:russian-sauna",
+      "companyName": "Russian Sauna",
+      "outcome": "no_active_company_site",
+      "reviewSourceUrl": "https://www.bbb.org/us/pa/warminster/profile/hot-tub-dealers/luxaris-inc-0241-75000498/addressId/92534",
+      "identitySignals": ["exact_name", "address", "country", "product", "corporate_relationship"],
+      "evidenceUrls": ["https://www.bbb.org/us/pa/warminster/profile/hot-tub-dealers/luxaris-inc-0241-75000498/addressId/92534", "https://www.revdex.com/reviews/russian-sauna-llc/698865"],
+      "rejectedCandidates": [{"url":"https://www.luxaris.com/","reason":"Historically associated website is no longer active; do not present it as a reachable current company site."}],
+      "relatedCompanies": [{"companyId":"importer:luxaris","status":"confirmed","confidence":100,"reason":"BBB identifies Russian Sauna as an alternate name of Luxaris Inc.; public records share the Warminster address and phone."}]
+    },
+    {
+      "companyId": "importer:luxaris",
+      "companyName": "Luxaris",
+      "outcome": "no_active_company_site",
+      "reviewSourceUrl": "https://www.bbb.org/us/pa/warminster/profile/hot-tub-dealers/luxaris-inc-0241-75000498/addressId/92534",
+      "identitySignals": ["exact_name", "address", "country", "product", "corporate_relationship"],
+      "evidenceUrls": ["https://www.bbb.org/us/pa/warminster/profile/hot-tub-dealers/luxaris-inc-0241-75000498/addressId/92534", "https://bizstanding.com/p/luxaris-182766424"],
+      "rejectedCandidates": [{"url":"https://www.luxaris.com/","reason":"Historical company domain is not currently reachable; retaining the evidence without publishing a dead website."}],
+      "relatedCompanies": [{"companyId":"importer:russian-sauna","status":"confirmed","confidence":100,"reason":"BBB lists Russian Sauna as an alternate name of Luxaris Inc.; shipment and public records share the Warminster operating address."}]
+    }
+  ]
+}

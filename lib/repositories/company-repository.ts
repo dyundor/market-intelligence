@@ -58,6 +58,16 @@ export class CompanyRepository {
     return result.results || [];
   }
 
+  async listRelatedEntities(companyId: string): Promise<Array<Record<string, unknown>>> {
+    const result=await this.db.prepare(`SELECT e.id,e.name,e.entity_type,e.address,e.country,e.website,
+      CASE a.alias_type WHEN 'confirmed_related_company' THEN 'confirmed' ELSE 'suspected' END relation_status,
+      a.confidence,a.source_url
+      FROM company_identity_aliases a JOIN importyeti_web_entities e ON e.id=a.alias_value
+      WHERE a.company_id=? AND a.alias_type IN ('confirmed_related_company','suspected_related_company')
+      ORDER BY a.confidence DESC,e.name`).bind(companyId).all();
+    return result.results||[];
+  }
+
   async listRelationships(id: string, entityType: "importer" | "supplier"): Promise<Array<Record<string, unknown>>> {
     const join =
       entityType === "importer"

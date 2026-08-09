@@ -12,9 +12,11 @@ export async function GET(request: NextRequest) {
   const relations = await repository.listRelationships(id, entityType);
   const monthly = await repository.monthlyBreakdown(id, entityType);
   const aliases = await repository.listAliases(id);
+  const relatedEntities = await repository.listRelatedEntities(id);
   return NextResponse.json({
     company,
     aliases,
+    relatedEntities,
     relationshipRole: entityType === "importer" ? "upstream_suppliers" : "downstream_importers",
     relationships: relations,
     monthlyBreakdown: monthly,
