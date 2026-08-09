@@ -637,6 +637,15 @@ describe("Contact research queue", () => {
     assert.doesNotMatch(sql,/@baindepot\.|\+1-\d/);
     assert.match(sql,/ON CONFLICT\(company_id,contact_type,contact_value\) DO UPDATE/);
   });
+  it("adds Chadwell's official purchasing leader as the Your Source decision route",()=>{
+    const sql=readFileSync(new URL("../data/public-decision-owner-wave4-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/https:\/\/www\.linkedin\.com\/in\/john-janis-39a54212/);
+    assert.match(sql,/John Janis — Vice President, Purchasing/);
+    assert.match(sql,/https:\/\/www\.chadwellsupply\.com\/about-us\/leadership\//);
+    assert.match(sql,/multifamily MRO faucet and shower-system supplier-fit note/);
+    assert.doesNotMatch(sql,/@chadwellsupply\.|\+1-\d/);
+    assert.match(sql,/COALESCE\(lead_contacts\.label,excluded\.label\)/);
+  });
   it("keeps sales export decision-owner ordering aligned with contact quality",()=>{
     const source=readFileSync(new URL("../app/api/leads/export/route.ts",import.meta.url),"utf8");
     for(const role of ["purchas","sourcing","product development","owner","president","chief executive","ceo"]) assert.match(source,new RegExp(`GLOB '\\*${role}\\*'`));
