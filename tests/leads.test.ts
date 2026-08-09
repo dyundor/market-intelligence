@@ -646,6 +646,16 @@ describe("Contact research queue", () => {
     assert.doesNotMatch(sql,/@chadwellsupply\.|\+1-\d/);
     assert.match(sql,/COALESCE\(lead_contacts\.label,excluded\.label\)/);
   });
+  it("adds Giagni's registry-backed owner route without invented contact data",()=>{
+    const sql=readFileSync(new URL("../data/public-decision-owner-wave5-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/https:\/\/www\.linkedin\.com\/in\/vincent-giagni-ab0255243/);
+    assert.match(sql,/Vincent Giagni — CEO \/ Owner Decision Route/);
+    assert.match(sql,/New York public corporate records/);
+    assert.match(sql,/https:\/\/apps\.dos\.ny\.gov\/publicInquiry\//);
+    assert.match(sql,/tariff-resilient supply proposal/);
+    assert.doesNotMatch(sql,/@giagni\.|\+1-\d/);
+    assert.match(sql,/length\(lead_contacts\.notes\)>=length\(excluded\.notes\)/);
+  });
   it("keeps sales export decision-owner ordering aligned with contact quality",()=>{
     const source=readFileSync(new URL("../app/api/leads/export/route.ts",import.meta.url),"utf8");
     for(const role of ["purchas","sourcing","product development","owner","president","chief executive","ceo"]) assert.match(source,new RegExp(`GLOB '\\*${role}\\*'`));
