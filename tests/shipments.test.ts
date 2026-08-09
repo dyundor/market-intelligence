@@ -13,6 +13,7 @@ import { MemoryCache, FixedBudget } from "../app/api/_shared/query-engine-produc
 import { shipmentDataCapability } from "../lib/providers/mock/capabilities.ts";
 import { ShipmentRankingProvider } from "../lib/providers/shipments/provider.ts";
 import { calculateHsEvidence, parseHsCodes } from "../lib/trade/hs-evidence.ts";
+import { computeGrowthRate, computeTrend, aggregateMonthly, type TrendPoint, type TrendMetric } from "../lib/products/trend-metrics.ts";
 
 class MockDb {
   calls: Array<{ sql: string; args: unknown[] }> = [];
@@ -413,4 +414,173 @@ test("rankHotProducts includes confidence in each product", () => {
   const trays = ranked.find(product => product.id === "shower_tray")!;
   assert.ok(trays.shipments > 0);
   assert.ok(trays.confidence.identifiedRatio > 0);
+});
+
+// --- TrendMetric tests ---
+
+test("computeGrowthRate returns null for first month and zero prev", () => {
+  assert.equal(computeGrowthRate(null, 10), null);
+  assert.equal(computeGrowthRate(0, 10), null);
+});
+
+test("computeGrowthRate calculates MoM percentage change", () => {
+  assert.equal(computeGrowthRate(10, 15), 50);
+  assert.equal(computeGrowthRate(10, 5), -50);
+  assert.equal(computeGrowthRate(5, 5), 0);
+  assert.equal(computeGrowthRate(100, 200), 100);
+});
+
+test("computeTrend returns null for empty rows or unknown productId", () => {
+  assert.equal(computeTrend([], "shower_tray"), null);
+  assert.equal(computeTrend([{ id: "1", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-07-01", weight_kg: 100 }], "shower_tray"), null);
+});
+
+test("computeTrend groups shipments by month and computes metrics", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "1", importer_id: "a", importer_name: "Buyer A", product_description: "Shower Tray", shipment_date: "2026-06-15", weight_kg: 1000 },
+    { id: "2", importer_id: "a", importer_name: "Buyer A", product_description: "Shower Tray", shipment_date: "2026-07-01", weight_kg: 2000 },
+    { id: "3", importer_id: "b", importer_name: "Buyer B", product_description: "Shower Tray", shipment_date: "2026-07-15", weight_kg: 1500 },
+    { id: "4", importer_id: "a", importer_name: "Buyer A", product_description: "Shower Tray", shipment_date: "2026-08-10", weight_kg: 3000 },
+  ];
+  const trend = computeTrend(rows, "shower_tray");
+  assert.ok(trend, "Expected a TrendMetric result");
+  assert.equal(trend!.productId, "shower_tray");
+  assert.equal(trend!.productName, "Shower trays");
+  assert.equal(trend!.points.length, 3);
+
+  assert.equal(trend!.points[0].month, "2026-06");
+  assert.equal(trend!.points[0].shipments, 1);
+  assert.equal(trend!.points[0].buyers, 1);
+  assert.equal(trend!.points[0].weightKg, 1000);
+  assert.deepEqual(trend!.points[0].uniqueBuyerIds, ["a"]);
+  assert.equal(trend!.points[0].growthRate, null);
+
+  assert.equal(trend!.points[1].month, "2026-07");
+  assert.equal(trend!.points[1].shipments, 2);
+  assert.equal(trend!.points[1].buyers, 2);
+  assert.equal(trend!.points[1].weightKg, 3500);
+  assert.equal(trend!.points[1].growthRate, 100);
+
+  assert.equal(trend!.points[2].month, "2026-08");
+  assert.equal(trend!.points[2].shipments, 1);
+  assert.equal(trend!.points[2].weightKg, 3000);
+  assert.equal(trend!.points[2].growthRate, -50);
+
+  assert.equal(trend!.summary.totalShipments, 4);
+  assert.equal(trend!.summary.totalBuyers, 2);
+  assert.equal(trend!.summary.totalWeightKg, 7500);
+  assert.equal(trend!.summary.avgMonthlyGrowth, 25);
+  assert.equal(trend!.summary.bestMonth, "2026-07");
+  assert.equal(trend!.summary.worstMonth, "2026-08");
+  assert.equal(trend!.summary.periodStart, "2026-06");
+  assert.equal(trend!.summary.periodEnd, "2026-08");
+});
+
+test("computeTrend handles zero weight and missing shipment_date", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-07-01", weight_kg: 0 },
+    { id: "2", importer_id: "b", importer_name: "B", product_description: "Faucet mixer", shipment_date: null, weight_kg: 500 },
+    { id: "3", importer_id: "c", importer_name: "C", product_description: "Faucet", shipment_date: "2026-07-15", weight_kg: null },
+  ];
+  const trend = computeTrend(rows, "bathroom_faucet");
+  assert.ok(trend);
+  assert.equal(trend!.points.length, 1);
+  assert.equal(trend!.points[0].month, "2026-07");
+  assert.equal(trend!.points[0].shipments, 2);
+  assert.equal(trend!.points[0].weightKg, 0);
+  assert.equal(trend!.points[0].buyers, 2);
+  assert.equal(trend!.summary.totalWeightKg, 0);
+});
+
+test("computeTrend detects mixed-product shipments", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Shower Tray Bathtub", shipment_date: "2026-07-01", weight_kg: 1000 },
+    { id: "2", importer_id: "b", importer_name: "B", product_description: "Shower Tray", shipment_date: "2026-07-02", weight_kg: 500 },
+  ];
+  const trend = computeTrend(rows, "shower_tray");
+  assert.ok(trend);
+  assert.equal(trend!.points.length, 1);
+  assert.equal(trend!.points[0].mixedCount, undefined); // mixedCount is used internally, not exposed on TrendPoint
+  assert.equal(trend!.points[0].confidence.mixedLoadRatio, 0.5);
+});
+
+test("computeTrend returns null when no rows match productId", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Kitchen Faucet", shipment_date: "2026-07-01", weight_kg: 100 },
+  ];
+  assert.equal(computeTrend(rows, "bathroom_faucet"), null);
+});
+
+test("computeTrend confidence per month identifies data quality", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Shower Tray", shipment_date: "2026-07-01", weight_kg: 100 },
+    { id: "2", importer_id: "a", importer_name: "A", product_description: "Shower Tray Bathtub", shipment_date: "2026-07-02", weight_kg: 200 },
+  ];
+  const trend = computeTrend(rows, "shower_tray")!;
+  const pt = trend.points[0];
+  assert.ok(pt.confidence.score > 0);
+  assert.equal(pt.confidence.sampleSize, 2);
+  assert.equal(pt.confidence.identifiedRatio, 1);
+  assert.equal(pt.confidence.mixedLoadRatio, 0.5);
+  assert.equal(pt.confidence.dataSource, "stored_us_ocean_import_shipments");
+  assert.equal(pt.confidence.lastUpdated, "2026-07");
+  assert.ok(pt.confidence.explanation.includes("records"));
+});
+
+test("aggregateMonthly calls computeTrend with 12-month default", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [];
+  for (let m = 1; m <= 12; m += 1) {
+    rows.push({ id: `s-${m}`, importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: `2025-${String(m).padStart(2, "0")}-01`, weight_kg: 100 });
+    rows.push({ id: `s-${m + 12}`, importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: `2026-${String(m).padStart(2, "0")}-01`, weight_kg: 100 });
+  }
+  const trend = aggregateMonthly(rows, "bathroom_faucet");
+  assert.ok(trend);
+  assert.equal(trend!.points.length, 12);
+  assert.equal(trend!.points[0].month, "2026-01");
+  assert.equal(trend!.points[11].month, "2026-12"); // 2025 months are out of the 12-month window
+});
+
+test("computeTrend sorts points by month ascending", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "3", importer_id: "a", importer_name: "A", product_description: "Shower Tray", shipment_date: "2026-08-01", weight_kg: 100 },
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Shower Tray", shipment_date: "2026-06-01", weight_kg: 100 },
+    { id: "2", importer_id: "a", importer_name: "A", product_description: "Shower Tray", shipment_date: "2026-07-01", weight_kg: 100 },
+  ];
+  const trend = computeTrend(rows, "shower_tray")!;
+  assert.equal(trend.points.length, 3);
+  assert.equal(trend.points[0].month, "2026-06");
+  assert.equal(trend.points[1].month, "2026-07");
+  assert.equal(trend.points[2].month, "2026-08");
+});
+
+test("computeTrend summary handles single month", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-07-01", weight_kg: 100 },
+  ];
+  const trend = computeTrend(rows, "bathroom_faucet")!;
+  assert.equal(trend.summary.totalShipments, 1);
+  assert.equal(trend.summary.avgMonthlyGrowth, 0);
+  assert.equal(trend.summary.bestMonth, "2026-07");
+  assert.equal(trend.summary.worstMonth, "2026-07");
+  assert.equal(trend.summary.periodStart, "2026-07");
+  assert.equal(trend.summary.periodEnd, "2026-07");
+});
+
+test("computeTrend with months=3 limits to last 3 months", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-01-01", weight_kg: 100 },
+    { id: "2", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-02-01", weight_kg: 100 },
+    { id: "3", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-03-01", weight_kg: 100 },
+    { id: "4", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-04-01", weight_kg: 100 },
+    { id: "5", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-05-01", weight_kg: 100 },
+  ];
+  const trend = computeTrend(rows, "bathroom_faucet", 3);
+  assert.ok(trend);
+  assert.equal(trend!.points.length, 3);
+  assert.equal(trend!.points[0].month, "2026-03");
+  assert.equal(trend!.points[1].month, "2026-04");
+  assert.equal(trend!.points[2].month, "2026-05");
+  assert.equal(trend!.summary.periodStart, "2026-03");
+  assert.equal(trend!.summary.periodEnd, "2026-05");
+  assert.equal(trend!.summary.totalShipments, 3);
 });
