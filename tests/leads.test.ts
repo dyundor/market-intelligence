@@ -290,6 +290,10 @@ describe("Decision-owner contact gap queue",()=>{
     assert.match(queue[0].recommendedAction,/sourcing or product-development owner/);
     assert.ok(queue[0].priorityScore>queue[1].priorityScore);
   });
+  it("uses evidence-backed research instructions instead of a generic gap prompt",()=>{
+    const [task]=buildContactGapQueue([{companyId:"posey",companyName:"Posey",leadStatus:"contact_ready",commercialFitScore:70,outreachScore:70,bestContactRouteQuality:"business_route",bestContactLabel:"Business Form",researchNextAction:"Request Chris or Don Posey through the verified form."}]);
+    assert.equal(task.recommendedAction,"Request Chris or Don Posey through the verified form.");
+  });
 });
 
 describe("Sales review task scheduling", () => {
@@ -655,6 +659,14 @@ describe("Contact research queue", () => {
     assert.match(sql,/tariff-resilient supply proposal/);
     assert.doesNotMatch(sql,/@giagni\.|\+1-\d/);
     assert.match(sql,/length\(lead_contacts\.notes\)>=length\(excluded\.notes\)/);
+  });
+  it("keeps named Posey and Therma owner routing evidence without fake direct contacts",()=>{
+    const sql=readFileSync(new URL("../data/public-owner-routing-wave1-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/Chris Posey and Don Posey as current Co-Presidents/);
+    assert.match(sql,/Brad Roberts as Therma-Glass owner/);
+    assert.match(sql,/https:\/\/www\.poseysupply\.com\/aboutus/);
+    assert.match(sql,/planning_commission\/meeting\/24308/);
+    assert.doesNotMatch(sql,/INSERT INTO lead_contacts|@poseysupply\.com|brad@/);
   });
   it("keeps sales export decision-owner ordering aligned with contact quality",()=>{
     const source=readFileSync(new URL("../app/api/leads/export/route.ts",import.meta.url),"utf8");

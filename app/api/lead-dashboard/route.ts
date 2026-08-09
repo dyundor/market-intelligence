@@ -15,6 +15,7 @@ export async function GET() {
       (SELECT outcome_code FROM lead_actions a WHERE a.company_id=w.company_id AND a.outcome_code IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) outcome_code,
       (SELECT next_action_due FROM lead_actions a WHERE a.company_id=w.company_id AND a.next_action_due IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) next_action_due,
       (SELECT next_action FROM lead_actions a WHERE a.company_id=w.company_id AND a.next_action_due IS NOT NULL ORDER BY a.created_at DESC LIMIT 1) next_action,
+      (SELECT next_action FROM lead_contact_research r WHERE r.company_id=w.company_id LIMIT 1) research_next_action,
       e.name company_name
      FROM buyer_watchlist w LEFT JOIN importyeti_web_entities e ON e.id=w.company_id`,
   ).bind().all(),env.DB.prepare(`SELECT DISTINCT company_id,outcome_code FROM lead_actions WHERE outcome_code IN ('quote_requested','quote_sent','won','lost')`).bind().all(),env.DB.prepare(
@@ -36,7 +37,7 @@ export async function GET() {
   }
   const contactGaps=buildContactGapQueue((rows.results||[]).map(row=>{
     const best=bestVerifiedContact(contactsByCompany.get(String(row.company_id))||[]);
-    return {companyId:String(row.company_id),companyName:String(row.company_name||row.company_id),leadStatus:String(row.lead_status||"new"),commercialFitScore:row.commercial_fit_score==null?null:Number(row.commercial_fit_score),outreachScore:row.outreach_score==null?null:Number(row.outreach_score),bestContactRouteQuality:best?contactRouteQuality(best):null,bestContactLabel:best?.label||null,nextActionDue:row.next_action_due?String(row.next_action_due):null};
+    return {companyId:String(row.company_id),companyName:String(row.company_name||row.company_id),leadStatus:String(row.lead_status||"new"),commercialFitScore:row.commercial_fit_score==null?null:Number(row.commercial_fit_score),outreachScore:row.outreach_score==null?null:Number(row.outreach_score),bestContactRouteQuality:best?contactRouteQuality(best):null,bestContactLabel:best?.label||null,researchNextAction:row.research_next_action?String(row.research_next_action):null,nextActionDue:row.next_action_due?String(row.next_action_due):null};
   }));
   return NextResponse.json({metrics:{...metrics,missingDecisionMaker:contactGaps.length},tasks,contactGaps,today});
 }
