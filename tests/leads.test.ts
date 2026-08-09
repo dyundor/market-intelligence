@@ -628,6 +628,15 @@ describe("Contact research queue", () => {
     assert.match(sql,/COALESCE\(lead_contacts\.label,excluded\.label\)/);
     assert.match(sql,/length\(lead_contacts\.notes\)>=length\(excluded\.notes\)/);
   });
+  it("adds a current Bath Depot founder route without inferred contact details",()=>{
+    const sql=readFileSync(new URL("../data/public-decision-owner-wave3-2026-08-08.sql",import.meta.url),"utf8");
+    assert.match(sql,/https:\/\/www\.linkedin\.com\/in\/marc-nadeau-b3455645\//);
+    assert.match(sql,/Marc Nadeau — President & Founder/);
+    assert.match(sql,/Bath Depot official current company activity/);
+    assert.match(sql,/https:\/\/www\.akeneo\.com\/wp-content\/uploads\/2023\/07\/Bath-Depot-2024\.pdf/);
+    assert.doesNotMatch(sql,/@baindepot\.|\+1-\d/);
+    assert.match(sql,/ON CONFLICT\(company_id,contact_type,contact_value\) DO UPDATE/);
+  });
   it("keeps sales export decision-owner ordering aligned with contact quality",()=>{
     const source=readFileSync(new URL("../app/api/leads/export/route.ts",import.meta.url),"utf8");
     for(const role of ["purchas","sourcing","product development","owner","president","chief executive","ceo"]) assert.match(source,new RegExp(`GLOB '\\*${role}\\*'`));
