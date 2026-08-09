@@ -17,6 +17,7 @@
     "db:setup": "node scripts/db-local.mjs migrate && node scripts/db-local.mjs seed",
     "contacts:import": "node --experimental-strip-types scripts/import-public-lead-contacts.mjs",
     "contacts:research": "node --experimental-strip-types scripts/import-contact-research.mjs",
+    "websites:import": "node --experimental-strip-types scripts/import-public-company-websites.mjs",
     "capture:promote": "node scripts/promote-importyeti-capture.mjs",
     "sales:initialize": "node --experimental-strip-types scripts/initialize-real-sales-pipeline.mjs",
     "sales:drafts": "node --experimental-strip-types scripts/initialize-outreach-packages.mjs",

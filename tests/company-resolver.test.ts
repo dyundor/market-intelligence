@@ -3,6 +3,7 @@ import test from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolveCompanyIdentity, mergeCompany, type CompanyIdentityRecord } from "../lib/entities/company-resolver.ts";
 import { companyIdentityKey } from "../lib/entities/company.ts";
+import { buildWebsiteSearchQueries, validateWebsiteResearch } from "../lib/company/website-evidence.ts";
 
 const RECORDS: CompanyIdentityRecord[] = [
   { id: "e-kohler", name: "KOHLER", identityKey: companyIdentityKey("KOHLER"), aliases: ["Kohler Co.", "Kohler Co., Inc.", "科勒"] },
@@ -36,6 +37,23 @@ test("mergeCompany reuses the existing company record", () => {
   const fresh = mergeCompany(RECORDS, { id: "e-moen", name: "Moen Inc.", identityKey: companyIdentityKey("Moen Inc."), aliases: [] });
   assert.equal(fresh.matched, false);
   assert.equal(fresh.record.id, "e-moen");
+});
+
+test("website research expands exact-name searches with identity context", () => {
+  assert.deepEqual(buildWebsiteSearchQueries({name:"Opulent International Group",address:"No. 126 Danuan Rd",country:"Taiwan",products:"PVC flooring"}),[
+    '"Opulent International Group" official website',
+    '"Opulent International Group" "No. 126 Danuan Rd"',
+    '"Opulent International Group" Taiwan',
+    '"Opulent International Group" PVC flooring manufacturer',
+  ]);
+});
+
+test("website research accepts cross-validated group sites and rejects weak or directory candidates", () => {
+  const valid={companyId:"supplier:opulent",companyName:"Opulent International Group",website:"https://www.mjgroupus.com/",websiteStatus:"verified_group_site" as const,websiteSourceUrl:"https://www.red-dot.org/project/example",identitySignals:["exact_name","address","country","product","corporate_relationship","authoritative_cross_reference"] as const,evidenceUrls:["https://www.red-dot.org/project/example","https://www.mjig.com/investor.pdf"]};
+  assert.deepEqual(validateWebsiteResearch(valid),[]);
+  assert.ok(validateWebsiteResearch({...valid,website:"https://www.volza.com/company-profile/opulent"}).some(error=>error.includes("independent HTTPS")));
+  assert.ok(validateWebsiteResearch({...valid,identitySignals:["exact_name","country"]}).some(error=>error.includes("three independent")));
+  assert.ok(validateWebsiteResearch({...valid,identitySignals:["exact_name","address","country"]}).some(error=>error.includes("group sites require")));
 });
 
 test("ranking layer is independent from the query layer", () => {

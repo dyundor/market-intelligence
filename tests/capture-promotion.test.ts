@@ -43,6 +43,25 @@ describe("Reviewed capture promotion",()=>{
     assert.deepEqual(second.after,first.after);
   });
 
+  it("imports reviewed company websites with preserved evidence and namesake rejections",()=>{
+    const dry=JSON.parse(execFileSync(process.execPath,["--experimental-strip-types","scripts/import-public-company-websites.mjs",`--db=${dbPath}`],{cwd:root,encoding:"utf8"}));
+    assert.equal(dry.mode,"dry-run");
+    assert.equal(dry.reviewed,1);
+    const first=JSON.parse(execFileSync(process.execPath,["--experimental-strip-types","scripts/import-public-company-websites.mjs",`--db=${dbPath}`,"--apply"],{cwd:root,encoding:"utf8"}));
+    const second=JSON.parse(execFileSync(process.execPath,["--experimental-strip-types","scripts/import-public-company-websites.mjs",`--db=${dbPath}`,"--apply"],{cwd:root,encoding:"utf8"}));
+    assert.equal(first.written,1);
+    assert.equal(second.written,0);
+    assert.equal(second.unchanged,1);
+    const verifiedDb=new DatabaseSync(dbPath);
+    const opulent=verifiedDb.prepare("SELECT website,website_status,website_source_url,raw_evidence FROM importyeti_web_entities WHERE id='supplier:opulent-international-group'").get();
+    assert.equal(opulent.website,"https://www.mjgroupus.com/");
+    assert.equal(opulent.website_status,"verified_group_site");
+    assert.match(opulent.website_source_url,/red-dot\.org/);
+    assert.match(opulent.raw_evidence,/opulentintl\.com/);
+    assert.match(opulent.raw_evidence,/India chemicals and ceramics company/);
+    verifiedDb.close();
+  });
+
   it("initializes qualified real buyers without regressing an existing contact-ready lead",()=>{
     const db=new DatabaseSync(dbPath);
     db.prepare("INSERT INTO buyer_watchlist (id,company_id,status,notes,lead_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?)").run("test-am","importer:am-conservation-group","researching","verified public contact","contact_ready","2026-08-08","2026-08-08");

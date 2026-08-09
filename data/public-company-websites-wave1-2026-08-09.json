@@ -1,0 +1,23 @@
+{
+  "researchedAt":"2026-08-09",
+  "searchStrategy":"Exact legal name plus address, country and product search; reject namesakes; require at least three identity signals and two public evidence URLs.",
+  "companies":[
+    {
+      "companyId":"supplier:opulent-international-group",
+      "companyName":"Opulent International Group",
+      "website":"https://www.mjgroupus.com/",
+      "websiteStatus":"verified_group_site",
+      "websiteSourceUrl":"https://www.red-dot.org/project/lite-rspc-flooring/mjr2021oe-l1-57694",
+      "identitySignals":["exact_name","address","country","product","corporate_relationship","authoritative_cross_reference"],
+      "evidenceUrls":[
+        "https://www.red-dot.org/project/lite-rspc-flooring/mjr2021oe-l1-57694",
+        "https://www.mjig.com/upload_file/investor/EN-2025_8466_20250625F02_20250626_102344.pdf",
+        "https://www.linkedin.com/company/m-j-international-group"
+      ],
+      "rejectedCandidates":[
+        {"url":"https://www.opulentintl.com/","reason":"India chemicals and ceramics company; country, address and products conflict with the Taiwan flooring exporter."},
+        {"url":"https://www.opulent-group.com/","reason":"Singapore electronics manufacturer; industry and corporate identity conflict."}
+      ]
+    }
+  ]
+}
