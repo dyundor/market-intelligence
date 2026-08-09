@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { classifySalesProducts, rankHotProducts } from "../lib/products/hot-products.ts";
+import { classifySalesProducts, rankHotProducts, aggregateProductBuyers, enrichProductBuyers } from "../lib/products/hot-products.ts";
 import { readFileSync } from "node:fs";
 import type { Shipment } from "../lib/entities/shipment.ts";
 import { shipmentFromRow, enrichShipmentRow } from "../lib/entities/shipment.ts";
@@ -274,4 +274,46 @@ test("Query Engine shipment flow: Top20 reuses Top50 ranking and cache prevents 
   assert.equal(top20View?.topLimit, 20);
   assert.equal(top20View?.topCount, 5);
   assert.equal(top20View?.totalCount, 5);
+});
+
+test("aggregateProductBuyers groups shipments by product and buyer", () => {
+  const rows = [
+    { id: "1", importer_id: "a", importer_name: "Buyer A", product_description: "Shower Tray", shipment_date: "2026-07-01", weight_kg: 1000 },
+    { id: "2", importer_id: "b", importer_name: "Buyer B", product_description: "Bathtub shower tray drainer", shipment_date: "2026-06-01", weight_kg: 2000 },
+    { id: "3", importer_id: "a", importer_name: "Buyer A", product_description: "Shower base acrylic", shipment_date: "2026-07-02", weight_kg: 500 },
+  ];
+  const buyers = aggregateProductBuyers(rows, "shower_tray");
+  assert.equal(buyers.length, 2);
+  assert.equal(buyers[0].importerId, "a");
+  assert.equal(buyers[0].shipments, 2);
+  assert.equal(buyers[0].latestShipmentDate, "2026-07-02");
+  assert.equal(buyers[1].importerId, "b");
+  assert.equal(buyers[1].shipments, 1);
+  const empty = aggregateProductBuyers(rows, "nonexistent");
+  assert.equal(empty.length, 0);
+});
+
+test("enrichProductBuyers sorts qualified first and marks excluded", () => {
+  const aggregates = [
+    { importerId: "a", importerName: "A", shipments: 5, weightKg: 1000, latestShipmentDate: "2026-01-01" },
+    { importerId: "b", importerName: "B", shipments: 3, weightKg: 500, latestShipmentDate: "2025-01-01" },
+  ];
+  const entities = [
+    { id: "a", name: "Buyer A", identity_status: "source_verified", identity_confidence: 95, identity_notes: null, website: "https://a.com", website_status: "verified", country: "US" },
+    { id: "b", name: "Buyer B", identity_status: "confirmed_manufacturer", identity_confidence: 80, identity_notes: null, website: null, website_status: null, country: null },
+  ];
+  const watchlist = [
+    { company_id: "a", lead_status: "contact_ready", outreach_strategy: "OEM/ODM Pitch", commercial_fit_score: 70, outreach_score: 60, recommended_products: "Faucets" },
+    { company_id: "b", lead_status: null, outreach_strategy: null, commercial_fit_score: null, outreach_score: null, recommended_products: null },
+  ];
+  const verifiedContacts = new Set(["a"]);
+  const result = enrichProductBuyers(aggregates, entities, watchlist, verifiedContacts);
+  assert.equal(result.length, 2);
+  assert.equal(result[0].id, "a");
+  assert.equal(result[0].excluded, false);
+  assert.equal(result[0].hasVerifiedContact, true);
+  assert.equal(result[0].leadStatus, "contact_ready");
+  assert.equal(result[1].id, "b");
+  assert.equal(result[1].excluded, true);
+  assert.equal(result[1].exclusionReason, "同行制造商 — 不宜作为客户开发");
 });

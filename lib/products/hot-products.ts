@@ -2,6 +2,21 @@ export interface ProductShipmentEvidence { id:string; importer_id:string|null; i
 export interface RepresentativeProduct { title:string;brand:string;productUrl:string;imageUrl:string|null;sourceName:string }
 export interface HotProduct { id:string;name:string;nameEn:string;shipments:number;buyers:number;weightKg:number;latestShipmentDate:string|null;recentShipments:number;heatScore:number;topBuyers:Array<{id:string;name:string;shipments:number}>;sampleDescriptions:string[];productSearchUrl:string;imageSearchUrl:string;representativeProduct:RepresentativeProduct|null }
 
+export interface EnrichedProductBuyer {
+  id:string;name:string;shipments:number;weightKg:number;latestShipmentDate:string|null;
+  identityStatus:string|null;identityConfidence:number|null;identityNotes:string|null;
+  website:string|null;websiteStatus:string|null;country:string|null;
+  leadStatus:string|null;outreachStrategy:string|null;commercialFitScore:number|null;outreachScore:number|null;
+  recommendedProducts:string|null;hasVerifiedContact:boolean;
+  excluded:boolean;exclusionReason:string|null;
+}
+
+export interface ProductBuyerPayload {
+  productId:string;productName:string;productNameEn:string;
+  totalShipments:number;totalBuyers:number;
+  buyers:EnrichedProductBuyer[];
+}
+
 const REPRESENTATIVE_PRODUCTS:Record<string,RepresentativeProduct>={
   shower_tray:{title:"SlimLine acrylic shower base",brand:"DreamLine",productUrl:"https://dreamline.com/product/dreamline-slimline-36-inch-d-x-48-inch-w-x-2-3-4-inch-h-double-threshold-shower-base/dlt-103648/dlt-1036481",imageUrl:null,sourceName:"DreamLine official product page"},
   bathtub:{title:"Studio 60 × 36-inch drop-in bathtub",brand:"American Standard",productUrl:"https://www.americanstandard-us.com/products/studio-r-60-x-36-inch-drop-in-bathtub-with-2-inch-edge",imageUrl:"https://cdn.shopify.com/s/files/1/0609/8567/1727/files/259172_P-2934002D2020_CDNwebp.webp?v=1744842709",sourceName:"American Standard official product page"},
@@ -9,7 +24,7 @@ const REPRESENTATIVE_PRODUCTS:Record<string,RepresentativeProduct>={
   bathroom_faucet:{title:"Lahara single-handle bathroom faucet",brand:"Delta",productUrl:"https://www.deltafaucet.com/bathroom/product/538-CZMPU-DST.html",imageUrl:null,sourceName:"Delta official product page"},
 };
 
-const SALES_PRODUCTS=[
+export const SALES_PRODUCTS=[
   {id:"bathroom_faucet",name:"浴室水龙头",nameEn:"Bathroom faucets",patterns:[/\bfaucet(s)?\b/i,/\bbasin faucet/i,/\bmixer faucet/i],exclude:[/kitchen faucet/i,/faucet (accessor|part|spo)/i]},
   {id:"faucet_parts",name:"龙头配件与零件",nameEn:"Faucet parts & accessories",patterns:[/faucet (accessor|part|spo)/i,/spout/i]},
   {id:"shower_tray",name:"淋浴底盆",nameEn:"Shower trays",patterns:[/shower\s*tray/i,/shower base/i,/acrylic base/i]},
@@ -43,4 +58,77 @@ export function rankHotProducts(rows:ProductShipmentEvidence[]):HotProduct[]{
   const maxBuyers=Math.max(1,...aggregates.map(product=>product.buyers));
   const maxWeightLog=Math.max(1,...aggregates.map(product=>Math.log10(Math.max(1,product.weightKg))));
   return aggregates.map(product=>({...product,heatScore:Math.round(product.recentShipments/maxRecent*55+product.buyers/maxBuyers*30+Math.log10(Math.max(1,product.weightKg))/maxWeightLog*15)})).sort((a,b)=>b.heatScore-a.heatScore||b.recentShipments-a.recentShipments||b.buyers-a.buyers);
+}
+
+export interface ProductBuyerAggregate {
+  importerId:string;importerName:string;shipments:number;weightKg:number;latestShipmentDate:string|null;
+}
+
+export function aggregateProductBuyers(rows:ProductShipmentEvidence[],productId:string):ProductBuyerAggregate[]{
+  const product=SALES_PRODUCTS.find(p=>p.id===productId);
+  if(!product)return [];
+  const matched=rows.filter(row=>classifySalesProducts(row.product_description||"").includes(product.id));
+  const buyers=new Map<string,ProductBuyerAggregate>();
+  for(const row of matched){
+    if(!row.importer_id)continue;
+    const current=buyers.get(row.importer_id)||{importerId:row.importer_id,importerName:row.importer_name||row.importer_id,shipments:0,weightKg:0,latestShipmentDate:null};
+    current.shipments+=1;
+    current.weightKg+=Number(row.weight_kg||0);
+    if(row.shipment_date&&(!current.latestShipmentDate||row.shipment_date>current.latestShipmentDate))current.latestShipmentDate=row.shipment_date;
+    buyers.set(row.importer_id,current);
+  }
+  return [...buyers.values()].sort((a,b)=>b.shipments-a.shipments);
+}
+
+function isExcludedIdentity(identityStatus:string|null):{excluded:boolean;exclusionReason:string|null}{
+  if(!identityStatus)return{excluded:false,exclusionReason:null};
+  if(identityStatus==="confirmed_manufacturer")return{excluded:true,exclusionReason:"同行制造商 — 不宜作为客户开发"};
+  if(identityStatus==="likely_manufacturer")return{excluded:true,exclusionReason:"疑似同行制造商 — 暂不宜开发"};
+  if(identityStatus==="defunct")return{excluded:true,exclusionReason:"已停业"};
+  if(identityStatus==="acquired")return{excluded:true,exclusionReason:"已被收购 — 主体不再独立运营"};
+  if(identityStatus==="ambiguous")return{excluded:true,exclusionReason:"身份模糊 — 待进一步确认"};
+  if(identityStatus==="fuzzy_candidate")return{excluded:true,exclusionReason:"疑似同名企业 — 身份未确认"};
+  if(identityStatus==="unresolved")return{excluded:true,exclusionReason:"身份待人工确认"};
+  return{excluded:false,exclusionReason:null};
+}
+
+export function enrichProductBuyers(
+  aggregates:ProductBuyerAggregate[],
+  entities:Array<{id:string;name:string;identity_status:string|null;identity_confidence:number|null;identity_notes:string|null;website:string|null;website_status:string|null;country:string|null}>,
+  watchlist:Array<{company_id:string;lead_status:string|null;outreach_strategy:string|null;commercial_fit_score:number|null;outreach_score:number|null;recommended_products:string|null}>,
+  verifiedContacts:Set<string>,
+):EnrichedProductBuyer[]{
+  const entityMap=new Map(entities.map(e=>[e.id,e]));
+  const watchlistMap=new Map(watchlist.map(w=>[w.company_id,w]));
+  return aggregates.map(agg=>{
+    const entity=entityMap.get(agg.importerId);
+    const watch=watchlistMap.get(agg.importerId);
+    const exclusion=entity?isExcludedIdentity(entity.identity_status):{excluded:false,reason:null};
+    return {
+      id:agg.importerId,
+      name:entity?.name||agg.importerName,
+      shipments:agg.shipments,
+      weightKg:agg.weightKg,
+      latestShipmentDate:agg.latestShipmentDate,
+      identityStatus:entity?.identity_status||null,
+      identityConfidence:entity?.identity_confidence||null,
+      identityNotes:entity?.identity_notes||null,
+      website:entity?.website||null,
+      websiteStatus:entity?.website_status||null,
+      country:entity?.country||null,
+      leadStatus:watch?.lead_status||null,
+      outreachStrategy:watch?.outreach_strategy||null,
+      commercialFitScore:watch?.commercial_fit_score||null,
+      outreachScore:watch?.outreach_score||null,
+      recommendedProducts:watch?.recommended_products||null,
+      hasVerifiedContact:verifiedContacts.has(agg.importerId),
+      ...exclusion,
+    };
+  }).sort((a,b)=>{
+    if(a.excluded!==b.excluded)return a.excluded?1:-1;
+    const aScore=(a.identityStatus==="source_verified"?3:0)+(a.hasVerifiedContact?2:0)+(a.commercialFitScore&&a.commercialFitScore>=35?1:0);
+    const bScore=(b.identityStatus==="source_verified"?3:0)+(b.hasVerifiedContact?2:0)+(b.commercialFitScore&&b.commercialFitScore>=35?1:0);
+    if(aScore!==bScore)return bScore-aScore;
+    return b.shipments-a.shipments;
+  });
 }
