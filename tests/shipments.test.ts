@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { classifySalesProducts, rankHotProducts, aggregateProductBuyers, enrichProductBuyers, REPRESENTATIVE_PRODUCTS } from "../lib/products/hot-products.ts";
+import { computeConfidence } from "../lib/data-confidence.ts";
 import { readFileSync } from "node:fs";
 import type { Shipment } from "../lib/entities/shipment.ts";
 import { shipmentFromRow, enrichShipmentRow } from "../lib/entities/shipment.ts";
@@ -325,4 +326,91 @@ test("enrichProductBuyers sorts qualified first and marks excluded", () => {
   assert.equal(result[1].id, "b");
   assert.equal(result[1].excluded, true);
   assert.equal(result[1].exclusionReason, "同行制造商 — 不宜作为客户开发");
+});
+
+test("computeConfidence calculates score on log scale and correct ratios", () => {
+  const result = computeConfidence({
+    shipmentRecords: 500,
+    matchedRecords: 400,
+    mixedRecords: 50,
+    categories: 1,
+    lastUpdated: "2026-07-15",
+    dataSource: "stored_us_ocean_import_shipments",
+  });
+  assert.equal(result.sampleSize, 500);
+  assert.equal(result.score, Math.round(Math.log10(500) / Math.log10(1000) * 100));
+  assert.equal(result.identifiedRatio, 400 / 500);
+  assert.equal(result.mixedLoadRatio, 50 / 400);
+  assert.equal(result.unclassifiedRatio, (500 - 400) / 500);
+  assert.equal(result.dataSource, "stored_us_ocean_import_shipments");
+  assert.equal(result.lastUpdated, "2026-07-15");
+  assert.ok(result.explanation.includes("500 shipment records"));
+  assert.ok(result.explanation.includes("80% classified"));
+  assert.ok(result.explanation.includes("13% from mixed-product shipments"));
+});
+
+test("computeConfidence with large sample reaches score 100", () => {
+  const result = computeConfidence({
+    shipmentRecords: 5000,
+    matchedRecords: 4000,
+    mixedRecords: 800,
+    categories: 1,
+    lastUpdated: "2026-07-15",
+  });
+  assert.equal(result.score, 100);
+  assert.equal(result.sampleSize, 5000);
+  assert.ok(result.explanation.includes("large sample, high confidence"));
+});
+
+test("computeConfidence with small sample stays below 100", () => {
+  const result = computeConfidence({
+    shipmentRecords: 10,
+    matchedRecords: 8,
+    mixedRecords: 2,
+    categories: 1,
+    lastUpdated: "2026-07-15",
+  });
+  assert.ok(result.score < 100);
+  assert.ok(result.score > 0);
+  assert.equal(result.identifiedRatio, 0.8);
+  assert.equal(result.mixedLoadRatio, 0.25);
+  assert.ok(result.explanation.includes("small sample, lower confidence"));
+});
+
+test("computeConfidence with zero records handles edge case", () => {
+  const result = computeConfidence({
+    shipmentRecords: 0,
+    matchedRecords: 0,
+    mixedRecords: 0,
+    categories: 1,
+    lastUpdated: "",
+  });
+  assert.equal(result.score, 0);
+  assert.equal(result.identifiedRatio, 0);
+  assert.equal(result.mixedLoadRatio, 0);
+  assert.equal(result.unclassifiedRatio, 0);
+  assert.ok(result.explanation.includes("No shipment records"));
+});
+
+test("rankHotProducts includes confidence in each product", () => {
+  const rows = [
+    { id: "1", importer_id: "a", importer_name: "Buyer A", product_description: "Shower Tray", shipment_date: "2026-07-01", weight_kg: 1000 },
+    { id: "2", importer_id: "b", importer_name: "Buyer B", product_description: "Bathtub Shower Tray Drainer", shipment_date: "2026-06-01", weight_kg: 2000 },
+    { id: "3", importer_id: "a", importer_name: "Buyer A", product_description: "Faucet", shipment_date: "2026-07-02", weight_kg: 500 },
+  ];
+  const ranked = rankHotProducts(rows);
+  for (const product of ranked) {
+    assert.ok(product.confidence, `Product ${product.id} missing confidence`);
+    assert.equal(typeof product.confidence.score, "number");
+    assert.equal(typeof product.confidence.sampleSize, "number");
+    assert.equal(product.confidence.sampleSize, 3);
+    assert.equal(typeof product.confidence.identifiedRatio, "number");
+    assert.equal(typeof product.confidence.mixedLoadRatio, "number");
+    assert.equal(typeof product.confidence.unclassifiedRatio, "number");
+    assert.ok(product.confidence.explanation.length > 0);
+    assert.equal(product.confidence.dataSource, "stored_us_ocean_import_shipments");
+  }
+  const trays = ranked.find(product => product.id === "shower_tray")!;
+  assert.ok(trays.shipments > 0);
+  assert.ok(trays.confidence.identifiedRatio > 0);
 });

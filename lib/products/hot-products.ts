@@ -1,6 +1,8 @@
+import { computeConfidence, type DataConfidence } from "../data-confidence.ts";
+
 export interface ProductShipmentEvidence { id:string; importer_id:string|null; importer_name:string|null; product_description:string|null; shipment_date:string|null; weight_kg:number|null }
 export interface RepresentativeProduct { title:string;brand:string;productUrl:string;imageUrl:string|null;sourceName:string }
-export interface HotProduct { id:string;name:string;nameEn:string;shipments:number;buyers:number;weightKg:number;latestShipmentDate:string|null;recentShipments:number;heatScore:number;topBuyers:Array<{id:string;name:string;shipments:number}>;sampleDescriptions:string[];productSearchUrl:string;imageSearchUrl:string;representativeProduct:RepresentativeProduct|null }
+export interface HotProduct { id:string;name:string;nameEn:string;shipments:number;buyers:number;weightKg:number;latestShipmentDate:string|null;recentShipments:number;heatScore:number;topBuyers:Array<{id:string;name:string;shipments:number}>;sampleDescriptions:string[];productSearchUrl:string;imageSearchUrl:string;representativeProduct:RepresentativeProduct|null;confidence:DataConfidence }
 
 export interface EnrichedProductBuyer {
   id:string;name:string;shipments:number;weightKg:number;latestShipmentDate:string|null;
@@ -50,14 +52,19 @@ function monthIndex(value:string):number{return Number(value.slice(0,4))*12+Numb
 export function rankHotProducts(rows:ProductShipmentEvidence[]):HotProduct[]{
   const latest=rows.map(row=>row.shipment_date||"").filter(Boolean).sort().at(-1)||"";
   const recentFloor=latest?monthIndex(latest)-11:0;
+  const rowCategories=rows.map(row=>classifySalesProducts(row.product_description||""));
+  const totalRecords=rows.length;
+  const dataSource="stored_us_ocean_import_shipments";
   const aggregates=SALES_PRODUCTS.map(product=>{
-    const matched=rows.filter(row=>classifySalesProducts(row.product_description||"").includes(product.id));
+    const matched:ProductShipmentEvidence[]=[];let mixedCount=0;
+    for(let i=0;i<rows.length;i++)if(rowCategories[i].includes(product.id)){matched.push(rows[i]);if(rowCategories[i].length>1)mixedCount++;}
     const buyers=new Map<string,{id:string;name:string;shipments:number}>();
     for(const row of matched)if(row.importer_id){const current=buyers.get(row.importer_id)||{id:row.importer_id,name:row.importer_name||row.importer_id,shipments:0};current.shipments+=1;buyers.set(row.importer_id,current);}
     const recent=matched.filter(row=>row.shipment_date&&monthIndex(row.shipment_date)>=recentFloor).length;
     const weight=matched.reduce((sum,row)=>sum+Number(row.weight_kg||0),0);
     const query=`${product.nameEn} wholesale supplier North America`;
-    return {id:product.id,name:product.name,nameEn:product.nameEn,shipments:matched.length,buyers:buyers.size,weightKg:weight,latestShipmentDate:matched.map(row=>row.shipment_date||"").filter(Boolean).sort().at(-1)||null,recentShipments:recent,topBuyers:[...buyers.values()].sort((a,b)=>b.shipments-a.shipments).slice(0,5),sampleDescriptions:[...new Set(matched.map(row=>row.product_description||"").filter(Boolean))].slice(0,5),productSearchUrl:`https://www.google.com/search?q=${encodeURIComponent(query)}`,imageSearchUrl:`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`,representativeProduct:REPRESENTATIVE_PRODUCTS[product.id]||null};
+    const confidence=computeConfidence({shipmentRecords:totalRecords,matchedRecords:matched.length,mixedRecords:mixedCount,categories:1,lastUpdated:latest,dataSource});
+    return {id:product.id,name:product.name,nameEn:product.nameEn,shipments:matched.length,buyers:buyers.size,weightKg:weight,latestShipmentDate:matched.map(row=>row.shipment_date||"").filter(Boolean).sort().at(-1)||null,recentShipments:recent,topBuyers:[...buyers.values()].sort((a,b)=>b.shipments-a.shipments).slice(0,5),sampleDescriptions:[...new Set(matched.map(row=>row.product_description||"").filter(Boolean))].slice(0,5),productSearchUrl:`https://www.google.com/search?q=${encodeURIComponent(query)}`,imageSearchUrl:`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`,representativeProduct:REPRESENTATIVE_PRODUCTS[product.id]||null,confidence};
   }).filter(product=>product.shipments>0);
   const maxRecent=Math.max(1,...aggregates.map(product=>product.recentShipments));
   const maxBuyers=Math.max(1,...aggregates.map(product=>product.buyers));
