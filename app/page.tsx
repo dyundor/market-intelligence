@@ -253,14 +253,14 @@ function HotProductList({locale,onBuyer,onProductClick}:{locale:Locale;onBuyer:(
         <span><strong>{product.latestShipmentDate||"—"}</strong><small>{locale==="zh-CN"?"最近交易":"latest"}</small></span>
         <button className={`confidence-badge${(!product.confidence||product.confidence.sampleSize<30)?' confidence-low':''}`} onClick={()=>setExpandedConfidence(v=>v===product.id?null:product.id)} aria-expanded={expandedConfidence===product.id}>{expandedConfidence===product.id?<strong>▲</strong>:<><strong>{product.confidence?.score!=null?product.confidence.score:"—"}/100</strong><small>{locale==="zh-CN"?"置信度":"Confidence"}</small></>}</button>
       </article>
-      {expandedConfidence===product.id&&<div className="confidence-row">
+      {expandedConfidence===product.id&&<button className={`confidence-row${product.confidence&&product.confidence.sampleSize<30?' confidence-low':''}`} onClick={()=>setExpandedConfidence(null)}>
         <span className="confidence-score"><strong>{locale==="zh-CN"?"置信度评分":"Confidence score"}: {product.confidence?.score!=null?product.confidence.score:"—"}/100</strong></span>
         <span>{locale==="zh-CN"?`基于 ${product.confidence?.sampleSize?.toLocaleString()||"0"} 条货运记录`:`Based on ${product.confidence?.sampleSize?.toLocaleString()||"0"} shipment records`}</span>
         <span>{locale==="zh-CN"?`数据来源: ${dataSourceLabel(product.confidence?.dataSource||"")}`:`Source: ${dataSourceLabel(product.confidence?.dataSource||"")}`}</span>
-        <span>{locale==="zh-CN"?`最后更新: ${product.confidence?.lastUpdated||"—"}`:`Last updated: ${product.confidence?.lastUpdated||"—"}`}</span>
-        {product.confidence&&product.confidence.sampleSize<30&&<span className="limited-sample">{locale==="zh-CN"?"样本量有限":"Limited sample"}</span>}
+        <span>{locale==="zh-CN"?`最后更新: ${product.confidence?.lastUpdated||((!product.confidence||!product.confidence.sampleSize)?(locale==="zh-CN"?"无近期数据":"No recent data"):"N/A")}`:`Last updated: ${product.confidence?.lastUpdated||((!product.confidence||!product.confidence.sampleSize)?(locale==="zh-CN"?"无近期数据":"No recent data"):"N/A")}`}</span>
+        {product.confidence&&product.confidence.sampleSize<30&&<span className="limited-sample">{locale==="zh-CN"?"⚠ 样本量有限 — 解读需谨慎":"⚠ Limited sample — interpret with caution"}</span>}
         <span className="confidence-explanation">{product.confidence?.explanation||""}</span>
-      </div>}
+      </button>}
     </React.Fragment>)}</div>
     <p>{locale==="zh-CN"?"混装提单可能同时计入多个产品；搜索链接用于产品调研，原始提单仍是销量证据。":"Mixed-product BOLs may support multiple products; search links support research while raw shipment records remain the sales evidence."}</p>
   </section>;
