@@ -75,6 +75,14 @@ test("buyer detail uses coverage-aware HS evidence and removes the disabled lega
   assert.doesNotMatch(page, /companyDetail&&false|importer-monthly-detail/);
 });
 
+test("buyer detail preserves real zeroes and recognizes supported website verification states", () => {
+  const page = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /\["verified","verified_company_site"\]\.includes\(c\.website_status\|\|""\)/);
+  assert.match(page, /Number\(item\.captured_bols\|\|0\)\.toLocaleString/);
+  assert.match(page, /item\.supplier_count\?\?0/);
+  assert.doesNotMatch(page, /item\.captured_bols\|\|"—"|item\.supplier_count\|\|"—"/);
+});
+
 test("provider shipment rows normalize into canonical Shipment entities", () => {
   const shipments = normalizeShipments({ shipments: RAW_ROWS });
   assert.equal(shipments.length, 3);
