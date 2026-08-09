@@ -584,3 +584,46 @@ test("computeTrend with months=3 limits to last 3 months", () => {
   assert.equal(trend!.summary.periodEnd, "2026-05");
   assert.equal(trend!.summary.totalShipments, 3);
 });
+
+test("computeTrend with out-of-order data returns points sorted by month ascending", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "3", importer_id: "a", importer_name: "A", product_description: "Valve", shipment_date: "2026-08-15", weight_kg: 300 },
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Valve", shipment_date: "2026-06-01", weight_kg: 100 },
+    { id: "4", importer_id: "b", importer_name: "B", product_description: "Valve", shipment_date: "2026-09-10", weight_kg: 400 },
+    { id: "2", importer_id: "a", importer_name: "A", product_description: "Valve", shipment_date: "2026-07-20", weight_kg: 200 },
+  ];
+  const trend = computeTrend(rows, "valve")!;
+  assert.equal(trend.points.length, 4);
+  assert.equal(trend.points[0].month, "2026-06");
+  assert.equal(trend.points[1].month, "2026-07");
+  assert.equal(trend.points[2].month, "2026-08");
+  assert.equal(trend.points[3].month, "2026-09");
+  assert.equal(trend.points[0].shipments, 1);
+  assert.equal(trend.points[1].shipments, 1);
+  assert.equal(trend.points[2].shipments, 1);
+  assert.equal(trend.points[3].shipments, 1);
+});
+
+test("computeTrend handles empty data gracefully", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [];
+  const result = computeTrend(rows, "shower_tray");
+  assert.equal(result, null);
+});
+
+test("computeTrend with 2 months verifies growthRate calculation", () => {
+  const rows: Array<{ id: string; importer_id: string | null; importer_name: string | null; product_description: string | null; shipment_date: string | null; weight_kg: number | null }> = [
+    { id: "1", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-06-10", weight_kg: 500 },
+    { id: "2", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-06-20", weight_kg: 500 },
+    { id: "3", importer_id: "b", importer_name: "B", product_description: "Faucet", shipment_date: "2026-07-05", weight_kg: 1000 },
+    { id: "4", importer_id: "b", importer_name: "B", product_description: "Faucet", shipment_date: "2026-07-15", weight_kg: 1000 },
+    { id: "5", importer_id: "a", importer_name: "A", product_description: "Faucet", shipment_date: "2026-07-25", weight_kg: 1000 },
+  ];
+  const trend = computeTrend(rows, "bathroom_faucet")!;
+  assert.equal(trend.points.length, 2);
+  assert.equal(trend.points[0].month, "2026-06");
+  assert.equal(trend.points[0].shipments, 2);
+  assert.equal(trend.points[0].growthRate, null);
+  assert.equal(trend.points[1].month, "2026-07");
+  assert.equal(trend.points[1].shipments, 3);
+  assert.equal(trend.points[1].growthRate, 50);
+});
