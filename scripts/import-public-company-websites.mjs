@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { validateNoActiveWebsiteResearch, validateWebsiteResearch } from "../lib/company/website-evidence.ts";
+import { scoreWebsiteCandidate, validateNoActiveWebsiteResearch, validateWebsiteResearch } from "../lib/company/website-evidence.ts";
 
 const root=dirname(dirname(fileURLToPath(import.meta.url)));
 const sourceFile=process.argv.find(arg=>arg.endsWith(".json"))||"data/public-company-websites-wave1-2026-08-09.json";
@@ -28,7 +28,7 @@ for(const record of payload.companies){
   report.reviewed+=1;
   if(protectedWebsite||unchangedWebsite||!apply){report.unchanged+=Number(!!protectedWebsite||unchangedWebsite);continue;}
   const now=new Date().toISOString();
-  const evidence={researchedAt:payload.researchedAt,searchStrategy:payload.searchStrategy,identitySignals:record.identitySignals,evidenceUrls:record.evidenceUrls,rejectedCandidates:record.rejectedCandidates||[]};
+  const evidence={researchedAt:payload.researchedAt,searchStrategy:payload.searchStrategy,candidateName:record.candidateName||record.companyName,candidateScore:scoreWebsiteCandidate(record.companyName,record.candidateName||record.companyName,record.identitySignals),identitySignals:record.identitySignals,evidenceUrls:record.evidenceUrls,rejectedCandidates:record.rejectedCandidates||[]};
   db.prepare(`UPDATE importyeti_web_entities SET
     website=?,website_status=?,website_source_url=?,website_verified_at=?,updated_at=?,
     raw_evidence=json_set(CASE WHEN json_valid(raw_evidence) THEN raw_evidence ELSE '{}' END,'$.website_research',json(?))

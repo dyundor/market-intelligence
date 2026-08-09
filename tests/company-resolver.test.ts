@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolveCompanyIdentity, mergeCompany, type CompanyIdentityRecord } from "../lib/entities/company-resolver.ts";
 import { companyIdentityKey } from "../lib/entities/company.ts";
-import { buildWebsiteSearchQueries, validateNoActiveWebsiteResearch, validateWebsiteResearch } from "../lib/company/website-evidence.ts";
+import { buildWebsiteSearchQueries, scoreWebsiteCandidate, validateNoActiveWebsiteResearch, validateWebsiteResearch } from "../lib/company/website-evidence.ts";
 
 const RECORDS: CompanyIdentityRecord[] = [
   { id: "e-kohler", name: "KOHLER", identityKey: companyIdentityKey("KOHLER"), aliases: ["Kohler Co.", "Kohler Co., Inc.", "科勒"] },
@@ -46,6 +46,13 @@ test("website research expands exact-name searches with identity context", () =>
     '"Opulent International Group" Taiwan contact',
     '"Opulent International Group" PVC flooring manufacturer',
   ]);
+});
+
+test("website research repairs truncated legal names and ranks VETTA above the Vesta namesake",()=>{
+  const queries=buildWebsiteSearchQueries({name:"Vetta Kitchen And Bath Manufacturin",country:"United States",products:"Faucet"});
+  assert.ok(queries.includes('"Vetta Kitchen And Bath Manufacturing" official website'));
+  assert.equal(scoreWebsiteCandidate("Vetta Kitchen And Bath Manufacturin","Vetta Kitchen and Bath Manufacturing, Inc.",["exact_name","country","product","authoritative_cross_reference"]),80);
+  assert.ok(scoreWebsiteCandidate("Vetta Kitchen And Bath Manufacturin","Vesta Kitchen & Bath",["country"])<75);
 });
 
 test("website research accepts cross-validated group sites and rejects weak or directory candidates", () => {

@@ -1,0 +1,28 @@
+{
+  "researchedAt":"2026-08-09T00:00:00.000Z",
+  "searchStrategy":"Google candidate search with truncated-name repair; rank likely matches, then require product and independent registry or trade-association confirmation.",
+  "companies":[
+    {
+      "companyId":"importer:vetta-kitchen-and-bath-manufacturin","companyName":"Vetta Kitchen And Bath Manufacturin","candidateName":"Vetta Kitchen and Bath Manufacturing, Inc.",
+      "website":"https://www.vetta.com/","websiteStatus":"verified_company_site","websiteSourceUrl":"https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultDetail?aggregateId=domp-p12000081254-92534706-d647-4557-acff-b4524ae8beb2&directionType=CurrentList&inquirytype=EntityName&listNameOrder=MJFGLOBAL+P070001060640&searchNameOrder=MJFGROUP+P120000812540&searchTerm=MJF+GLASS+",
+      "identitySignals":["exact_name","country","product","authoritative_cross_reference"],
+      "evidenceUrls":["https://search.sunbiz.org/Inquiry/CorporationSearch/SearchResultDetail?aggregateId=domp-p12000081254-92534706-d647-4557-acff-b4524ae8beb2&directionType=CurrentList&inquirytype=EntityName&listNameOrder=MJFGLOBAL+P070001060640&searchNameOrder=MJFGROUP+P120000812540&searchTerm=MJF+GLASS+","https://www.linkedin.com/company/meijie-faucet-company","https://kbis2026.smallworldlabs.com/?boothId=boothId%3D2012876&page_id=2424"],
+      "rejectedCandidates":[{"url":"https://www.vestakb.com/","reason":"VestaBF LLC is a New York design and project-management studio; its name, operating entity and services do not match the VETTA faucet manufacturer in the trade records."}]
+    },
+    {
+      "companyId":"supplier:jinan-mech-piping-technology","companyName":"Jinan Mech Piping Technology","candidateName":"Jinan Mech Piping Technology Co., Ltd",
+      "website":"https://www.mechpipingtech.com/en/","websiteStatus":"verified_company_site","websiteSourceUrl":"https://www.mechpipingtech.com/en/","identitySignals":["exact_name","address","country","product","authoritative_cross_reference"],
+      "evidenceUrls":["https://www.mechpipingtech.com/en/","https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0324/2026032401858.pdf"]
+    },
+    {
+      "companyId":"supplier:apl-apollo-tubes","companyName":"APL Apollo Tubes","candidateName":"APL Apollo Tubes Limited",
+      "website":"https://www.aplapollo.com/","websiteStatus":"verified_company_site","websiteSourceUrl":"https://www.aplapollo.com/","identitySignals":["exact_name","country","product","authoritative_cross_reference"],
+      "evidenceUrls":["https://www.aplapollo.com/","https://www.itatube.org/member-detail.php?ID=2218"]
+    },
+    {
+      "companyId":"supplier:jinan-meide-casting","companyName":"Jinan Meide Casting","candidateName":"Jinan Meide Casting Co., Ltd.",
+      "website":"https://www.meide-casting.com/","websiteStatus":"verified_company_site","websiteSourceUrl":"https://www.meide-casting.com/","identitySignals":["exact_name","address","country","product","authoritative_cross_reference"],
+      "evidenceUrls":["https://www.meide-casting.com/","https://www.dnb.com/business-directory/company-profiles.jinan_meide_casting_co_ltd.df691e8e71369302afac931e81b3c548.html"]
+    }
+  ]
+}
